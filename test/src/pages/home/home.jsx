@@ -36,6 +36,65 @@ function Home() {
     }
   };
   
+  // Search functionality
+  const [searchTerm, setSearchTerm] = useState('');
+  const [mockItems] = useState([
+    { id: 1, title: '全新 MacBook Pro', price: 45000, image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=300', seller: 'Emma', condition: '全新' },
+    { id: 2, title: '經濟學原理課本', price: 350, image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=300', seller: 'Jason', condition: '良好' },
+    { id: 3, title: '腳踏車', price: 2500, image: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?q=80&w=300', seller: 'Mark', condition: '二手' },
+    { id: 4, title: '輔大限量T恤', price: 450, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=300', seller: 'Linda', condition: '全新' },
+    { id: 5, title: 'JBL 藍牙音響', price: 1200, image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?q=80&w=300', seller: 'David', condition: '二手' },
+    { id: 6, title: '桌遊組合', price: 800, image: 'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?q=80&w=300', seller: 'Sophia', condition: '良好' },
+  ]);
+  
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchTerm.trim()) return;
+    
+    try {
+      setLoading(true);
+      const searchResults = [];
+      
+      // 搜尋資料庫中的商品
+      const searchQuery = query(
+        collection(db, 'products'),
+        where('title', '>=', searchTerm),
+        where('title', '<=', searchTerm + '\uf8ff'),
+        limit(10)
+      );
+      
+      const querySnapshot = await getDocs(searchQuery);
+      querySnapshot.forEach((doc) => {
+        searchResults.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      // 如果資料庫中沒有找到結果，搜尋 mock data
+      if (searchResults.length === 0) {
+        const mockResults = mockItems.filter(item => 
+          item.title.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        searchResults.push(...mockResults);
+      }
+      
+      setFeaturedItems(searchResults);
+      setError(null);
+    } catch (err) {
+      console.error('Search error:', err);
+      setError('搜尋時發生錯誤，請稍後再試');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 清除搜尋
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    fetchItems(); // 重新載入所有商品
+  };
+
   // 獲取商品
   const fetchItems = async () => {
     try {
@@ -60,14 +119,7 @@ function Home() {
         setFeaturedItems(items);
       } else {
         // Fallback to mock data if no items in Firestore yet
-        setFeaturedItems([
-          { id: 1, title: '全新 MacBook Pro', price: 45000, image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=300', seller: 'Emma', condition: '全新' },
-          { id: 2, title: '經濟學原理課本', price: 350, image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=300', seller: 'Jason', condition: '良好' },
-          { id: 3, title: '腳踏車', price: 2500, image: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?q=80&w=300', seller: 'Mark', condition: '二手' },
-          { id: 4, title: '輔大限量T恤', price: 450, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=300', seller: 'Linda', condition: '全新' },
-          { id: 5, title: 'JBL 藍牙音響', price: 1200, image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?q=80&w=300', seller: 'David', condition: '二手' },
-          { id: 6, title: '桌遊組合', price: 800, image: 'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?q=80&w=300', seller: 'Sophia', condition: '良好' },
-        ]);
+        setFeaturedItems(mockItems);
       }
       
       setError(null);
@@ -94,43 +146,6 @@ function Home() {
     fetchItems();
   }, [db]);
 
-  // Search functionality
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchTerm.trim()) return;
-    
-    try {
-      setLoading(true);
-      // Perform search query
-      const searchQuery = query(
-        collection(db, 'products'),
-        where('title', '>=', searchTerm),
-        where('title', '<=', searchTerm + '\uf8ff'),
-        limit(10)
-      );
-      
-      const querySnapshot = await getDocs(searchQuery);
-      const searchResults = [];
-      
-      querySnapshot.forEach((doc) => {
-        searchResults.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      
-      setFeaturedItems(searchResults);
-      setError(null);
-    } catch (err) {
-      console.error('Search error:', err);
-      setError('搜尋時發生錯誤，請稍後再試');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Admin access check
   const isAdmin = currentUser && currentUser.email && currentUser.email.endsWith('@mail.fju.edu.tw');
 
@@ -148,6 +163,16 @@ function Home() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            {searchTerm && (
+              <button 
+                type="button" 
+                className="clear-search" 
+                onClick={handleClearSearch}
+                aria-label="清除搜尋"
+              >
+                ✕
+              </button>
+            )}
             <button type="submit">搜尋</button>
           </form>
         </div>

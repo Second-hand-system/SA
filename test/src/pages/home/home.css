@@ -33,32 +33,74 @@
 
 .search-bar {
   display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
   max-width: 600px;
   margin: 0 auto;
 }
 
 .search-bar input {
   flex: 1;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 25px 0 0 25px;
-  font-size: 1rem;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.search-bar input:focus {
   outline: none;
+  border-color: rgba(147, 122, 71, 0.9);
 }
 
 .search-bar button {
-  background-color: #cbb26a;
-  color: #333;
-  font-weight: bold;
-  padding: 12px 25px;
+  padding: 12px 24px;
+  background-color: #e2af4a;
+  color: white;
   border: none;
-  border-radius: 0 25px 25px 0;
+  border-radius: 8px;
+  font-size: 16px;
   cursor: pointer;
   transition: background-color 0.3s;
 }
 
 .search-bar button:hover {
-  background-color: #e9b107;
+  background-color: #357abd;
+}
+
+.clear-search {
+  background: none !important;
+  border: none !important;
+  color: #666 !important;
+  padding: 8px !important;
+  font-size: 18px !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s !important;
+}
+
+.clear-search:hover {
+  color: #333 !important;
+  background-color: transparent !important;
+}
+
+/* 確保搜尋框和按鈕的排列正確 */
+.search-bar {
+  position: relative;
+}
+
+.search-bar input {
+  padding-right: 40px; /* 為清除按鈕留出空間 */
+}
+
+.clear-search {
+  position: absolute;
+  right: 120px; /* 調整位置，確保不會與搜尋按鈕重疊 */
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 /* User Welcome */
