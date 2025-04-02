@@ -4,6 +4,7 @@ import './App.css'
 import Header from './component/Header'
 import Login from './pages/login'
 import Register from './pages/register'
+import Home from './pages/home/home'
 import AuthProvider from './context/AuthContext'
 
 function App() {
@@ -16,12 +17,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/" element={
-            <main className="content">
-              {/* Main content goes here */}
-              <h1>Welcome to My App</h1>
-            </main>
-          } />
+          <Route path="/" element={<Home />} />
         </Routes>
       </Router>
     </AuthProvider>
