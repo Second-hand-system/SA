@@ -1,0 +1,13 @@
+[debug] [2025-04-02T14:28:11.203Z] ----------------------------------------------------------------------
+[debug] [2025-04-02T14:28:11.204Z] Command:       /usr/local/bin/node /usr/local/bin/firebase login
+[debug] [2025-04-02T14:28:11.205Z] CLI Version:   14.0.1
+[debug] [2025-04-02T14:28:11.205Z] Platform:      darwin
+[debug] [2025-04-02T14:28:11.205Z] Node Version:  v22.14.0
+[debug] [2025-04-02T14:28:11.205Z] Time:          Wed Apr 02 2025 22:28:11 GMT+0800 (Taipei Standard Time)
+[debug] [2025-04-02T14:28:11.205Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-04-02T14:28:11.206Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[info] i  Firebase optionally collects CLI and Emulator Suite usage and error reporting information to help improve our products. Data is collected in accordance with Google's privacy policy (https://policies.google.com/privacy) and is not used to identify you.
+ 
+[debug] [2025-04-02T14:28:11.670Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2025-04-02T14:28:11.671Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}

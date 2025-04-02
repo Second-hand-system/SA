@@ -5,6 +5,7 @@ import Header from './component/Header'
 import Login from './pages/login'
 import Register from './pages/register'
 import Home from './pages/home/home'
+import Sell from './pages/sell/sell'
 import AuthProvider from './context/AuthContext'
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/sell" element={<Sell />} />
           <Route path="/" element={<Home />} />
         </Routes>
       </Router>
