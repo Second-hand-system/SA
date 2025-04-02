@@ -1,12 +1,75 @@
-# React + Vite
+# 輔大二手交易平台
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+輔大二手交易平台是一個為天主教輔仁大學學生設計的網絡應用，旨在促進校園內的二手物品交易，幫助學生買賣教材、電子產品、服裝及其他物品。
 
-Currently, two official plugins are available:
+## 系統架構
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+本系統採用以下技術架構：
 
-## Expanding the ESLint configuration
+- **前端框架**：React 19 + Vite
+- **路由管理**：React Router v7
+- **資料庫**：Firebase Firestore
+- **身份驗證**：Firebase Authentication
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 功能特點
+
+### 使用者管理
+- 註冊：學生可以使用電子郵件創建新帳戶
+- 登入：已註冊用戶可以使用電子郵件和密碼登入
+- 個人資料：用戶可以設置個人顯示名稱
+
+### 產品列表
+- 商品瀏覽：用戶可以瀏覽平台上所有可用的二手商品
+- 分類檢視：商品按類別分類（書籍教材、電子產品、家具寢具、交通工具、服裝衣物、運動用品）
+- 搜尋功能：用戶可以使用關鍵字搜尋特定商品
+
+### 管理功能
+- 管理員特權：帶有 @mail.fju.edu.tw 郵箱的用戶擁有管理員權限
+- 資料管理：管理員可以添加測試數據到數據庫進行測試
+
+## 目錄結構
+
+```
+/src
+  /assets          - 靜態資源文件
+  /component       - React 共用元件
+    /Header        - 網站頭部導航組件
+  /context
+    /AuthContext   - 身份驗證上下文管理器
+  /pages           - 應用頁面
+    /home          - 首頁展示產品和分類
+    /login         - 用戶登入頁面
+    /register      - 用戶註冊頁面
+  /utils           - 工具函數
+    /seedFirestore - 數據庫填充工具
+  firebase.js      - Firebase 配置
+  App.jsx          - 主應用元件
+  main.jsx         - 應用入口點
+```
+
+## 開發與部署
+
+### 本地開發
+```bash
+# 安裝依賴
+npm install
+
+# 啟動開發服務器
+npm run dev
+```
+
+### 生產部署
+```bash
+# 構建生產版本
+npm run build
+
+# 預覽生產構建
+npm run preview
+```
+
+## 擴展計劃
+
+1. 實現商品上傳功能
+2. 添加用戶間即時聊天功能
+3. 實現評價系統
+4. 開發商品預約和交易確認流程
