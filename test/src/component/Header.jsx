@@ -18,7 +18,7 @@ const Header = () => {
     <header className="header">
       <div className="logo">
         <Link to="/" style={{ textDecoration: 'none' }}>
-          <h1>My App</h1>
+          <h1>輔大二手交易平台</h1>
         </Link>
       </div>
       <nav className="nav">
@@ -28,12 +28,12 @@ const Header = () => {
               <span className="welcome-text">
                 Hi, {currentUser.displayName || currentUser.email}
               </span>
-              <button onClick={handleLogout}>Logout</button>
+              <button onClick={handleLogout}>登出</button>
             </>
           ) : (
             <>
-              <Link to="/login"><button>Login</button></Link>
-              <Link to="/register"><button>Register</button></Link>
+              <Link to="/login"><button>登入</button></Link>
+              <Link to="/register"><button>註冊</button></Link>
             </>
           )}
         </div>

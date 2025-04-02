@@ -156,7 +156,7 @@ function Home() {
       {/* User Welcome */}
       {currentUser && (
         <div className="user-welcome">
-          <p>嗨，{currentUser.displayName || currentUser.email}！歡迎回來</p>
+          <p>您好，{currentUser.displayName || currentUser.email}！歡迎回來</p>
           {isAdmin && (
             <div className="admin-actions">
               <button onClick={handleSeedData} className="admin-seed-button">
@@ -229,7 +229,7 @@ function Home() {
 
       {/* Footer */}
       <footer className="home-footer">
-        <p>© 2023 輔仁大學二手交易平台 | <a href="#">使用條款</a> | <a href="#">隱私權政策</a></p>
+        <p>© 2025 輔仁大學二手交易平台 | <a href="#">使用條款</a> | <a href="#">隱私權政策</a></p>
         <p>有任何問題？ <a href="mailto:support@fjumarket.com">聯絡我們</a></p>
       </footer>
     </div>
