@@ -40,11 +40,11 @@ const Login = () => {
   return (
     <div className="login-container">
       <div className="login-card">
-        <h1>Login</h1>
+        <h1>登入</h1>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">信箱</label>
             <input
               type="email"
               id="email"
@@ -56,7 +56,7 @@ const Login = () => {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">密碼</label>
             <input
               type="password"
               id="password"
@@ -76,7 +76,7 @@ const Login = () => {
           </button>
         </form>
         <p className="register-link">
-          Don't have an account? <a href="/register">Register</a>
+          尚未有帳號? <a href="/register">註冊</a>
         </p>
       </div>
     </div>

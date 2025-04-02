@@ -57,11 +57,11 @@ const Register = () => {
   return (
     <div className="register-container">
       <div className="register-card">
-        <h1>Create Account</h1>
+        <h1>註冊帳號</h1>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="name">Full Name</label>
+            <label htmlFor="name">姓名</label>
             <input
               type="text"
               id="name"
@@ -73,7 +73,7 @@ const Register = () => {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">信箱</label>
             <input
               type="email"
               id="email"
@@ -85,7 +85,7 @@ const Register = () => {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">密碼</label>
             <input
               type="password"
               id="password"
@@ -98,7 +98,7 @@ const Register = () => {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="confirmPassword">確認密碼</label>
             <input
               type="password"
               id="confirmPassword"
@@ -119,7 +119,7 @@ const Register = () => {
           </button>
         </form>
         <p className="login-link">
-          Already have an account? <a href="/login">Login</a>
+          已經有帳號了? <a href="/login">登入</a>
         </p>
       </div>
     </div>
