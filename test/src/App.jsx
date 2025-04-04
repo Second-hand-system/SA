@@ -6,6 +6,7 @@ import Login from './pages/login'
 import Register from './pages/register'
 import Home from './pages/home/home'
 import Sell from './pages/sell/sell'
+import Profile from './pages/profile/Profile'
 import AuthProvider from './context/AuthContext'
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/sell" element={<Sell />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/" element={<Home />} />
         </Routes>
       </Router>

@@ -25,9 +25,9 @@ const Header = () => {
         <div className="auth-buttons">
           {currentUser ? (
             <>
-              <span className="welcome-text">
-                Hi, {currentUser.displayName || currentUser.email}
-              </span>
+              <Link to="/profile" className="profile-link">
+                <span>個人資料</span>
+              </Link>
               <button onClick={handleLogout}>登出</button>
             </>
           ) : (
