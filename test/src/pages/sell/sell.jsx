@@ -70,6 +70,13 @@ function Sell() {
       setLoading(true);
       setError('');
 
+      // 檢查必填字段
+      if (!formData.title || !formData.price || !formData.description || !imageFile) {
+        setError('請填寫所有必填欄位');
+        setLoading(false);
+        return;
+      }
+
       let imageUrl = '';
       
       // 如果有上傳圖片，先上傳到 Storage
@@ -100,42 +107,33 @@ function Sell() {
           console.log('取得圖片 URL:', imageUrl);
         } catch (uploadError) {
           console.error('圖片上傳錯誤:', uploadError);
-          if (uploadError.code === 'storage/unauthorized') {
-            throw new Error('您沒有權限上傳圖片，請確認是否已登入');
-          } else if (uploadError.code === 'storage/canceled') {
-            throw new Error('圖片上傳被取消');
-          } else if (uploadError.code === 'storage/unknown') {
-            throw new Error('圖片上傳時發生未知錯誤，請稍後再試');
-          } else {
-            throw new Error(`圖片上傳失敗: ${uploadError.message}`);
-          }
+          setLoading(false);
+          throw new Error(`圖片上傳失敗: ${uploadError.message}`);
         }
       }
 
       // 準備商品資料
       const productData = {
-        ...formData,
+        title: formData.title,
         price: Number(formData.price),
+        description: formData.description,
+        category: formData.category,
+        condition: formData.condition,
         image: imageUrl,
         sellerName: currentUser.displayName || '未知賣家',
         sellerEmail: currentUser.email,
         createdAt: serverTimestamp(),
+        status: 'available'
       };
 
       console.log('準備上傳商品資料:', productData);
 
-      try {
-        // 新增商品到 Firestore
-        const docRef = await addDoc(collection(db, 'products'), productData);
-        console.log('商品上傳成功，文件ID:', docRef.id);
-        
-        // 上架成功，導回首頁
-        navigate('/');
-      } catch (firestoreError) {
-        console.error('Firestore 儲存錯誤:', firestoreError);
-        throw new Error(`商品資料儲存失敗: ${firestoreError.message}`);
-      }
+      // 新增商品到 Firestore
+      const docRef = await addDoc(collection(db, 'products'), productData);
+      console.log('商品上傳成功，文件ID:', docRef.id);
       
+      // 上架成功，導回首頁
+      navigate('/');
     } catch (err) {
       console.error('上架商品錯誤:', err);
       setError(err.message || '上架商品時發生錯誤，請稍後再試');
@@ -248,4 +246,4 @@ function Sell() {
   );
 }
 
-export default Sell; 
+export default Sell;
