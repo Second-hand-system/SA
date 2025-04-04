@@ -3,8 +3,10 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 export const firebaseConfig = {
   apiKey: "AIzaSyCnRJrHqH5FcWcP9FS0ZqhTxLdWKjAxbtU",
   authDomain: "sa-second-hand-system.firebaseapp.com",
@@ -18,10 +20,27 @@ export const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+const auth = getAuth(app);
 
-// Initialize Storage with custom settings
-const storage = getStorage(app, "gs://sa-second-hand-system.appspot.com");
+// Initialize Storage with CORS configuration
+const storage = getStorage(app);
+
+// Initialize Firestore
 const db = getFirestore(app);
 
-export { storage, db };
+// 確保用戶已登入
+const ensureAuth = () => {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      unsubscribe();
+      if (user) {
+        resolve(user);
+      } else {
+        reject(new Error('請先登入'));
+      }
+    });
+  });
+};
+
+export { storage, db, auth, ensureAuth };
 export default app;
