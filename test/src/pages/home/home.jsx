@@ -245,9 +245,6 @@ function Home() {
     setLoading(false);
   }, []);
 
-  // Admin access check
-  const isAdmin = currentUser && currentUser.email && currentUser.email.endsWith('@mail.fju.edu.tw');
-
   return (
     <div className="home-container">
       {/* Hero Section */}
@@ -255,24 +252,19 @@ function Home() {
         <div className="hero-content">
           <h1>輔大二手交易平台</h1>
           <p>買賣交流、資源共享、永續校園</p>
-          <form onSubmit={handleSearch} className="search-bar">
+          <form className="search-bar" onSubmit={handleSearch}>
             <input 
               type="text" 
               placeholder="搜尋商品..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            <button type="submit">搜尋</button>
             {searchTerm && (
-              <button 
-                type="button" 
-                className="clear-search" 
-                onClick={handleClearSearch}
-                aria-label="清除搜尋"
-              >
-                ✕
+              <button type="button" onClick={handleClearSearch} className="clear-search">
+                清除
               </button>
             )}
-            <button type="submit">搜尋</button>
           </form>
         </div>
       </div>
@@ -281,14 +273,19 @@ function Home() {
       {currentUser && (
         <div className="user-welcome">
           <p>您好，{currentUser.displayName || currentUser.email}！歡迎回來</p>
-          {isAdmin && (
-            <div className="admin-actions">
-              <button onClick={handleSeedData} className="admin-seed-button">
-                新增測試資料到 Firestore
-              </button>
-              {seedSuccess && <span className="seed-success">✅ 資料新增成功！</span>}
-            </div>
-          )}
+        </div>
+      )}
+
+      {/* Admin Section */}
+      {currentUser && currentUser.email === 'admin@example.com' && (
+        <div className="admin-section">
+          <h3>管理員功能</h3>
+          <div className="admin-actions">
+            <button onClick={handleSeedData} className="admin-seed-button">
+              新增測試資料到 Firestore
+            </button>
+            {seedSuccess && <span className="seed-success">✅ 資料新增成功！</span>}
+          </div>
         </div>
       )}
 
@@ -360,4 +357,4 @@ function Home() {
   );
 }
 
-export default Home; 
+export default Home;

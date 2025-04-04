@@ -3,8 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -21,10 +20,27 @@ export const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+const auth = getAuth(app);
 
-// Initialize Storage with custom settings
+// Initialize Storage with CORS configuration
 const storage = getStorage(app);
+
+// Initialize Firestore
 const db = getFirestore(app);
 
-export { storage, db };
+// 確保用戶已登入
+const ensureAuth = () => {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      unsubscribe();
+      if (user) {
+        resolve(user);
+      } else {
+        reject(new Error('請先登入'));
+      }
+    });
+  });
+};
+
+export { storage, db, auth, ensureAuth };
 export default app;

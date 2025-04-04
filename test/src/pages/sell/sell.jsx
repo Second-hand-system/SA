@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../../context/AuthContext';
-import { storage, db } from '../../firebase';
+import { storage, db, ensureAuth } from '../../firebase';
 import './sell.css';
 
 function Sell() {
@@ -11,17 +11,26 @@ function Sell() {
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   // 商品表單資料
   const [formData, setFormData] = useState({
     title: '',
     price: '',
     description: '',
-    condition: '全新', // 預設值
-    category: '書籍教材', // 預設值
+    condition: '全新',
+    category: '電子產品',
   });
+
+  // 檢查用戶登入狀態
+  useEffect(() => {
+    ensureAuth()
+      .then(() => setError(''))
+      .catch(err => setError(err.message));
+  }, []);
 
   // 處理表單輸入變化
   const handleInputChange = (e) => {
@@ -30,19 +39,18 @@ function Sell() {
       ...prev,
       [name]: value
     }));
+    setError('');
   };
 
   // 處理圖片上傳預覽
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // 驗證檔案大小（最大 5MB）
       if (file.size > 5 * 1024 * 1024) {
         setError('圖片大小不能超過 5MB');
         return;
       }
       
-      // 驗證檔案類型
       if (!file.type.startsWith('image/')) {
         setError('請上傳圖片檔案');
         return;
@@ -54,64 +62,90 @@ function Sell() {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
+      setError('');
     }
+  };
+
+  // 上傳圖片到 Storage
+  const uploadImage = async (file) => {
+    const fileExtension = file.name.split('.').pop();
+    const safeFileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
+    const storageRef = ref(storage, `products/${safeFileName}`);
+    
+    const metadata = {
+      contentType: file.type,
+      customMetadata: {
+        uploadedBy: currentUser.email,
+        originalName: file.name
+      }
+    };
+
+    return new Promise((resolve, reject) => {
+      const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(Math.round(progress));
+        },
+        (error) => {
+          console.error('Upload error:', error);
+          reject(error);
+        },
+        async () => {
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(downloadURL);
+          } catch (error) {
+            console.error('Get URL error:', error);
+            reject(error);
+          }
+        }
+      );
+    });
   };
 
   // 上傳商品到 Firestore
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!currentUser) {
+    try {
+      await ensureAuth();
+    } catch (err) {
       setError('請先登入後再上架商品');
+      return;
+    }
+
+    // 驗證表單數據
+    if (!formData.title.trim()) {
+      setError('請輸入商品名稱');
+      return;
+    }
+
+    if (!formData.price || formData.price <= 0) {
+      setError('請輸入有效的價格');
+      return;
+    }
+
+    if (!formData.description.trim()) {
+      setError('請輸入商品描述');
+      return;
+    }
+
+    if (!imageFile) {
+      setError('請上傳商品圖片');
       return;
     }
 
     try {
       setLoading(true);
       setError('');
+      setSuccess('');
+      setUploadProgress(0);
 
-      let imageUrl = '';
+      // 上傳圖片
+      const imageUrl = await uploadImage(imageFile);
       
-      // 如果有上傳圖片，先上傳到 Storage
-      if (imageFile) {
-        try {
-          console.log('開始上傳圖片...');
-          
-          // 生成安全的檔案名稱
-          const fileExtension = imageFile.name.split('.').pop();
-          const safeFileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
-          const storageRef = ref(storage, `products/${safeFileName}`);
-          
-          console.log('上傳圖片到:', safeFileName);
-          
-          // 設定中繼資料
-          const metadata = {
-            contentType: imageFile.type,
-            customMetadata: {
-              uploadedBy: currentUser.email,
-              originalName: imageFile.name
-            }
-          };
-
-          const uploadResult = await uploadBytes(storageRef, imageFile, metadata);
-          console.log('圖片上傳成功:', uploadResult);
-          
-          imageUrl = await getDownloadURL(uploadResult.ref);
-          console.log('取得圖片 URL:', imageUrl);
-        } catch (uploadError) {
-          console.error('圖片上傳錯誤:', uploadError);
-          if (uploadError.code === 'storage/unauthorized') {
-            throw new Error('您沒有權限上傳圖片，請確認是否已登入');
-          } else if (uploadError.code === 'storage/canceled') {
-            throw new Error('圖片上傳被取消');
-          } else if (uploadError.code === 'storage/unknown') {
-            throw new Error('圖片上傳時發生未知錯誤，請稍後再試');
-          } else {
-            throw new Error(`圖片上傳失敗: ${uploadError.message}`);
-          }
-        }
-      }
-
       // 準備商品資料
       const productData = {
         ...formData,
@@ -119,26 +153,26 @@ function Sell() {
         image: imageUrl,
         sellerName: currentUser.displayName || '未知賣家',
         sellerEmail: currentUser.email,
+        sellerId: currentUser.uid,
         createdAt: serverTimestamp(),
+        status: 'available'
       };
 
-      console.log('準備上傳商品資料:', productData);
-
-      try {
-        // 新增商品到 Firestore
-        const docRef = await addDoc(collection(db, 'products'), productData);
-        console.log('商品上傳成功，文件ID:', docRef.id);
-        
-        // 上架成功，導回首頁
+      // 新增商品到 Firestore
+      const docRef = await addDoc(collection(db, 'products'), productData);
+      console.log('商品上傳成功，ID:', docRef.id);
+      
+      setSuccess('商品上架成功！');
+      
+      // 延遲一下再跳轉
+      setTimeout(() => {
         navigate('/');
-      } catch (firestoreError) {
-        console.error('Firestore 儲存錯誤:', firestoreError);
-        throw new Error(`商品資料儲存失敗: ${firestoreError.message}`);
-      }
+      }, 1500);
       
     } catch (err) {
       console.error('上架商品錯誤:', err);
       setError(err.message || '上架商品時發生錯誤，請稍後再試');
+      setUploadProgress(0);
     } finally {
       setLoading(false);
     }
@@ -149,6 +183,15 @@ function Sell() {
       <h1>上架商品</h1>
       
       {error && <div className="error-message">{error}</div>}
+      {success && <div className="success-message">{success}</div>}
+      
+      {uploadProgress > 0 && (
+        <div className="upload-progress">
+          <div className="progress-bar" style={{ width: `${uploadProgress}%` }}>
+            {uploadProgress}%
+          </div>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="sell-form">
         <div className="form-group">
@@ -161,6 +204,7 @@ function Sell() {
             onChange={handleInputChange}
             required
             placeholder="請輸入商品名稱"
+            disabled={loading}
           />
         </div>
 
@@ -175,6 +219,7 @@ function Sell() {
             required
             min="0"
             placeholder="請輸入價格"
+            disabled={loading}
           />
         </div>
 
@@ -186,9 +231,10 @@ function Sell() {
             value={formData.category}
             onChange={handleInputChange}
             required
+            disabled={loading}
           >
-            <option value="書籍教材">書籍教材</option>
             <option value="電子產品">電子產品</option>
+            <option value="書籍教材">書籍教材</option>
             <option value="家具寢具">家具寢具</option>
             <option value="交通工具">交通工具</option>
             <option value="服裝衣物">服裝衣物</option>
@@ -204,6 +250,7 @@ function Sell() {
             value={formData.condition}
             onChange={handleInputChange}
             required
+            disabled={loading}
           >
             <option value="全新">全新</option>
             <option value="二手">二手</option>
@@ -221,6 +268,7 @@ function Sell() {
             required
             placeholder="請詳細描述商品狀況、規格等資訊"
             rows="5"
+            disabled={loading}
           />
         </div>
 
@@ -232,6 +280,7 @@ function Sell() {
             accept="image/*"
             onChange={handleImageChange}
             required
+            disabled={loading}
           />
           {imagePreview && (
             <div className="image-preview">
@@ -240,12 +289,16 @@ function Sell() {
           )}
         </div>
 
-        <button type="submit" className="submit-button" disabled={loading}>
-          {loading ? '上架中...' : '確認上架'}
+        <button 
+          type="submit" 
+          className="submit-button" 
+          disabled={loading || !currentUser}
+        >
+          {loading ? `上架中 ${uploadProgress}%` : '確認上架'}
         </button>
       </form>
     </div>
   );
 }
 
-export default Sell; 
+export default Sell;
