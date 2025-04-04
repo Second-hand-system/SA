@@ -1,4 +1,9 @@
 .header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -39,8 +44,26 @@
   background-color: rgba(147, 122, 71, 0.9);
 }
 
+.profile-link {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.profile-link:hover {
+  background-color: rgba(147, 122, 71, 0.1);
+}
+
 .welcome-text {
   margin-right: 10px;
   color: #333;
   font-weight: 500;
+}
+
+/* 為固定定位的 header 騰出空間 */
+body {
+  padding-top: 80px; /* 根據 header 的高度調整 */
 } 
