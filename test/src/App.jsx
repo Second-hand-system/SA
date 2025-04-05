@@ -8,6 +8,7 @@ import Home from './pages/home/home'
 import Sell from './pages/sell/sell'
 import Profile from './pages/profile/Profile'
 import ProductDetail from './pages/product/ProductDetail'
+import EditProduct from './pages/product/edit/EditProduct'
 import AuthProvider from './context/AuthContext'
 import { useAuth } from './context/AuthContext'
 
@@ -52,6 +53,11 @@ function App() {
           <Route path="/product/:productId" element={
             <ProtectedRoute>
               <ProductDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/product/edit/:productId" element={
+            <ProtectedRoute>
+              <EditProduct />
             </ProtectedRoute>
           } />
         </Routes>

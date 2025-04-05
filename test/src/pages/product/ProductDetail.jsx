@@ -130,7 +130,12 @@ const ProductDetail = () => {
                 >
                   {isDeleting ? '刪除中...' : '刪除商品'}
                 </button>
-                <button className="edit-product-btn">編輯商品</button>
+                <button 
+                  className="edit-product-btn"
+                  onClick={() => navigate(`/product/edit/${productId}`)}
+                >
+                  編輯商品
+                </button>
               </>
             ) : (
               <>
