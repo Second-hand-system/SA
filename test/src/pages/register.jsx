@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getAuth, fetchSignInMethodsForEmail } from 'firebase/auth';
 import './register.css';
 
 const Register = () => {
@@ -15,6 +16,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const auth = getAuth();
 
   const validateEmail = (email) => {
     const emailRegex = /^\d{9}@m365\.fju\.edu\.tw$/;
@@ -48,21 +50,47 @@ const Register = () => {
 
     // 信箱格式驗證
     if (!validateEmail(formData.email)) {
-      setError('信箱格式錯誤');
+      setError('請使用輔大信箱 (學號@m365.fju.edu.tw)');
       return;
     }
     
     try {
       setError('');
       setLoading(true);
+      console.log('Checking if email already exists:', formData.email);
+
+      // 檢查信箱是否已被註冊
+      const methods = await fetchSignInMethodsForEmail(auth, formData.email);
+      console.log('Sign in methods:', methods);
+      
+      if (methods.length > 0) {
+        setError('此信箱已被註冊');
+        return;
+      }
+
+      console.log('Attempting to register with:', { name: formData.name, email: formData.email });
       await register(formData.name, formData.email, formData.password);
+      console.log('Registration successful');
       // 註冊成功後導向首頁
       navigate('/');
     } catch (error) {
-      if (error.code === 'auth/email-already-in-use') {
-        setError('此信箱已被註冊');
-      } else {
-        setError('註冊失敗：' + error.message);
+      console.error('Registration error:', error.code, error.message);
+      
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          setError('此信箱已被註冊');
+          break;
+        case 'auth/invalid-email':
+          setError('信箱格式錯誤');
+          break;
+        case 'auth/operation-not-allowed':
+          setError('註冊功能暫時無法使用');
+          break;
+        case 'auth/weak-password':
+          setError('密碼強度不足');
+          break;
+        default:
+          setError('註冊失敗，請稍後再試');
       }
     } finally {
       setLoading(false);
@@ -84,7 +112,7 @@ const Register = () => {
               type="text"
               id="name"
               name="name"
-              placeholder="請輸入您的姓名"
+              placeholder="請輸入姓名"
               value={formData.name}
               onChange={handleChange}
               required
@@ -96,7 +124,7 @@ const Register = () => {
               type="email"
               id="email"
               name="email"
-              placeholder="請輸入您的信箱"
+              placeholder="請輸入輔大信箱"
               value={formData.email}
               onChange={handleChange}
               required
@@ -108,7 +136,7 @@ const Register = () => {
               type="password"
               id="password"
               name="password"
-              placeholder="請設定密碼"
+              placeholder="請設定密碼 (至少6個字元)"
               value={formData.password}
               onChange={handleChange}
               required

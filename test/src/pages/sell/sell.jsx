@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../../context/AuthContext';
-import { storage, db, ensureAuth } from '../../firebase';
+import { db } from '../../firebase';
 import './sell.css';
 
 function Sell() {
@@ -27,10 +26,10 @@ function Sell() {
 
   // 檢查用戶登入狀態
   useEffect(() => {
-    ensureAuth()
-      .then(() => setError(''))
-      .catch(err => setError(err.message));
-  }, []);
+    if (!currentUser) {
+      setError('請先登入');
+    }
+  }, [currentUser]);
 
   // 處理表單輸入變化
   const handleInputChange = (e) => {
@@ -42,12 +41,22 @@ function Sell() {
     setError('');
   };
 
+  // 將圖片轉換為 base64
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
+
   // 處理圖片上傳預覽
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError('圖片大小不能超過 5MB');
+      if (file.size > 2 * 1024 * 1024) { // 限制 2MB
+        setError('圖片大小不能超過 2MB');
         return;
       }
       
@@ -56,62 +65,23 @@ function Sell() {
         return;
       }
 
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-      setError('');
-    }
-  };
-
-  // 上傳圖片到 Storage
-  const uploadImage = async (file) => {
-    const fileExtension = file.name.split('.').pop();
-    const safeFileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
-    const storageRef = ref(storage, `products/${safeFileName}`);
-    
-    const metadata = {
-      contentType: file.type,
-      customMetadata: {
-        uploadedBy: currentUser.email,
-        originalName: file.name
+      try {
+        const base64 = await convertToBase64(file);
+        setImageFile(base64);
+        setImagePreview(base64);
+        setError('');
+      } catch (error) {
+        console.error('圖片轉換錯誤:', error);
+        setError('圖片處理失敗，請重試');
       }
-    };
-
-    return new Promise((resolve, reject) => {
-      const uploadTask = uploadBytesResumable(storageRef, file, metadata);
-
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(Math.round(progress));
-        },
-        (error) => {
-          console.error('Upload error:', error);
-          reject(error);
-        },
-        async () => {
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve(downloadURL);
-          } catch (error) {
-            console.error('Get URL error:', error);
-            reject(error);
-          }
-        }
-      );
-    });
+    }
   };
 
   // 上傳商品到 Firestore
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    try {
-      await ensureAuth();
-    } catch (err) {
+    if (!currentUser) {
       setError('請先登入後再上架商品');
       return;
     }
@@ -137,20 +107,16 @@ function Sell() {
       return;
     }
 
-    try {
-      setLoading(true);
-      setError('');
-      setSuccess('');
-      setUploadProgress(0);
+    setLoading(true);
+    setError('');
+    setSuccess('');
 
-      // 上傳圖片
-      const imageUrl = await uploadImage(imageFile);
-      
+    try {
       // 準備商品資料
       const productData = {
         ...formData,
         price: Number(formData.price),
-        image: imageUrl,
+        image: imageFile, // 直接存儲 base64 圖片
         sellerName: currentUser.displayName || '未知賣家',
         sellerEmail: currentUser.email,
         sellerId: currentUser.uid,
@@ -160,9 +126,9 @@ function Sell() {
 
       // 新增商品到 Firestore
       const docRef = await addDoc(collection(db, 'products'), productData);
-      console.log('商品上傳成功，ID:', docRef.id);
       
       setSuccess('商品上架成功！');
+      console.log('商品上傳成功，ID:', docRef.id);
       
       // 延遲一下再跳轉
       setTimeout(() => {
@@ -172,7 +138,6 @@ function Sell() {
     } catch (err) {
       console.error('上架商品錯誤:', err);
       setError(err.message || '上架商品時發生錯誤，請稍後再試');
-      setUploadProgress(0);
     } finally {
       setLoading(false);
     }
@@ -184,14 +149,6 @@ function Sell() {
       
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}
-      
-      {uploadProgress > 0 && (
-        <div className="upload-progress">
-          <div className="progress-bar" style={{ width: `${uploadProgress}%` }}>
-            {uploadProgress}%
-          </div>
-        </div>
-      )}
       
       <form onSubmit={handleSubmit} className="sell-form">
         <div className="form-group">
@@ -273,7 +230,7 @@ function Sell() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="image">商品圖片</label>
+          <label htmlFor="image">商品圖片 (限制 2MB 以內)</label>
           <input
             type="file"
             id="image"
@@ -294,7 +251,7 @@ function Sell() {
           className="submit-button" 
           disabled={loading || !currentUser}
         >
-          {loading ? `上架中 ${uploadProgress}%` : '確認上架'}
+          {loading ? '上架中...' : '確認上架'}
         </button>
       </form>
     </div>

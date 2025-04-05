@@ -35,23 +35,49 @@ const Login = () => {
     
     // 信箱格式驗證
     if (!validateEmail(formData.email)) {
-      setError('信箱格式錯誤');
+      setError('請使用輔大信箱 (學號@m365.fju.edu.tw)');
       return;
     }
     
     try {
       setError('');
       setLoading(true);
+      console.log('Attempting to login with:', formData.email);
+      
+      // 檢查信箱是否已註冊
+      const methods = await fetchSignInMethodsForEmail(auth, formData.email);
+      console.log('Sign in methods:', methods);
+      
+      if (methods.length === 0) {
+        setError('此信箱尚未註冊');
+        return;
+      }
       
       // 嘗試登入
       await login(formData.email, formData.password);
+      console.log('Login successful');
       // 登入成功後導向首頁
       navigate('/');
     } catch (error) {
-      console.log('Firebase error:', error.code, error.message);
+      console.error('Login error:', error.code, error.message);
       
-      // 統一顯示錯誤訊息
-      setError('帳號/密碼錯誤');
+      // 根據錯誤代碼顯示適當的錯誤訊息
+      switch (error.code) {
+        case 'auth/invalid-email':
+          setError('信箱格式錯誤');
+          break;
+        case 'auth/user-not-found':
+          setError('此信箱尚未註冊');
+          break;
+        case 'auth/wrong-password':
+          setError('密碼錯誤');
+          break;
+        case 'auth/too-many-requests':
+          setError('登入嘗試次數過多，請稍後再試');
+          break;
+        default:
+          setError('登入失敗，請稍後再試');
+      }
     } finally {
       setLoading(false);
     }
@@ -81,7 +107,7 @@ const Login = () => {
               type="email"
               id="email"
               name="email"
-              placeholder="請輸入您的信箱"
+              placeholder="請輸入輔大信箱"
               value={formData.email}
               onChange={handleChange}
               required
@@ -93,7 +119,7 @@ const Login = () => {
               type="password"
               id="password"
               name="password"
-              placeholder="請輸入您的密碼"
+              placeholder="請輸入密碼"
               value={formData.password}
               onChange={handleChange}
               required

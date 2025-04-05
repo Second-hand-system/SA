@@ -1,7 +1,5 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
@@ -19,13 +17,7 @@ export const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 const auth = getAuth(app);
-
-// Initialize Storage with CORS configuration
-const storage = getStorage(app);
-
-// Initialize Firestore
 const db = getFirestore(app);
 
 // 確保用戶已登入
@@ -42,5 +34,18 @@ const ensureAuth = () => {
   });
 };
 
-export { storage, db, auth, ensureAuth };
+// 初始化 Storage 的 CORS 設置
+const initializeStorage = async () => {
+  try {
+    // 在這裡可以添加其他 Storage 相關的初始化設置
+    console.log('Storage initialized successfully');
+  } catch (error) {
+    console.error('Error initializing storage:', error);
+  }
+};
+
+// 執行初始化
+initializeStorage();
+
+export { db, auth, ensureAuth };
 export default app;

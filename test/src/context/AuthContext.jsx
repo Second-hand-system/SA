@@ -1,18 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
-  getAuth, 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { initializeApp } from 'firebase/app';
-import { firebaseConfig } from '../firebase';
-
-// Initialize Firebase if not already initialized
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import { auth } from '../firebase';
 
 // Create context
 const AuthContext = createContext();
@@ -48,7 +42,9 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       setError('');
+      console.log('Attempting login with:', { email, password });
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log('Login successful:', userCredential.user);
       return userCredential.user;
     } catch (error) {
       console.error('Login error:', error);
@@ -71,7 +67,9 @@ export const AuthProvider = ({ children }) => {
 
   // Listen for auth state changes
   useEffect(() => {
+    console.log('Setting up auth state listener');
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('Auth state changed:', user);
       setCurrentUser(user);
       setLoading(false);
     });
