@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { getFirestore, doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import app from '../../firebase';
 import './ProductDetail.css';
 
@@ -9,7 +10,10 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const db = getFirestore(app);
+  const auth = getAuth(app);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -36,6 +40,24 @@ const ProductDetail = () => {
 
     fetchProduct();
   }, [productId, db]);
+
+  const handleDeleteProduct = async () => {
+    if (!window.confirm('確定要刪除此商品嗎？此操作無法復原。')) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await deleteDoc(doc(db, 'products', productId));
+      alert('商品已成功刪除！');
+      navigate('/');
+    } catch (err) {
+      console.error('Error deleting product:', err);
+      alert('刪除商品時發生錯誤，請稍後再試。');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -70,6 +92,8 @@ const ProductDetail = () => {
     });
   };
 
+  const isOwner = auth.currentUser && product.sellerId === auth.currentUser.uid;
+
   return (
     <div className="product-detail-container">
       <div className="product-detail-content">
@@ -97,9 +121,24 @@ const ProductDetail = () => {
             </ul>
           </div>
           <div className="product-actions">
-            <button className="contact-seller-btn">聯絡賣家</button>
-            <button className="save-product-btn">收藏商品</button>
-            <button className="share-product-btn">分享商品</button>
+            {isOwner ? (
+              <>
+                <button 
+                  className="delete-product-btn" 
+                  onClick={handleDeleteProduct}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? '刪除中...' : '刪除商品'}
+                </button>
+                <button className="edit-product-btn">編輯商品</button>
+              </>
+            ) : (
+              <>
+                <button className="contact-seller-btn">聯絡賣家</button>
+                <button className="save-product-btn">收藏商品</button>
+                <button className="share-product-btn">分享商品</button>
+              </>
+            )}
           </div>
           <Link to="/" className="back-home-link">返回首頁</Link>
         </div>
