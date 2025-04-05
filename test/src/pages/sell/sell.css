@@ -1,32 +1,34 @@
 .sell-container {
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 20px;
+  max-width: 600px;
+  margin: 15px auto;
+  padding: 10px;
+  padding-top: 80px;
 }
 
 .sell-container h1 {
   text-align: center;
   color: #333;
-  margin-bottom: 30px;
-  font-size: 2rem;
+  margin-bottom: 15px;
+  font-size: 1.5rem;
 }
 
 .sell-form {
   background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .form-group {
-  margin-bottom: 25px;
+  margin-bottom: 12px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   color: #333;
   font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .form-group input[type="text"],
@@ -34,19 +36,26 @@
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 16px;
+  padding: 6px 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.9rem;
   transition: border-color 0.3s;
+}
+
+.form-group textarea {
+  height: 80px;
+  resize: vertical;
+  min-height: 60px;
 }
 
 .form-group input[type="file"] {
   width: 100%;
-  padding: 12px;
-  border: 2px dashed #e0e0e0;
-  border-radius: 8px;
+  padding: 8px;
+  border: 1px dashed #e0e0e0;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .form-group input:focus,
@@ -57,28 +66,29 @@
 }
 
 .image-preview {
-  margin-top: 15px;
+  margin-top: 10px;
   text-align: center;
 }
 
 .image-preview img {
-  max-width: 300px;
-  max-height: 300px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .submit-button {
   width: 100%;
-  padding: 15px;
+  padding: 10px;
   background-color: #8c001a;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
+  border-radius: 6px;
+  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.3s;
+  margin-top: 10px;
 }
 
 .submit-button:hover {
@@ -93,11 +103,12 @@
 .error-message {
   background-color: #ffebee;
   color: #c62828;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
   text-align: center;
-  border-left: 4px solid #c62828;
+  border-left: 3px solid #c62828;
+  font-size: 0.9rem;
 }
 
 /* Responsive adjustments */
