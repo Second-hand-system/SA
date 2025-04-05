@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import './Profile.css';
 
 const Profile = () => {
@@ -8,12 +9,13 @@ const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    studentId: '',
-    grade: '',
-    email: currentUser?.email || '',
-    dormitory: ''
+    "姓名：": '',
+    "學號：": '',
+    "年級：": '',
+    "電子郵件：": '',
+    "宿舍：": ''
   });
+  const [loading, setLoading] = useState(false);
 
   const dormitories = [
     '宜真宜善學苑',
@@ -24,28 +26,72 @@ const Profile = () => {
     '信義和平學苑'
   ];
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (currentUser) {
-        const db = getFirestore();
-        const docRef = doc(db, 'profiles', currentUser.uid);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-          setProfile(docSnap.data());
-          setFormData(docSnap.data());
-        }
+  const fetchProfile = async () => {
+    if (!currentUser) return;
+    
+    try {
+      setLoading(true);
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const docSnap = await getDoc(userDocRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setProfile(data);
+        setFormData({
+          "姓名：": data["姓名："] || '',
+          "學號：": data["學號："] || '',
+          "年級：": data["年級："] || '',
+          "電子郵件：": currentUser.email || '',
+          "宿舍：": data["宿舍："] || ''
+        });
+      } else {
+        // 如果文檔不存在，設置默認值
+        setFormData({
+          "姓名：": '',
+          "學號：": '',
+          "年級：": '',
+          "電子郵件：": currentUser.email || '',
+          "宿舍：": ''
+        });
       }
-    };
-    fetchProfile();
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      alert('獲取資料時發生錯誤');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchProfile();
+    }
   }, [currentUser]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const db = getFirestore();
-    await setDoc(doc(db, 'profiles', currentUser.uid), formData);
-    setProfile(formData);
-    setIsEditing(false);
+    if (!currentUser) {
+      alert('請先登入');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userDocRef, {
+        ...formData,
+        updatedAt: new Date().toISOString()
+      });
+      
+      // 重新獲取資料以更新顯示
+      await fetchProfile();
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      alert('儲存資料時發生錯誤，請稍後再試');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -74,8 +120,8 @@ const Profile = () => {
             <label>姓名：</label>
             <input
               type="text"
-              name="name"
-              value={formData.name}
+              name="姓名："
+              value={formData["姓名："]}
               onChange={handleChange}
               required
             />
@@ -84,8 +130,8 @@ const Profile = () => {
             <label>學號：</label>
             <input
               type="text"
-              name="studentId"
-              value={formData.studentId}
+              name="學號："
+              value={formData["學號："]}
               onChange={handleChange}
               required
             />
@@ -94,8 +140,8 @@ const Profile = () => {
             <label>年級：</label>
             <input
               type="text"
-              name="grade"
-              value={formData.grade}
+              name="年級："
+              value={formData["年級："]}
               onChange={handleChange}
               required
             />
@@ -104,16 +150,16 @@ const Profile = () => {
             <label>電子郵件：</label>
             <input
               type="email"
-              name="email"
-              value={formData.email}
+              name="電子郵件："
+              value={formData["電子郵件："]}
               disabled
             />
           </div>
           <div className="form-group">
             <label>宿舍：</label>
             <select
-              name="dormitory"
-              value={formData.dormitory}
+              name="宿舍："
+              value={formData["宿舍："]}
               onChange={handleChange}
               required
             >
@@ -124,31 +170,35 @@ const Profile = () => {
             </select>
           </div>
           <div className="form-buttons">
-            <button type="submit">儲存</button>
-            <button type="button" onClick={() => setIsEditing(false)}>取消</button>
+            <button type="submit" disabled={loading}>
+              {loading ? '儲存中...' : '儲存'}
+            </button>
+            <button type="button" onClick={() => setIsEditing(false)} disabled={loading}>
+              取消
+            </button>
           </div>
         </form>
       ) : (
         <div className="profile-info">
           <div className="info-group">
             <label>姓名：</label>
-            <span>{profile.name}</span>
+            <span>{profile["姓名："]}</span>
           </div>
           <div className="info-group">
             <label>學號：</label>
-            <span>{profile.studentId}</span>
+            <span>{profile["學號："]}</span>
           </div>
           <div className="info-group">
             <label>年級：</label>
-            <span>{profile.grade}</span>
+            <span>{profile["年級："]}</span>
           </div>
           <div className="info-group">
             <label>電子郵件：</label>
-            <span>{profile.email}</span>
+            <span>{profile["電子郵件："]}</span>
           </div>
           <div className="info-group">
             <label>宿舍：</label>
-            <span>{profile.dormitory}</span>
+            <span>{profile["宿舍："]}</span>
           </div>
           <button onClick={() => setIsEditing(true)}>編輯資料</button>
         </div>
