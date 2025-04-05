@@ -9,7 +9,7 @@ export const firebaseConfig = {
   apiKey: "AIzaSyCnRJrHqH5FcWcP9FS0ZqhTxLdWKjAxbtU",
   authDomain: "sa-second-hand-system.firebaseapp.com",
   projectId: "sa-second-hand-system",
-  storageBucket: "sa-second-hand-system.appspot.com",
+  storageBucket: "sa-second-hand-system.firebasestorage.app",
   messagingSenderId: "476098508687",
   appId: "1:476098508687:web:b96e14ac565f9eb3b2fdfa",
   measurementId: "G-7Q5SH5YBPP"
