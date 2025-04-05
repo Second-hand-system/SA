@@ -17,8 +17,6 @@ const EditProduct = () => {
     description: '',
     condition: '全新',
     category: '其他',
-    contact: '',
-    paymentMethod: '面交',
     meetupLocation: '輔大校園'
   });
 
@@ -57,8 +55,6 @@ const EditProduct = () => {
           description: productData.description || '',
           condition: productData.condition || '全新',
           category: productData.category || '其他',
-          contact: productData.contact || '',
-          paymentMethod: productData.paymentMethod || '面交',
           meetupLocation: productData.meetupLocation || '輔大校園'
         });
         setImagePreview(productData.image);
@@ -242,32 +238,6 @@ const EditProduct = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="contact">聯絡方式</label>
-          <input
-            type="text"
-            id="contact"
-            name="contact"
-            value={formData.contact}
-            onChange={handleInputChange}
-            placeholder="LINE ID 或電話"
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="paymentMethod">交易方式</label>
-          <select
-            id="paymentMethod"
-            name="paymentMethod"
-            value={formData.paymentMethod}
-            onChange={handleInputChange}
-          >
-            <option value="面交">面交</option>
-            <option value="郵寄">郵寄</option>
-            <option value="面交或郵寄">面交或郵寄</option>
-          </select>
-        </div>
-
-        <div className="form-group">
           <label htmlFor="meetupLocation">面交地點</label>
           <input
             type="text"
@@ -275,7 +245,7 @@ const EditProduct = () => {
             name="meetupLocation"
             value={formData.meetupLocation}
             onChange={handleInputChange}
-            placeholder="若選擇面交，請填寫面交地點"
+            placeholder="請填寫面交地點"
           />
         </div>
 

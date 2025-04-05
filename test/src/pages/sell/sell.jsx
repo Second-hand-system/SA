@@ -21,6 +21,7 @@ function Sell() {
     description: '',
     condition: '全新',
     category: '書籍教材',
+    location: '',
   });
 
   // 檢查用戶登入狀態
@@ -118,6 +119,7 @@ function Sell() {
         description: formData.description,
         category: formData.category,
         condition: formData.condition,
+        location: formData.location,
         image: imageFile,
         sellerName: currentUser.displayName || '未知賣家',
         sellerEmail: currentUser.email,
@@ -218,6 +220,20 @@ function Sell() {
             <option value="二手-良好">二手-良好</option>
             <option value="二手-普通">二手-普通</option>
           </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="location">面交地點</label>
+          <input
+            type="text"
+            id="location"
+            name="location"
+            value={formData.location}
+            onChange={handleInputChange}
+            required
+            placeholder="請輸入希望的交易地點"
+            disabled={loading}
+          />
         </div>
 
         <div className="form-group">
