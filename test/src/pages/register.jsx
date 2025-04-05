@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './register.css';
 
@@ -70,11 +70,14 @@ const Register = () => {
   };
 
   return (
-    <div className="register-container">
-      <div className="register-card">
-        <h1>註冊帳號</h1>
-        {error && <div className="error-message">{error}</div>}
+    <div className="login-container">
+      <div className="platform-title">
+        <h1>輔大二手交易平台</h1>
+        <p>買賣交流・資源共享</p>
+      </div>
+      <div className="login-card">
         <form onSubmit={handleSubmit}>
+          {error && <div className="error-message">{error}</div>}
           <div className="form-group">
             <label htmlFor="name">姓名</label>
             <input
@@ -133,8 +136,8 @@ const Register = () => {
             {loading ? '註冊中...' : '註冊'}
           </button>
         </form>
-        <p className="login-link">
-          已有帳號？ <a href="/login">登入</a>
+        <p className="register-link">
+          已有帳號？ <Link to="/login">登入</Link>
         </p>
       </div>
     </div>

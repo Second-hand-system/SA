@@ -7,14 +7,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0.8rem 2rem;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  height: 64px;
 }
 
 .logo h1 {
   font-size: 1.5rem;
   color: #333;
+  margin: 0;
 }
 
 .nav {
@@ -36,11 +40,12 @@
   border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
 }
 
 .auth-buttons button:hover {
-  background-color: rgba(147, 122, 71, 0.9);
+  background-color: rgba(120, 100, 58, 0.95);
+  transform: translateY(-1px);
 }
 
 .profile-link {
@@ -49,7 +54,7 @@
   font-weight: 500;
   padding: 8px 16px;
   border-radius: 4px;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
 }
 
 .profile-link:hover {

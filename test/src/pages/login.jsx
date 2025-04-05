@@ -59,19 +59,22 @@ const Login = () => {
 
   return (
     <div className="login-container">
+      <div className="platform-title">
+        <h1>輔大二手交易平台</h1>
+        <p>買賣交流・資源共享</p>
+      </div>
       <div className="login-card">
-        <h1>登入</h1>
-        {error && (
-          <div className="error-message">
-            {error}
-            {error.includes('尚未註冊') && (
-              <Link to="/register" className="register-button">
-                前往註冊
-              </Link>
-            )}
-          </div>
-        )}
         <form onSubmit={handleSubmit}>
+          {error && (
+            <div className="error-message">
+              {error}
+              {error.includes('尚未註冊') && (
+                <Link to="/register" className="register-button">
+                  前往註冊
+                </Link>
+              )}
+            </div>
+          )}
           <div className="form-group">
             <label htmlFor="email">信箱</label>
             <input
@@ -105,7 +108,7 @@ const Login = () => {
           </button>
         </form>
         <p className="register-link">
-          尚未有帳號? <Link to="/register">註冊</Link>
+          尚未有帳號？<Link to="/register">註冊</Link>
         </p>
       </div>
     </div>
