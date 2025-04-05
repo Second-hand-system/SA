@@ -9,7 +9,6 @@ const ProductDetail = () => {
   const { productId } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const db = getFirestore(app);
   const auth = getAuth(app);
@@ -18,21 +17,20 @@ const ProductDetail = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        setLoading(true);
+        // 從 Firestore 中尋找產品
         const docRef = doc(db, 'products', productId);
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
-          setProduct({ id: docSnap.id, ...docSnap.data() });
-          setError(null);
-        } else {
-          setError('找不到商品');
-          setProduct(null);
+          const data = docSnap.data();
+          // 處理 createdAt 欄位，如果是 Timestamp 物件，轉換為字串
+          if (data.createdAt && typeof data.createdAt.toDate === 'function') {
+            data.createdAt = data.createdAt.toDate().toLocaleString('zh-TW');
+          }
+          setProduct({ id: docSnap.id, ...data });
         }
-      } catch (err) {
-        console.error('Error fetching product:', err);
-        setError('載入商品時發生錯誤');
-        setProduct(null);
+      } catch (error) {
+        console.error('Error fetching product:', error);
       } finally {
         setLoading(false);
       }
@@ -60,37 +58,20 @@ const ProductDetail = () => {
   };
 
   if (loading) {
-    return (
-      <div className="product-detail-container">
-        <div className="loading">
-          <div className="loading-spinner"></div>
-          <p>載入中...</p>
-        </div>
-      </div>
-    );
+    return <div className="product-detail-container">載入中...</div>;
   }
 
-  if (error || !product) {
+  if (!product) {
     return (
       <div className="product-detail-container">
         <div className="not-found">
-          <h2>找不到商品</h2>
-          <p>{error || '您所尋找的商品不存在或已被移除。'}</p>
+          <h2>找不到產品</h2>
+          <p>您所尋找的產品不存在或已被移除。</p>
           <Link to="/" className="back-home-btn">返回首頁</Link>
         </div>
       </div>
     );
   }
-
-  const formatDate = (timestamp) => {
-    if (!timestamp) return '未知';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString('zh-TW', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
   const isOwner = auth.currentUser && product.sellerId === auth.currentUser.uid;
 
@@ -98,7 +79,7 @@ const ProductDetail = () => {
     <div className="product-detail-container">
       <div className="product-detail-content">
         <div className="product-image">
-          <img src={product.image} alt={product.title} />
+          <img src={product.image || 'https://via.placeholder.com/300x200?text=無圖片'} alt={product.title} />
         </div>
         <div className="product-info">
           <h1>{product.title}</h1>
@@ -110,14 +91,12 @@ const ProductDetail = () => {
           <div className="product-details">
             <h3>商品詳情</h3>
             <ul>
-              <li><strong>商品狀態：</strong> {product.condition}</li>
-              <li><strong>賣家：</strong> {product.sellerName}</li>
-              <li><strong>聯絡方式：</strong> {product.contact || '請登入後查看'}</li>
-              <li><strong>上架時間：</strong> {formatDate(product.createdAt)}</li>
-              <li><strong>商品編號：</strong> {product.id}</li>
+              <li><strong>商品狀態：</strong> {product.condition || '未指定'}</li>
+              <li><strong>賣家：</strong> {product.sellerName || '未知'}</li>
+              <li><strong>聯絡方式：</strong> {product.sellerEmail || '未提供'}</li>
+              <li><strong>上架時間：</strong> {product.createdAt || '未知'}</li>
               <li><strong>商品類別：</strong> {product.category || '未分類'}</li>
-              <li><strong>交易方式：</strong> {product.paymentMethod || '面交'}</li>
-              <li><strong>面交地點：</strong> {product.meetupLocation || '輔大校園'}</li>
+              <li><strong>面交地點：</strong> {product.meetupLocation || '未指定'}</li>
             </ul>
           </div>
           <div className="product-actions">
