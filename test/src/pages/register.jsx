@@ -16,6 +16,11 @@ const Register = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  const validateEmail = (email) => {
+    const emailRegex = /^\d{9}@m365\.fju\.edu\.tw$/;
+    return emailRegex.test(email);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -30,14 +35,20 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Basic validation
+    // 基本驗證
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('密碼不一致');
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError('密碼長度必須至少為6個字元');
+      return;
+    }
+
+    // 信箱格式驗證
+    if (!validateEmail(formData.email)) {
+      setError('信箱格式錯誤');
       return;
     }
     
@@ -45,10 +56,14 @@ const Register = () => {
       setError('');
       setLoading(true);
       await register(formData.name, formData.email, formData.password);
-      // Redirect to home page after successful registration
+      // 註冊成功後導向首頁
       navigate('/');
     } catch (error) {
-      setError('Failed to create an account: ' + error.message);
+      if (error.code === 'auth/email-already-in-use') {
+        setError('此信箱已被註冊');
+      } else {
+        setError('註冊失敗：' + error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -66,7 +81,7 @@ const Register = () => {
               type="text"
               id="name"
               name="name"
-              placeholder="Enter your full name"
+              placeholder="請輸入您的姓名"
               value={formData.name}
               onChange={handleChange}
               required
@@ -78,7 +93,7 @@ const Register = () => {
               type="email"
               id="email"
               name="email"
-              placeholder="Enter your email"
+              placeholder="請輸入您的信箱"
               value={formData.email}
               onChange={handleChange}
               required
@@ -90,7 +105,7 @@ const Register = () => {
               type="password"
               id="password"
               name="password"
-              placeholder="Create a password"
+              placeholder="請設定密碼"
               value={formData.password}
               onChange={handleChange}
               required
@@ -103,7 +118,7 @@ const Register = () => {
               type="password"
               id="confirmPassword"
               name="confirmPassword"
-              placeholder="Confirm your password"
+              placeholder="請再次輸入密碼"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
@@ -115,11 +130,11 @@ const Register = () => {
             className="submit-btn" 
             disabled={loading}
           >
-            {loading ? 'Creating Account...' : 'Register'}
+            {loading ? '註冊中...' : '註冊'}
           </button>
         </form>
         <p className="login-link">
-          已經有帳號了? <a href="/login">登入</a>
+          已有帳號？ <a href="/login">登入</a>
         </p>
       </div>
     </div>
