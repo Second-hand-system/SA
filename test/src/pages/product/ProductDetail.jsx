@@ -96,7 +96,7 @@ const ProductDetail = () => {
               <li><strong>聯絡方式：</strong> {product.sellerEmail || '未提供'}</li>
               <li><strong>上架時間：</strong> {product.createdAt || '未知'}</li>
               <li><strong>商品類別：</strong> {product.category || '未分類'}</li>
-              <li><strong>面交地點：</strong> {product.meetupLocation || '未指定'}</li>
+              <li><strong>面交地點：</strong> {product.location || '未指定'}</li>
             </ul>
           </div>
           <div className="product-actions">
