@@ -41,8 +41,8 @@
 }
 
 .product-price {
-  font-size: 1.25rem;
-  color: rgba(147, 122, 71, 0.9);
+  font-size: 1.5rem;
+  color: #e2af4a;
   font-weight: 600;
 }
 
@@ -83,6 +83,11 @@
   font-size: 0.9rem;
 }
 
+.product-details li strong {
+  color: #333;
+  margin-right: 0.5rem;
+}
+
 .product-actions {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
@@ -104,7 +109,7 @@
 }
 
 .contact-seller-btn {
-  background-color: rgba(147, 122, 71, 0.9);
+  background-color: #e2af4a;
   color: white;
   flex: 2;
 }
@@ -131,7 +136,7 @@
 }
 
 .contact-seller-btn:hover {
-  background-color: rgba(147, 122, 71, 1);
+  background-color: #357abd;
 }
 
 .save-product-btn:hover,
@@ -142,14 +147,14 @@
 .back-home-link {
   display: inline-block;
   margin-top: 1.5rem;
-  color: rgba(147, 122, 71, 0.9);
+  color: #e2af4a;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s ease;
 }
 
 .back-home-link:hover {
-  color: rgba(147, 122, 71, 1);
+  color: #357abd;
   text-decoration: underline;
 }
 
@@ -171,7 +176,7 @@
 .back-home-btn {
   display: inline-block;
   padding: 0.8rem 1.5rem;
-  background-color: rgba(147, 122, 71, 0.9);
+  background-color: #e2af4a;
   color: white;
   text-decoration: none;
   border-radius: 6px;
@@ -180,9 +185,36 @@
 }
 
 .back-home-btn:hover {
-  background-color: rgba(147, 122, 71, 1);
+  background-color: #357abd;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Loading Animation */
+.loading {
+  text-align: center;
+  padding: 3rem;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  border: 3px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 3px solid #e2af4a;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading p {
+  color: #666;
+  font-size: 1.1rem;
 }
 
 @media (max-width: 768px) {
@@ -193,6 +225,7 @@
   .product-detail-container {
     margin: 0.75rem;
     padding: 0.75rem;
+    padding-top: 5rem;
   }
 
   .product-details ul {
@@ -201,5 +234,12 @@
 
   .product-actions {
     grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .contact-seller-btn,
+  .save-product-btn,
+  .share-product-btn {
+    width: 100%;
   }
 } 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getFirestore, collection, getDocs, query, orderBy, limit, startAt } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, query, orderBy, limit, startAt, where } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import app from '../../firebase';
 import './home.css';
@@ -20,14 +20,33 @@ function Home() {
   // Search functionality
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  // 商品類別
+  const categories = [
+    { id: 'all', name: '全部商品', icon: '🛍️' },
+    { id: 'books', name: '教科書', icon: '📚' },
+    { id: 'electronics', name: '3C產品', icon: '📱' },
+    { id: 'furniture', name: '家具寢具', icon: '🛋️' },
+    { id: 'clothes', name: '衣物服飾', icon: '👕' },
+    { id: 'food', name: '食品', icon: '🍽️' },
+    { id: 'others', name: '其他', icon: '📦' }
+  ];
 
   // 獲取商品
-  const fetchProducts = async (page = 1) => {
+  const fetchProducts = async (page = 1, category = 'all') => {
     try {
       setLoading(true);
+      let baseQuery = collection(db, 'products');
+      
+      // 根據類別篩選
+      if (category !== 'all') {
+        baseQuery = query(baseQuery, where('category', '==', category));
+      }
+
       // 獲取所有商品以計算總頁數
       const allProductsQuery = query(
-        collection(db, 'products'),
+        baseQuery,
         orderBy('createdAt', 'desc')
       );
       const allProductsSnapshot = await getDocs(allProductsQuery);
@@ -37,7 +56,7 @@ function Home() {
       // 獲取當前頁的商品
       const startIndex = (page - 1) * productsPerPage;
       const productsQuery = query(
-        collection(db, 'products'),
+        baseQuery,
         orderBy('createdAt', 'desc'),
         startAt(allProductsSnapshot.docs[startIndex]),
         limit(productsPerPage)
@@ -63,9 +82,15 @@ function Home() {
     }
   };
 
-  // 初始載入
+  // 當類別改變時重置頁碼並重新獲取商品
   useEffect(() => {
-    fetchProducts(currentPage);
+    setCurrentPage(1);
+    fetchProducts(1, selectedCategory);
+  }, [selectedCategory]);
+
+  // 當頁碼改變時獲取商品
+  useEffect(() => {
+    fetchProducts(currentPage, selectedCategory);
   }, [currentPage]);
 
   // 處理搜尋
@@ -121,6 +146,13 @@ function Home() {
     window.scrollTo(0, 0);
   };
 
+  // 處理類別變更
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId);
+    setSearchTerm('');
+    setSearchResults([]);
+  };
+
   // 顯示的商品列表
   const displayProducts = searchTerm ? searchResults : products;
 
@@ -157,58 +189,86 @@ function Home() {
         </form>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
-
-      <div className="items-container">
-        {displayProducts.map((product) => (
-          <Link to={`/product/${product.id}`} key={product.id} className="item-card">
-            <div className="item-image">
-              <img src={product.image} alt={product.title} />
+      <div className="section">
+        <h2>商品類別</h2>
+        <div className="categories-container">
+          {categories.map(category => (
+            <div
+              key={category.id}
+              className={`category-card ${selectedCategory === category.id ? 'active' : ''}`}
+              onClick={() => handleCategoryChange(category.id)}
+            >
+              <div className="category-icon">{category.icon}</div>
+              <p>{category.name}</p>
             </div>
-            <div className="item-details">
-              <h3>{product.title}</h3>
-              <p className="item-price">NT$ {product.price}</p>
-              <div className="item-meta">
-                <span className="item-condition">{product.condition}</span>
-                <span>賣家：{product.sellerName}</span>
-              </div>
-            </div>
-          </Link>
-        ))}
+          ))}
+        </div>
       </div>
 
-      {!searchTerm && totalPages > 1 && (
-        <div className="pagination">
-          <button 
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="page-button"
-          >
-            上一頁
-          </button>
-          <span className="page-info">
-            第 {currentPage} 頁，共 {totalPages} 頁
-          </span>
-          <button 
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="page-button"
-          >
-            下一頁
-          </button>
-        </div>
-      )}
+      {error && <div className="error-message">{error}</div>}
 
-      {!loading && displayProducts.length === 0 && (
-        <div className="no-products">
-          <p>目前沒有商品</p>
-          {currentUser && (
-            <Link to="/sell" className="sell-link">
-              立即上架商品
+      <div className="section">
+        <h2>{categories.find(c => c.id === selectedCategory)?.name || '全部商品'}</h2>
+        <div className="items-container">
+          {displayProducts.map((product) => (
+            <Link to={`/product/${product.id}`} key={product.id} className="item-card">
+              <div className="item-image">
+                <img src={product.image} alt={product.title} />
+              </div>
+              <div className="item-details">
+                <h3>{product.title}</h3>
+                <p className="item-price">NT$ {product.price}</p>
+                <div className="item-meta">
+                  <span className="item-condition">{product.condition}</span>
+                  <span>賣家：{product.sellerName}</span>
+                </div>
+              </div>
             </Link>
-          )}
+          ))}
         </div>
-      )}
+
+        {!searchTerm && totalPages > 1 && (
+          <div className="pagination">
+            <button 
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="page-button"
+            >
+              上一頁
+            </button>
+            <span className="page-info">
+              第 {currentPage} 頁，共 {totalPages} 頁
+            </span>
+            <button 
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="page-button"
+            >
+              下一頁
+            </button>
+          </div>
+        )}
+
+        {!loading && displayProducts.length === 0 && (
+          <div className="no-products">
+            <p>目前沒有商品</p>
+            {currentUser && (
+              <Link to="/sell" className="sell-link">
+                立即上架商品
+              </Link>
+            )}
+          </div>
+        )}
+      </div>
+
+      <footer className="home-footer">
+        <p>&copy; 2024 輔大二手交易平台</p>
+        <p>
+          <Link to="/about">關於我們</Link> | 
+          <Link to="/terms">使用條款</Link> | 
+          <Link to="/privacy">隱私政策</Link>
+        </p>
+      </footer>
     </div>
   );
 }
