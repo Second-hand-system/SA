@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getAuth, fetchSignInMethodsForEmail } from 'firebase/auth';
 import './login.css';
 
 const Login = () => {
@@ -12,6 +13,12 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const auth = getAuth();
+
+  const validateEmail = (email) => {
+    const emailRegex = /^\d{9}@m365\.fju\.edu\.tw$/;
+    return emailRegex.test(email);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,19 +26,32 @@ const Login = () => {
       ...formData,
       [name]: value
     });
+    // 清除錯誤訊息
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // 信箱格式驗證
+    if (!validateEmail(formData.email)) {
+      setError('信箱格式錯誤');
+      return;
+    }
+    
     try {
       setError('');
       setLoading(true);
+      
+      // 嘗試登入
       await login(formData.email, formData.password);
-      // Redirect to home page after successful login
+      // 登入成功後導向首頁
       navigate('/');
     } catch (error) {
-      setError('Failed to sign in: ' + error.message);
+      console.log('Firebase error:', error.code, error.message);
+      
+      // 統一顯示錯誤訊息
+      setError('帳號/密碼錯誤');
     } finally {
       setLoading(false);
     }
@@ -41,7 +61,16 @@ const Login = () => {
     <div className="login-container">
       <div className="login-card">
         <h1>登入</h1>
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="error-message">
+            {error}
+            {error.includes('尚未註冊') && (
+              <Link to="/register" className="register-button">
+                前往註冊
+              </Link>
+            )}
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">信箱</label>
@@ -49,7 +78,7 @@ const Login = () => {
               type="email"
               id="email"
               name="email"
-              placeholder="Enter your email"
+              placeholder="請輸入您的信箱"
               value={formData.email}
               onChange={handleChange}
               required
@@ -61,7 +90,7 @@ const Login = () => {
               type="password"
               id="password"
               name="password"
-              placeholder="Enter your password"
+              placeholder="請輸入您的密碼"
               value={formData.password}
               onChange={handleChange}
               required
@@ -72,11 +101,11 @@ const Login = () => {
             className="submit-btn" 
             disabled={loading}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? '登入中...' : '登入'}
           </button>
         </form>
         <p className="register-link">
-          尚未有帳號? <a href="/register">註冊</a>
+          尚未有帳號? <Link to="/register">註冊</Link>
         </p>
       </div>
     </div>

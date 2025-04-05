@@ -24,6 +24,34 @@ h1 {
   font-size: 24px;
 }
 
+.error-message {
+  background-color: #ffe6e6;
+  color: #d63031;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.register-button {
+  background-color: #4a6cf7;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.register-button:hover {
+  background-color: #3a5cf5;
+}
+
 .form-group {
   margin-bottom: 20px;
 }
