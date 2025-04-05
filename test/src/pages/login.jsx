@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getAuth, fetchSignInMethodsForEmail } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import './login.css';
 
 const Login = () => {
@@ -44,16 +44,7 @@ const Login = () => {
       setLoading(true);
       console.log('Attempting to login with:', formData.email);
       
-      // 檢查信箱是否已註冊
-      const methods = await fetchSignInMethodsForEmail(auth, formData.email);
-      console.log('Sign in methods:', methods);
-      
-      if (methods.length === 0) {
-        setError('此信箱尚未註冊');
-        return;
-      }
-      
-      // 嘗試登入
+      // 直接嘗試登入
       await login(formData.email, formData.password);
       console.log('Login successful');
       // 登入成功後導向首頁

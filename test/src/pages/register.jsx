@@ -57,18 +57,9 @@ const Register = () => {
     try {
       setError('');
       setLoading(true);
-      console.log('Checking if email already exists:', formData.email);
-
-      // 檢查信箱是否已被註冊
-      const methods = await fetchSignInMethodsForEmail(auth, formData.email);
-      console.log('Sign in methods:', methods);
-      
-      if (methods.length > 0) {
-        setError('此信箱已被註冊');
-        return;
-      }
-
       console.log('Attempting to register with:', { name: formData.name, email: formData.email });
+
+      // 直接嘗試註冊
       await register(formData.name, formData.email, formData.password);
       console.log('Registration successful');
       // 註冊成功後導向首頁

@@ -38,7 +38,7 @@ const Profile = () => {
         const data = docSnap.data();
         setProfile(data);
         setFormData({
-          "姓名：": data["姓名："] || '',
+          "姓名：": data["姓名："] || currentUser.displayName || '',
           "學號：": data["學號："] || '',
           "年級：": data["年級："] || '',
           "電子郵件：": currentUser.email || '',
@@ -47,7 +47,7 @@ const Profile = () => {
       } else {
         // 如果文檔不存在，設置默認值
         setFormData({
-          "姓名：": '',
+          "姓名：": currentUser.displayName || '',
           "學號：": '',
           "年級：": '',
           "電子郵件：": currentUser.email || '',
@@ -86,6 +86,7 @@ const Profile = () => {
       // 重新獲取資料以更新顯示
       await fetchProfile();
       setIsEditing(false);
+      alert('資料已成功更新');
     } catch (error) {
       console.error('Error saving profile:', error);
       alert('儲存資料時發生錯誤，請稍後再試');
@@ -109,98 +110,99 @@ const Profile = () => {
   return (
     <div className="profile-container">
       <h2>個人資料</h2>
-      {!profile && !isEditing ? (
-        <div className="profile-empty">
-          <p>您尚未填寫個人資料</p>
-          <button onClick={() => setIsEditing(true)}>填寫資料</button>
-        </div>
-      ) : isEditing ? (
-        <form onSubmit={handleSubmit} className="profile-form">
+      {loading ? (
+        <div className="loading">載入中...</div>
+      ) : (
+        <div className="profile-form-container">
           <div className="form-group">
             <label>姓名：</label>
-            <input
-              type="text"
-              name="姓名："
-              value={formData["姓名："]}
-              onChange={handleChange}
-              required
-            />
+            {isEditing ? (
+              <input
+                type="text"
+                name="姓名："
+                value={formData["姓名："]}
+                onChange={handleChange}
+                required
+              />
+            ) : (
+              <div className="info-value">{profile?.["姓名："] || currentUser.displayName || '未填寫'}</div>
+            )}
           </div>
           <div className="form-group">
             <label>學號：</label>
-            <input
-              type="text"
-              name="學號："
-              value={formData["學號："]}
-              onChange={handleChange}
-              required
-            />
+            {isEditing ? (
+              <input
+                type="text"
+                name="學號："
+                value={formData["學號："]}
+                onChange={handleChange}
+                required
+              />
+            ) : (
+              <div className="info-value">{profile?.["學號："] || '未填寫'}</div>
+            )}
           </div>
           <div className="form-group">
             <label>年級：</label>
-            <input
-              type="text"
-              name="年級："
-              value={formData["年級："]}
-              onChange={handleChange}
-              required
-            />
+            {isEditing ? (
+              <input
+                type="text"
+                name="年級："
+                value={formData["年級："]}
+                onChange={handleChange}
+                required
+              />
+            ) : (
+              <div className="info-value">{profile?.["年級："] || '未填寫'}</div>
+            )}
           </div>
           <div className="form-group">
             <label>電子郵件：</label>
-            <input
-              type="email"
-              name="電子郵件："
-              value={formData["電子郵件："]}
-              disabled
-            />
+            {isEditing ? (
+              <input
+                type="email"
+                name="電子郵件："
+                value={formData["電子郵件："]}
+                disabled
+              />
+            ) : (
+              <div className="info-value">{profile?.["電子郵件："] || currentUser.email || '未填寫'}</div>
+            )}
           </div>
           <div className="form-group">
             <label>宿舍：</label>
-            <select
-              name="宿舍："
-              value={formData["宿舍："]}
-              onChange={handleChange}
-              required
-            >
-              <option value="">請選擇宿舍</option>
-              {dormitories.map(dorm => (
-                <option key={dorm} value={dorm}>{dorm}</option>
-              ))}
-            </select>
+            {isEditing ? (
+              <select
+                name="宿舍："
+                value={formData["宿舍："]}
+                onChange={handleChange}
+                required
+              >
+                <option value="">請選擇宿舍</option>
+                {dormitories.map(dorm => (
+                  <option key={dorm} value={dorm}>{dorm}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="info-value">{profile?.["宿舍："] || '未填寫'}</div>
+            )}
           </div>
           <div className="form-buttons">
-            <button type="submit" disabled={loading}>
-              {loading ? '儲存中...' : '儲存'}
-            </button>
-            <button type="button" onClick={() => setIsEditing(false)} disabled={loading}>
-              取消
-            </button>
+            {isEditing ? (
+              <>
+                <button type="button" onClick={handleSubmit} disabled={loading}>
+                  {loading ? '儲存中...' : '儲存'}
+                </button>
+                <button type="button" onClick={() => setIsEditing(false)} disabled={loading}>
+                  取消
+                </button>
+              </>
+            ) : (
+              <button type="button" onClick={() => setIsEditing(true)}>
+                編輯資料
+              </button>
+            )}
           </div>
-        </form>
-      ) : (
-        <div className="profile-info">
-          <div className="info-group">
-            <label>姓名：</label>
-            <span>{profile["姓名："]}</span>
-          </div>
-          <div className="info-group">
-            <label>學號：</label>
-            <span>{profile["學號："]}</span>
-          </div>
-          <div className="info-group">
-            <label>年級：</label>
-            <span>{profile["年級："]}</span>
-          </div>
-          <div className="info-group">
-            <label>電子郵件：</label>
-            <span>{profile["電子郵件："]}</span>
-          </div>
-          <div className="info-group">
-            <label>宿舍：</label>
-            <span>{profile["宿舍："]}</span>
-          </div>
-          <button onClick={() => setIsEditing(true)}>編輯資料</button>
         </div>
       )}
     </div>
