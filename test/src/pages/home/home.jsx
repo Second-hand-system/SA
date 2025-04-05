@@ -29,7 +29,6 @@ function Home() {
     { id: 'electronics', name: '3C產品', icon: '📱' },
     { id: 'furniture', name: '家具寢具', icon: '🛋️' },
     { id: 'clothes', name: '衣物服飾', icon: '👕' },
-    { id: 'food', name: '食品', icon: '🍽️' },
     { id: 'others', name: '其他', icon: '📦' }
   ];
 

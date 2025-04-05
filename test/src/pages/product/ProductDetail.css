@@ -97,7 +97,9 @@
 
 .contact-seller-btn,
 .save-product-btn,
-.share-product-btn {
+.share-product-btn,
+.delete-product-btn,
+.edit-product-btn {
   padding: 0.75rem 1rem;
   border: none;
   border-radius: 6px;
@@ -108,39 +110,53 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.contact-seller-btn {
+.contact-seller-btn,
+.delete-product-btn {
   background-color: #e2af4a;
   color: white;
   flex: 2;
 }
 
-.save-product-btn {
+.save-product-btn,
+.share-product-btn,
+.edit-product-btn {
   background-color: #f8f9fa;
   color: #333;
   border: 1px solid #ddd;
   flex: 1;
 }
 
-.share-product-btn {
-  background-color: #f8f9fa;
-  color: #333;
-  border: 1px solid #ddd;
-  flex: 1;
+.delete-product-btn {
+  background-color: #dc3545;
+}
+
+.delete-product-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  transform: none !important;
 }
 
 .contact-seller-btn:hover,
 .save-product-btn:hover,
-.share-product-btn:hover {
+.share-product-btn:hover,
+.delete-product-btn:hover:not(:disabled),
+.edit-product-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.contact-seller-btn:hover {
+.contact-seller-btn:hover,
+.delete-product-btn:hover:not(:disabled) {
   background-color: #357abd;
 }
 
+.delete-product-btn:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
 .save-product-btn:hover,
-.share-product-btn:hover {
+.share-product-btn:hover,
+.edit-product-btn:hover {
   background-color: #e9ecef;
 }
 
