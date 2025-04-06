@@ -113,10 +113,7 @@ function Home() {
       
       querySnapshot.forEach((doc) => {
         const product = doc.data();
-        if (
-          product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchTerm.toLowerCase())
-        ) {
+        if (product.title.toLowerCase().includes(searchTerm.toLowerCase())) {
           results.push({
             id: doc.id,
             ...product
