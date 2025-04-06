@@ -25,8 +25,8 @@ function Home() {
   // 商品類別
   const categories = [
     { id: 'all', name: '全部商品', icon: '🛍️' },
-    { id: 'books', name: '教科書', icon: '📚' },
-    { id: 'electronics', name: '3C產品', icon: '📱' },
+    { id: 'books', name: '書籍教材', icon: '📚' },
+    { id: 'electronics', name: '電子產品', icon: '📱' },
     { id: 'furniture', name: '家具寢具', icon: '🛋️' },
     { id: 'clothes', name: '衣物服飾', icon: '👕' },
     { id: 'others', name: '其他', icon: '📦' }
@@ -261,11 +261,9 @@ function Home() {
       </div>
 
       <footer className="home-footer">
-        <p>&copy; 2024 輔大二手交易平台</p>
+        <p>&copy; 2025 輔大二手交易平台</p>
         <p>
-          <Link to="/about">關於我們</Link> | 
-          <Link to="/terms">使用條款</Link> | 
-          <Link to="/privacy">隱私政策</Link>
+          關於我們 | 使用條款 | 隱私政策
         </p>
       </footer>
     </div>
