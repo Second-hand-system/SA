@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 
 const Profile = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -198,9 +200,14 @@ const Profile = () => {
                 </button>
               </>
             ) : (
-              <button type="button" onClick={() => setIsEditing(true)}>
-                編輯資料
-              </button>
+              <>
+                <button type="button" onClick={() => setIsEditing(true)}>
+                  編輯資料
+                </button>
+                <button type="button" onClick={() => navigate('/')} className="back-home-btn">
+                  返回首頁
+                </button>
+              </>
             )}
           </div>
         </div>

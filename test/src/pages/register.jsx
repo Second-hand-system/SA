@@ -13,6 +13,7 @@ const Register = () => {
   });
 
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -30,8 +31,9 @@ const Register = () => {
       [name]: value
     });
 
-    // Clear error when user starts typing again
+    // 清除錯誤和成功信息
     if (error) setError('');
+    if (success) setSuccess('');
   };
 
   const handleSubmit = async (e) => {
@@ -56,14 +58,22 @@ const Register = () => {
     
     try {
       setError('');
+      setSuccess('');
       setLoading(true);
       console.log('Attempting to register with:', { name: formData.name, email: formData.email });
 
       // 直接嘗試註冊
       await register(formData.name, formData.email, formData.password);
       console.log('Registration successful');
-      // 註冊成功後導向首頁
-      navigate('/');
+      
+      // 顯示成功信息
+      setSuccess('註冊成功！請重新登入以開始使用...');
+      
+      // 延遲 2 秒後導向登入頁面
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+      
     } catch (error) {
       console.error('Registration error:', error.code, error.message);
       
@@ -97,6 +107,7 @@ const Register = () => {
       <div className="login-card">
         <form onSubmit={handleSubmit}>
           {error && <div className="error-message">{error}</div>}
+          {success && <div className="success-message">{success}</div>}
           <div className="form-group">
             <label htmlFor="name">姓名</label>
             <input
