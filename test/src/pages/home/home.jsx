@@ -1,8 +1,14 @@
+// 導入 React 核心功能，包括 useState 和 useEffect hooks
 import React, { useState, useEffect } from 'react';
+// 導入自定義的認證上下文
 import { useAuth } from '../../context/AuthContext';
+// 導入 Firebase Firestore 的查詢和過濾功能
 import { getFirestore, collection, getDocs, query, orderBy, limit, startAt, where } from 'firebase/firestore';
+// 導入 React Router 的鏈接組件
 import { Link } from 'react-router-dom';
+// 導入 Firebase 應用實例
 import app from '../../firebase';
+// 導入樣式文件
 import './home.css';
 
 function Home() {
@@ -29,16 +35,16 @@ function Home() {
     { id: 'electronics', name: '電子產品', icon: '📱' },
     { id: 'furniture', name: '家具寢具', icon: '🛋️' },
     { id: 'clothes', name: '衣物服飾', icon: '👕' },
-    { id: 'others', name: '其他', icon: '📦' }
+    { id: 'others', name: '其他', icon: '��' }
   ];
 
-  // 獲取商品
+  // 獲取商品列表的函數
   const fetchProducts = async (page = 1, category = 'all') => {
     try {
       setLoading(true);
       let baseQuery = collection(db, 'products');
       
-      // 根據類別篩選
+      // 根據類別篩選商品
       if (category !== 'all') {
         baseQuery = query(baseQuery, where('category', '==', category));
       }
@@ -64,6 +70,7 @@ function Home() {
       const querySnapshot = await getDocs(productsQuery);
       const fetchedProducts = [];
       
+      // 處理獲取到的商品數據
       querySnapshot.forEach((doc) => {
         fetchedProducts.push({
           id: doc.id,
@@ -92,7 +99,7 @@ function Home() {
     fetchProducts(currentPage, selectedCategory);
   }, [currentPage]);
 
-  // 處理搜尋
+  // 處理搜索的函數
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchTerm.trim()) {
@@ -111,6 +118,7 @@ function Home() {
       const querySnapshot = await getDocs(searchQuery);
       const results = [];
       
+      // 過濾搜索結果
       querySnapshot.forEach((doc) => {
         const product = doc.data();
         if (product.title.toLowerCase().includes(searchTerm.toLowerCase())) {
@@ -130,30 +138,32 @@ function Home() {
     }
   };
 
-  // 清除搜尋
+  // 清除搜索結果的函數
   const handleClearSearch = () => {
     setSearchTerm('');
     setSearchResults([]);
   };
 
-  // 處理頁面變更
+  // 處理頁面變更的函數
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     window.scrollTo(0, 0);
   };
 
-  // 處理類別變更
+  // 處理類別變更的函數
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
     setSearchTerm('');
     setSearchResults([]);
   };
 
-  // 顯示的商品列表
+  // 決定要顯示的商品列表
   const displayProducts = searchTerm ? searchResults : products;
 
+  // 渲染組件
   return (
     <div className="home-container">
+      {/* 用戶歡迎區域 */}
       {currentUser && (
         <div className="user-welcome">
           歡迎回來，{currentUser.email}！
@@ -163,12 +173,14 @@ function Home() {
         </div>
       )}
 
+      {/* 英雄區域 */}
       <div className="hero-section">
         <div className="hero-content">
           <h1>輔大二手交易平台</h1>
           <p>買賣交流・資源共享</p>
         </div>
         
+        {/* 搜索欄 */}
         <form onSubmit={handleSearch} className="search-bar">
           <input
             type="text"
@@ -185,6 +197,7 @@ function Home() {
         </form>
       </div>
 
+      {/* 商品類別區域 */}
       <div className="section">
         <h2>商品類別</h2>
         <div className="categories-container">
@@ -201,8 +214,10 @@ function Home() {
         </div>
       </div>
 
+      {/* 錯誤信息顯示 */}
       {error && <div className="error-message">{error}</div>}
 
+      {/* 商品列表區域 */}
       <div className="section">
         <h2>{categories.find(c => c.id === selectedCategory)?.name || '全部商品'}</h2>
         <div className="items-container">
@@ -223,6 +238,7 @@ function Home() {
           ))}
         </div>
 
+        {/* 分頁控制 */}
         {!searchTerm && totalPages > 1 && (
           <div className="pagination">
             <button 
@@ -245,6 +261,7 @@ function Home() {
           </div>
         )}
 
+        {/* 無商品時的提示 */}
         {!loading && displayProducts.length === 0 && (
           <div className="no-products">
             <p>目前沒有商品</p>
@@ -257,6 +274,7 @@ function Home() {
         )}
       </div>
 
+      {/* 頁腳 */}
       <footer className="home-footer">
         <p>&copy; 2025 輔大二手交易平台</p>
         <p>
@@ -267,4 +285,5 @@ function Home() {
   );
 }
 
+// 導出 Home 組件
 export default Home;

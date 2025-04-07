@@ -1,37 +1,51 @@
+// 導入 React 核心功能，包括 useState 和 useEffect hooks
 import React, { useState, useEffect } from 'react';
+// 導入 React Router 的導航功能
 import { useNavigate } from 'react-router-dom';
+// 導入 Firebase Firestore 的集合、添加文檔和服務器時間戳功能
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+// 導入自定義的認證上下文
 import { useAuth } from '../../context/AuthContext';
+// 導入 Firebase 數據庫實例
 import { db } from '../../firebase';
+// 導入樣式文件
 import './sell.css';
 
+// 定義商品上架頁面組件
 function Sell() {
+  // 使用 useNavigate hook 獲取導航函數
   const navigate = useNavigate();
+  // 從認證上下文獲取當前用戶信息
   const { currentUser } = useAuth();
+  // 定義加載狀態，用於控制表單提交時的加載效果
   const [loading, setLoading] = useState(false);
+  // 定義錯誤信息狀態，用於顯示錯誤提示
   const [error, setError] = useState('');
+  // 定義成功信息狀態，用於顯示成功提示
   const [success, setSuccess] = useState('');
+  // 定義圖片文件狀態，存儲上傳的圖片
   const [imageFile, setImageFile] = useState(null);
+  // 定義圖片預覽狀態，用於顯示圖片預覽
   const [imagePreview, setImagePreview] = useState('');
 
-  // 商品表單資料
+  // 定義表單數據狀態，包含所有表單字段
   const [formData, setFormData] = useState({
-    title: '',
-    price: '',
-    description: '',
-    condition: '全新',
-    category: '書籍教材',
-    location: '',
+    title: '',          // 商品標題
+    price: '',          // 商品價格
+    description: '',    // 商品描述
+    condition: '全新',  // 商品狀態
+    category: '書籍教材', // 商品類別
+    location: '',       // 交易地點
   });
 
-  // 檢查用戶登入狀態
+  // 使用 useEffect 檢查用戶登入狀態
   useEffect(() => {
     if (!currentUser) {
       setError('請先登入');
     }
   }, [currentUser]);
 
-  // 處理表單輸入變化
+  // 處理表單輸入變化的函數
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -41,7 +55,7 @@ function Sell() {
     setError('');
   };
 
-  // 將圖片轉換為 base64
+  // 將圖片轉換為 base64 格式的函數
   const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -51,21 +65,24 @@ function Sell() {
     });
   };
 
-  // 處理圖片上傳預覽
+  // 處理圖片上傳和預覽的函數
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 限制 2MB
+      // 檢查文件大小（限制為 2MB）
+      if (file.size > 2 * 1024 * 1024) {
         setError('圖片大小不能超過 2MB');
         return;
       }
       
+      // 檢查文件類型
       if (!file.type.startsWith('image/')) {
         setError('請上傳圖片檔案');
         return;
       }
 
       try {
+        // 轉換圖片為 base64
         const base64 = await convertToBase64(file);
         setImageFile(base64);
         setImagePreview(base64);
@@ -77,10 +94,11 @@ function Sell() {
     }
   };
 
-  // 上傳商品到 Firestore
+  // 處理表單提交的函數
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // 檢查用戶是否已登入
     if (!currentUser) {
       setError('請先登入後再上架商品');
       return;
@@ -107,12 +125,13 @@ function Sell() {
       return;
     }
 
+    // 設置加載狀態
     setLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      // 準備商品資料
+      // 準備要上傳的商品數據
       const productData = {
         title: formData.title,
         price: Number(formData.price),
@@ -130,13 +149,13 @@ function Sell() {
 
       console.log('準備上傳商品資料:', productData);
 
-      // 新增商品到 Firestore
+      // 將商品數據添加到 Firestore
       const docRef = await addDoc(collection(db, 'products'), productData);
       console.log('商品上傳成功，ID:', docRef.id);
       
       setSuccess('商品上架成功！');
       
-      // 延遲一下再跳轉
+      // 延遲 1.5 秒後跳轉到首頁
       setTimeout(() => {
         navigate('/');
       }, 1500);
@@ -149,14 +168,19 @@ function Sell() {
     }
   };
 
+  // 渲染組件
   return (
     <div className="sell-container">
       <h1>上架商品</h1>
 
+      {/* 顯示錯誤信息 */}
       {error && <div className="error-message">{error}</div>}
+      {/* 顯示成功信息 */}
       {success && <div className="success-message">{success}</div>}
 
+      {/* 商品上架表單 */}
       <form onSubmit={handleSubmit} className="sell-form">
+        {/* 商品名稱輸入框 */}
         <div className="form-group">
           <label htmlFor="title">商品名稱</label>
           <input
@@ -171,6 +195,7 @@ function Sell() {
           />
         </div>
 
+        {/* 價格輸入框 */}
         <div className="form-group">
           <label htmlFor="price">價格</label>
           <input
@@ -186,6 +211,7 @@ function Sell() {
           />
         </div>
 
+        {/* 商品分類選擇框 */}
         <div className="form-group">
           <label htmlFor="category">商品分類</label>
           <select
@@ -205,6 +231,7 @@ function Sell() {
           </select>
         </div>
 
+        {/* 商品狀態選擇框 */}
         <div className="form-group">
           <label htmlFor="condition">商品狀態</label>
           <select
@@ -222,6 +249,7 @@ function Sell() {
           </select>
         </div>
 
+        {/* 面交地點輸入框 */}
         <div className="form-group">
           <label htmlFor="location">面交地點</label>
           <input
@@ -236,6 +264,7 @@ function Sell() {
           />
         </div>
 
+        {/* 商品描述輸入框 */}
         <div className="form-group">
           <label htmlFor="description">商品描述</label>
           <textarea
@@ -249,6 +278,7 @@ function Sell() {
           />
         </div>
 
+        {/* 商品圖片上傳 */}
         <div className="form-group">
           <label htmlFor="image">商品圖片</label>
           <input
@@ -260,6 +290,7 @@ function Sell() {
             required
             disabled={loading}
           />
+          {/* 圖片預覽區域 */}
           {imagePreview && (
             <div className="image-preview">
               <img src={imagePreview} alt="商品預覽" />
@@ -267,6 +298,7 @@ function Sell() {
           )}
         </div>
 
+        {/* 提交按鈕 */}
         <button 
           type="submit" 
           className="submit-btn" 
@@ -279,4 +311,5 @@ function Sell() {
   );
 }
 
+// 導出 Sell 組件
 export default Sell;
