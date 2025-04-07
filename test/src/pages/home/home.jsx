@@ -35,7 +35,7 @@ function Home() {
     { id: 'electronics', name: '電子產品', icon: '📱' },
     { id: 'furniture', name: '家具寢具', icon: '🛋️' },
     { id: 'clothes', name: '衣物服飾', icon: '👕' },
-    { id: 'others', name: '其他', icon: '��' }
+    { id: 'others', name: '其他', icon: '📦' }
   ];
 
   // 獲取商品列表的函數
