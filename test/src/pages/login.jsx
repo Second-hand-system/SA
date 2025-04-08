@@ -58,10 +58,8 @@ const Login = () => {
           setError('信箱格式錯誤');
           break;
         case 'auth/user-not-found':
-          setError('此信箱尚未註冊');
-          break;
         case 'auth/wrong-password':
-          setError('密碼錯誤');
+          setError('帳號/密碼錯誤');
           break;
         case 'auth/too-many-requests':
           setError('登入嘗試次數過多，請稍後再試');
@@ -85,7 +83,7 @@ const Login = () => {
           {error && (
             <div className="error-message">
               {error}
-              {error.includes('尚未註冊') && (
+              {error === '帳號/密碼錯誤' && (
                 <Link to="/register" className="register-button">
                   前往註冊
                 </Link>
