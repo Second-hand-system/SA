@@ -42,10 +42,17 @@ function Home() {
   const fetchProducts = async (page = 1, category = 'all') => {
     try {
       setLoading(true);
+      setError(null);  // 清除之前的錯誤
+      
+      console.log('開始獲取商品...');
+      console.log('當前頁碼:', page);
+      console.log('當前類別:', category);
+      
       let baseQuery = collection(db, 'products');
       
       // 根據類別篩選商品
       if (category !== 'all') {
+        console.log('應用類別過濾:', category);
         baseQuery = query(baseQuery, where('category', '==', category));
       }
 
@@ -54,35 +61,41 @@ function Home() {
         baseQuery,
         orderBy('createdAt', 'desc')
       );
+      
+      console.log('正在獲取總商品數...');
       const allProductsSnapshot = await getDocs(allProductsQuery);
       const totalProducts = allProductsSnapshot.docs.length;
+      console.log('總商品數:', totalProducts);
       setTotalPages(Math.ceil(totalProducts / productsPerPage));
 
       // 獲取當前頁的商品
-      const startIndex = (page - 1) * productsPerPage;
       const productsQuery = query(
         baseQuery,
         orderBy('createdAt', 'desc'),
-        startAt(allProductsSnapshot.docs[startIndex]),
         limit(productsPerPage)
       );
       
+      console.log('正在獲取當前頁商品...');
       const querySnapshot = await getDocs(productsQuery);
       const fetchedProducts = [];
       
       // 處理獲取到的商品數據
       querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        console.log('商品數據:', { id: doc.id, ...data });
         fetchedProducts.push({
           id: doc.id,
-          ...doc.data()
+          ...data
         });
       });
 
+      console.log('成功獲取商品:', fetchedProducts);
       setProducts(fetchedProducts);
       setError(null);
     } catch (err) {
-      console.error('Error fetching products:', err);
-      setError('載入商品時發生錯誤');
+      console.error('獲取商品時發生錯誤:', err);
+      setError(`載入商品時發生錯誤: ${err.message}`);
+      setProducts([]); // 清空商品列表
     } finally {
       setLoading(false);
     }

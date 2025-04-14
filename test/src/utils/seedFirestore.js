@@ -90,7 +90,11 @@ export const seedFirestore = async () => {
     
     // Add each product to Firestore
     for (const product of sampleProducts) {
-      await addDoc(productsCollection, product);
+      const productData = {
+        ...product,
+        createdAt: serverTimestamp()  // 確保每個商品都有 createdAt 字段
+      };
+      await addDoc(productsCollection, productData);
       console.log(`已添加商品: ${product.title}`);
     }
     

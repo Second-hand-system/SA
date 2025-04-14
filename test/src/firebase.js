@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
@@ -16,9 +16,28 @@ export const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+let app;
+let db;
+let auth;
+
+try {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  
+  // 啟用離線持久化
+  enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code == 'failed-precondition') {
+      console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+    } else if (err.code == 'unimplemented') {
+      console.warn('The current browser does not support persistence.');
+    }
+  });
+
+  console.log('Firebase initialized successfully');
+} catch (error) {
+  console.error('Error initializing Firebase:', error);
+}
 
 // 確保用戶已登入
 const ensureAuth = () => {
@@ -47,5 +66,17 @@ const initializeStorage = async () => {
 // 執行初始化
 initializeStorage();
 
-export { db, auth, ensureAuth };
+// 檢查 Firestore 連接
+const checkFirestoreConnection = async () => {
+  try {
+    const testDoc = await db.collection('_test_').doc('_test_').get();
+    console.log('Firestore connection test successful');
+    return true;
+  } catch (error) {
+    console.error('Firestore connection test failed:', error);
+    return false;
+  }
+};
+
+export { db, auth, ensureAuth, checkFirestoreConnection };
 export default app;
