@@ -22,6 +22,7 @@ function Sell() {
     condition: '全新',
     category: '書籍教材',
     location: '',
+    tradeMode: '先搶先贏',
   });
 
   // 檢查用戶登入狀態
@@ -125,7 +126,8 @@ function Sell() {
         sellerEmail: currentUser.email,
         sellerId: currentUser.uid,
         createdAt: serverTimestamp(),
-        status: 'available'
+        status: 'available',
+        tradeMode: formData.tradeMode
       };
 
       console.log('準備上傳商品資料:', productData);
@@ -234,6 +236,21 @@ function Sell() {
             placeholder="請輸入希望的交易地點"
             disabled={loading}
           />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="tradeMode">交易模式</label>
+          <select
+            id="tradeMode"
+            name="tradeMode"
+            value={formData.tradeMode}
+            onChange={handleInputChange}
+            required
+            disabled={loading}
+          >
+            <option value="先搶先贏">先搶先贏</option>
+            <option value="競標模式">競標模式</option>
+          </select>
         </div>
 
         <div className="form-group">
