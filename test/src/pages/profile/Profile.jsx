@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 
 const Profile = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [error, setError] = useState('');  // 添加錯誤狀態
   const [formData, setFormData] = useState({
     "姓名：": '',
     "學號：": '',
@@ -26,20 +29,30 @@ const Profile = () => {
     '信義和平學苑'
   ];
 
+  // 從信箱提取學號
+  const extractStudentId = (email) => {
+    const match = email.match(/^(\d{9})@/);
+    return match ? match[1] : '';
+  };
+
   const fetchProfile = async () => {
     if (!currentUser) return;
     
     try {
       setLoading(true);
+      setError('');  // 清除錯誤信息
       const userDocRef = doc(db, 'users', currentUser.uid);
       const docSnap = await getDoc(userDocRef);
+
+      // 從信箱提取學號
+      const studentId = extractStudentId(currentUser.email);
 
       if (docSnap.exists()) {
         const data = docSnap.data();
         setProfile(data);
         setFormData({
           "姓名：": data["姓名："] || currentUser.displayName || '',
-          "學號：": data["學號："] || '',
+          "學號：": studentId, // 使用從信箱提取的學號
           "年級：": data["年級："] || '',
           "電子郵件：": currentUser.email || '',
           "宿舍：": data["宿舍："] || ''
@@ -48,7 +61,7 @@ const Profile = () => {
         // 如果文檔不存在，設置默認值
         setFormData({
           "姓名：": currentUser.displayName || '',
-          "學號：": '',
+          "學號：": studentId, // 使用從信箱提取的學號
           "年級：": '',
           "電子郵件：": currentUser.email || '',
           "宿舍：": ''
@@ -56,7 +69,7 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      alert('獲取資料時發生錯誤');
+      setError('獲取資料時發生錯誤');
     } finally {
       setLoading(false);
     }
@@ -71,11 +84,12 @@ const Profile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!currentUser) {
-      alert('請先登入');
+      setError('請先登入');
       return;
     }
 
     setLoading(true);
+    setError('');  // 清除錯誤信息
     try {
       const userDocRef = doc(db, 'users', currentUser.uid);
       await setDoc(userDocRef, {
@@ -83,13 +97,12 @@ const Profile = () => {
         updatedAt: new Date().toISOString()
       });
       
-      // 重新獲取資料以更新顯示
       await fetchProfile();
       setIsEditing(false);
       alert('資料已成功更新');
     } catch (error) {
       console.error('Error saving profile:', error);
-      alert('儲存資料時發生錯誤，請稍後再試');
+      setError('儲存資料時發生錯誤，請稍後再試');
     } finally {
       setLoading(false);
     }
@@ -101,6 +114,7 @@ const Profile = () => {
       ...prev,
       [name]: value
     }));
+    setError('');  // 當用戶輸入時清除錯誤信息
   };
 
   if (!currentUser) {
@@ -114,6 +128,7 @@ const Profile = () => {
         <div className="loading">載入中...</div>
       ) : (
         <div className="profile-form-container">
+          {error && <div className="error-message">{error}</div>}  {/* 顯示錯誤信息 */}
           <div className="form-group">
             <label>姓名：</label>
             {isEditing ? (
@@ -135,11 +150,11 @@ const Profile = () => {
                 type="text"
                 name="學號："
                 value={formData["學號："]}
-                onChange={handleChange}
-                required
+                disabled
+                title="學號會自動從您的輔大信箱中提取"
               />
             ) : (
-              <div className="info-value">{profile?.["學號："] || '未填寫'}</div>
+              <div className="info-value">{formData["學號："] || '未填寫'}</div>
             )}
           </div>
           <div className="form-group">
@@ -164,6 +179,7 @@ const Profile = () => {
                 name="電子郵件："
                 value={formData["電子郵件："]}
                 disabled
+                title="信箱無法修改"
               />
             ) : (
               <div className="info-value">{profile?.["電子郵件："] || currentUser.email || '未填寫'}</div>
@@ -193,14 +209,22 @@ const Profile = () => {
                 <button type="button" onClick={handleSubmit} disabled={loading}>
                   {loading ? '儲存中...' : '儲存'}
                 </button>
-                <button type="button" onClick={() => setIsEditing(false)} disabled={loading}>
+                <button type="button" onClick={() => {
+                  setIsEditing(false);
+                  setError('');  // 取消編輯時清除錯誤信息
+                }} disabled={loading}>
                   取消
                 </button>
               </>
             ) : (
-              <button type="button" onClick={() => setIsEditing(true)}>
-                編輯資料
-              </button>
+              <>
+                <button type="button" onClick={() => setIsEditing(true)}>
+                  編輯資料
+                </button>
+                <button type="button" onClick={() => navigate('/')} className="back-home-btn">
+                  返回首頁
+                </button>
+              </>
             )}
           </div>
         </div>

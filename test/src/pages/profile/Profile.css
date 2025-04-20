@@ -183,4 +183,24 @@
   background-color: rgba(147, 122, 71, 1);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.back-home-btn {
+  background-color: #4CAF50;  /* 綠色背景 */
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: 10px;  /* 與編輯按鈕保持間距 */
+  transition: background-color 0.3s ease;
+}
+
+.back-home-btn:hover {
+  background-color: #45a049;  /* 滑鼠懸停時的深綠色 */
+}
+
+.back-home-btn:active {
+  background-color: #3d8b40;  /* 點擊時的更深綠色 */
 } 
