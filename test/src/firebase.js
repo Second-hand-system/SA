@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
@@ -23,15 +23,12 @@ let auth;
 try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  db = getFirestore(app);
   
-  // 啟用離線持久化
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code == 'failed-precondition') {
-      console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-    } else if (err.code == 'unimplemented') {
-      console.warn('The current browser does not support persistence.');
-    }
+  // 使用新的持久化配置初始化 Firestore
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache(
+      { tabManager: persistentMultipleTabManager() }
+    ),
   });
 
   console.log('Firebase initialized successfully');
