@@ -38,6 +38,12 @@ function Home() {
     { id: 'others', name: '其他', icon: '📦' }
   ];
 
+  // 將類別ID轉換為中文名稱的函數
+  const getCategoryName = (categoryId) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : '其他';
+  };
+
   // 獲取商品列表的函數
   const fetchProducts = async (page = 1, category = 'all') => {
     try {
@@ -73,12 +79,31 @@ function Home() {
       console.log('總商品數:', totalProducts);
       setTotalPages(Math.ceil(totalProducts / productsPerPage));
 
+      // 計算分頁的起始位置
+      const startIndex = (page - 1) * productsPerPage;
+      
       // 獲取當前頁的商品
-      // 分頁處理
       const paginatedQuery = query(
         productsQuery,
         limit(productsPerPage)
       );
+      
+      if (startIndex > 0) {
+        // 獲取前一頁的最後一個文檔
+        const previousPageQuery = query(
+          productsQuery,
+          limit(startIndex)
+        );
+        const previousPageSnapshot = await getDocs(previousPageQuery);
+        const lastVisible = previousPageSnapshot.docs[previousPageSnapshot.docs.length - 1];
+        
+        // 使用 startAfter 來獲取下一頁
+        paginatedQuery = query(
+          productsQuery,
+          startAfter(lastVisible),
+          limit(productsPerPage)
+        );
+      }
       
       console.log('正在獲取當前頁商品...');
       const querySnapshot = await getDocs(paginatedQuery);
@@ -250,6 +275,7 @@ function Home() {
                 <p className="item-price">NT$ {product.price}</p>
                 <div className="item-meta">
                   <span className="item-condition">{product.condition}</span>
+                  <span className="item-category">{getCategoryName(product.category)}</span>
                   <span>賣家：{product.sellerName}</span>
                 </div>
               </div>

@@ -462,4 +462,58 @@
   .cancel-btn {
     width: 100%;
   }
+}
+
+.favorite-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.1);
+}
+
+.favorite-btn .heart-icon {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  transform: rotate(-45deg);
+}
+
+.favorite-btn .heart-icon::before,
+.favorite-btn .heart-icon::after {
+  content: '';
+  width: 24px;
+  height: 24px;
+  position: absolute;
+  border-radius: 50%;
+  background-color: #ccc;
+  transition: background-color 0.3s;
+}
+
+.favorite-btn .heart-icon::before {
+  top: -12px;
+  left: 0;
+}
+
+.favorite-btn .heart-icon::after {
+  top: 0;
+  left: 12px;
+}
+
+.favorite-btn .heart-icon {
+  background-color: #ccc;
+  transition: background-color 0.3s;
+}
+
+.favorite-btn.active .heart-icon,
+.favorite-btn.active .heart-icon::before,
+.favorite-btn.active .heart-icon::after {
+  background-color: #ff4b4b;
 } 

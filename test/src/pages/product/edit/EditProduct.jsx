@@ -11,12 +11,21 @@ const EditProduct = () => {
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // 商品類別
+  const categories = [
+    { id: 'books', name: '書籍教材', icon: '📚' },
+    { id: 'electronics', name: '電子產品', icon: '📱' },
+    { id: 'furniture', name: '家具寢具', icon: '🛋️' },
+    { id: 'clothes', name: '衣物服飾', icon: '👕' },
+    { id: 'others', name: '其他', icon: '📦' }
+  ];
+
   const [formData, setFormData] = useState({
     title: '',
     price: '',
     description: '',
     condition: '全新',
-    category: '其他',
+    category: '',
     meetupLocation: '輔大校園'
   });
 
@@ -54,7 +63,7 @@ const EditProduct = () => {
           price: productData.price || '',
           description: productData.description || '',
           condition: productData.condition || '全新',
-          category: productData.category || '其他',
+          category: productData.category || '',
           meetupLocation: productData.meetupLocation || '輔大校園'
         });
         setImagePreview(productData.image);
@@ -213,12 +222,12 @@ const EditProduct = () => {
             value={formData.category}
             onChange={handleInputChange}
           >
-            <option value="教科書">教科書</option>
-            <option value="3C產品">3C產品</option>
-            <option value="傢俱寢具">傢俱寢具</option>
-            <option value="衣物">衣物</option>
-            <option value="食品">食品</option>
-            <option value="其他">其他</option>
+            <option value="">請選擇類別</option>
+            {categories.map(category => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
           </select>
         </div>
 

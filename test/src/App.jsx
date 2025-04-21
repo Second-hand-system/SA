@@ -9,6 +9,7 @@ import Sell from './pages/sell/sell'
 import Profile from './pages/profile/Profile'
 import ProductDetail from './pages/product/ProductDetail'
 import EditProduct from './pages/product/edit/EditProduct'
+import Favorites from './pages/favorites/Favorites'
 import AuthProvider from './context/AuthContext'
 import { useAuth } from './context/AuthContext'
 
@@ -48,6 +49,11 @@ function App() {
           <Route path="/profile" element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/favorites" element={
+            <ProtectedRoute>
+              <Favorites />
             </ProtectedRoute>
           } />
           <Route path="/product/:productId" element={

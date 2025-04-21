@@ -3,22 +3,19 @@
   top: 0;
   left: 0;
   right: 0;
+  background-color: white;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.8rem 2rem;
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  height: 64px;
 }
 
 .logo h1 {
-  font-size: 1.5rem;
-  color: #333;
   margin: 0;
+  color: #333;
+  font-size: 1.5rem;
 }
 
 .nav {
@@ -28,43 +25,77 @@
 
 .auth-buttons {
   display: flex;
-  gap: 10px;
+  gap: 1rem;
   align-items: center;
 }
 
 .auth-buttons button {
-  padding: 8px 16px;
-  background-color: rgba(147, 122, 71, 0.9);
-  color: white;
+  padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;
+  background-color: #e2af4a;
+  color: white;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s;
 }
 
 .auth-buttons button:hover {
-  background-color: rgba(120, 100, 58, 0.95);
-  transform: translateY(-1px);
+  background-color: #d19f3a;
 }
 
 .profile-link {
   text-decoration: none;
   color: #333;
-  font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 4px;
-  transition: all 0.3s ease;
 }
 
-.profile-link:hover {
-  background-color: rgba(147, 122, 71, 0.1);
-}
-
-.welcome-text {
-  margin-right: 10px;
+.favorites-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   color: #333;
-  font-weight: 500;
+  padding: 8px;
+}
+
+/* 愛心圖標樣式 */
+.heart-icon {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  transform: rotate(-45deg);
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.heart-icon::before,
+.heart-icon::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  border-radius: 50%;
+  background-color: #666;
+  transition: background-color 0.3s;
+}
+
+.heart-icon::before {
+  top: -8px;
+  left: 0;
+}
+
+.heart-icon::after {
+  top: 0;
+  left: 8px;
+}
+
+.heart-icon {
+  background-color: #666;
+}
+
+.favorites-link:hover .heart-icon,
+.favorites-link:hover .heart-icon::before,
+.favorites-link:hover .heart-icon::after {
+  background-color: #e2af4a;
 }
 
 /* 為固定定位的 header 騰出空間 */

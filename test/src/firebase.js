@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore, enableIndexedDbPersistence, doc, getDoc, collection, connectFirestoreEmulator } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence, doc, getDoc, collection, setDoc } from "firebase/firestore";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
 
 // Your web app's Firebase configuration
@@ -25,13 +25,30 @@ try {
   auth = getAuth(app);
   db = getFirestore(app);
   
+  // 監聽身份驗證狀態變化
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      console.log('User is signed in:', user.uid);
+      // 確保用戶文檔存在
+      const userRef = doc(db, 'users', user.uid);
+      setDoc(userRef, {
+        email: user.email,
+        lastLogin: new Date().toISOString()
+      }, { merge: true }).catch(error => {
+        console.error('Error updating user document:', error);
+      });
+    } else {
+      console.log('User is signed out');
+    }
+  });
+  
   // 如果需要使用Firebase本地模拟器（如果运行在开发环境中）
   if (window.location.hostname === "localhost") {
     try {
       // 仅在开发环境中使用模拟器
       // connectFirestoreEmulator(db, "localhost", 8080);
       // connectAuthEmulator(auth, "http://localhost:9099");
-      console.log("Firebase emulators are available for use if needed");
+      console.log("Firebase emulators are available but not connected");
     } catch (error) {
       console.warn("Firebase emulators setup error:", error);
     }
@@ -54,15 +71,41 @@ try {
 // 確保用戶已登入
 const ensureAuth = () => {
   return new Promise((resolve, reject) => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      unsubscribe();
-      if (user) {
-        resolve(user);
-      } else {
-        reject(new Error('請先登入'));
-      }
-    });
+    if (auth.currentUser) {
+      resolve(auth.currentUser);
+    } else {
+      const unsubscribe = auth.onAuthStateChanged(user => {
+        unsubscribe();
+        if (user) {
+          resolve(user);
+        } else {
+          reject(new Error('請先登入'));
+        }
+      });
+    }
   });
+};
+
+// 獲取用戶的收藏參考
+const getUserFavoritesRef = (userId) => {
+  return collection(db, 'users', userId, 'favorites');
+};
+
+// 獲取特定收藏商品的參考
+const getFavoriteRef = (userId, productId) => {
+  return doc(db, 'users', userId, 'favorites', productId);
+};
+
+// 檢查商品是否被收藏
+const checkIsFavorite = async (userId, productId) => {
+  if (!userId || !productId) return false;
+  try {
+    const favoriteDoc = await getDoc(getFavoriteRef(userId, productId));
+    return favoriteDoc.exists();
+  } catch (error) {
+    console.error('Error checking favorite status:', error);
+    return false;
+  }
 };
 
 // 初始化 Storage 的 CORS 設置
@@ -92,5 +135,13 @@ const checkFirestoreConnection = async () => {
   }
 };
 
-export { db, auth, ensureAuth, checkFirestoreConnection };
+export { 
+  db, 
+  auth, 
+  ensureAuth, 
+  checkFirestoreConnection,
+  getUserFavoritesRef,
+  getFavoriteRef,
+  checkIsFavorite 
+};
 export default app;

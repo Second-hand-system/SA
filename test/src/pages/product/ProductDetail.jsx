@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getFirestore, doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import app from '../../firebase';
 import './ProductDetail.css';
@@ -10,6 +10,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
   const db = getFirestore(app);
   const auth = getAuth(app);
   const navigate = useNavigate();
@@ -18,6 +19,22 @@ const ProductDetail = () => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [auctionStartTime, setAuctionStartTime] = useState('');
   const [auctionEndTime, setAuctionEndTime] = useState('');
+
+  // 商品類別
+  const categories = [
+    { id: 'all', name: '全部商品', icon: '🛍️' },
+    { id: 'books', name: '書籍教材', icon: '📚' },
+    { id: 'electronics', name: '電子產品', icon: '📱' },
+    { id: 'furniture', name: '家具寢具', icon: '🛋️' },
+    { id: 'clothes', name: '衣物服飾', icon: '👕' },
+    { id: 'others', name: '其他', icon: '📦' }
+  ];
+
+  // 將類別ID轉換為中文名稱的函數
+  const getCategoryName = (categoryId) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : '其他';
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -75,6 +92,57 @@ const ProductDetail = () => {
       return () => clearInterval(timer);
     }
   }, [product]);
+
+  // 檢查商品是否已收藏
+  useEffect(() => {
+    const checkIfFavorite = async () => {
+      if (!auth.currentUser || !productId) {
+        setIsFavorite(false);
+        return;
+      }
+
+      try {
+        const userId = auth.currentUser.uid;
+        // 先檢查用戶是否已登入並獲取到 UID
+        console.log('Current user:', auth.currentUser.email, 'UID:', userId);
+        
+        // 檢查用戶文檔
+        const userRef = doc(db, 'users', userId);
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+          // 如果用戶文檔不存在，創建它
+          console.log('Creating user document for:', userId);
+          await setDoc(userRef, {
+            email: auth.currentUser.email,
+            createdAt: serverTimestamp(),
+            lastUpdated: serverTimestamp(),
+            favorites: {} // 添加一個空的收藏對象
+          });
+        }
+
+        // 檢查收藏狀態
+        const favoriteRef = doc(userRef, 'favorites', productId);
+        const favoriteDoc = await getDoc(favoriteRef);
+        setIsFavorite(favoriteDoc.exists());
+        console.log('Favorite status:', favoriteDoc.exists());
+      } catch (error) {
+        console.error('Error checking favorite status:', error);
+        setIsFavorite(false);
+      }
+    };
+
+    // 確保用戶已登入後再檢查收藏狀態
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        checkIfFavorite();
+      } else {
+        setIsFavorite(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth, productId, db]);
 
   const handleUpdateStatus = async (newStatus) => {
     if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
@@ -139,6 +207,69 @@ const ProductDetail = () => {
     } catch (error) {
       console.error('Error setting auction time:', error);
       alert('設定競標時間時發生錯誤');
+    }
+  };
+
+  // 處理收藏/取消收藏
+  const handleToggleFavorite = async () => {
+    if (!auth.currentUser) {
+      alert('請先登入才能收藏商品');
+      return;
+    }
+
+    try {
+      const userId = auth.currentUser.uid;
+      console.log('Toggling favorite for user:', userId);
+
+      // 檢查用戶文檔
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        // 如果用戶文檔不存在，創建它
+        console.log('Creating user document for:', userId);
+        await setDoc(userRef, {
+          email: auth.currentUser.email,
+          createdAt: serverTimestamp(),
+          lastUpdated: serverTimestamp(),
+          favorites: {} // 添加一個空的收藏對象
+        });
+      }
+
+      // 更新收藏狀態
+      const favoriteRef = doc(userRef, 'favorites', productId);
+      const favoriteDoc = await getDoc(favoriteRef);
+
+      if (favoriteDoc.exists()) {
+        // 從收藏中移除
+        console.log('Removing from favorites:', productId);
+        await deleteDoc(favoriteRef);
+        setIsFavorite(false);
+        alert('已從收藏移除');
+      } else {
+        // 添加到收藏
+        console.log('Adding to favorites:', productId);
+        const favoriteData = {
+          productId: productId,
+          title: product.title,
+          price: product.price,
+          image: product.image,
+          description: product.description,
+          condition: product.condition,
+          category: product.category,
+          sellerName: product.sellerName,
+          sellerEmail: product.sellerEmail,
+          location: product.location,
+          createdAt: product.createdAt,
+          addedAt: serverTimestamp()
+        };
+        await setDoc(favoriteRef, favoriteData);
+        setIsFavorite(true);
+        alert('已加入收藏');
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      alert('操作失敗，請稍後再試');
     }
   };
 
@@ -294,7 +425,7 @@ const ProductDetail = () => {
               <li><strong>賣家：</strong> {product.sellerName || '未知'}</li>
               <li><strong>聯絡方式：</strong> {product.sellerEmail || '未提供'}</li>
               <li><strong>上架時間：</strong> {product.createdAt || '未知'}</li>
-              <li><strong>商品類別：</strong> {product.category || '未分類'}</li>
+              <li><strong>商品類別：</strong> {getCategoryName(product.category) || '未分類'}</li>
               <li><strong>面交地點：</strong> {product.location || '未指定'}</li>
             </ul>
           </div>
@@ -318,7 +449,12 @@ const ProductDetail = () => {
             ) : (
               <>
                 <button className="contact-seller-btn">聯絡賣家</button>
-                <button className="save-product-btn">收藏商品</button>
+                <button 
+                  className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+                  onClick={handleToggleFavorite}
+                >
+                  <div className="heart-icon"></div>
+                </button>
                 <button className="share-product-btn">分享商品</button>
               </>
             )}

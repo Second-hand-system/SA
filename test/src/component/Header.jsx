@@ -25,6 +25,9 @@ const Header = () => {
         <div className="auth-buttons">
           {currentUser ? (
             <>
+              <Link to="/favorites" className="favorites-link">
+                <div className="heart-icon"></div>
+              </Link>
               <Link to="/profile" className="profile-link">
                 <span>個人資料</span>
               </Link>

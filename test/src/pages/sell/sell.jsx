@@ -222,12 +222,12 @@ function Sell() {
             required
             disabled={loading}
           >
-            <option value="書籍教材">書籍教材</option>
-            <option value="電子產品">電子產品</option>
-            <option value="家具寢具">家具寢具</option>
-            <option value="交通工具">交通工具</option>
-            <option value="服裝衣物">服裝衣物</option>
-            <option value="運動用品">運動用品</option>
+            <option value="">請選擇分類</option>
+            <option value="books">書籍教材</option>
+            <option value="electronics">電子產品</option>
+            <option value="furniture">家具寢具</option>
+            <option value="clothes">衣物服飾</option>
+            <option value="others">其他</option>
           </select>
         </div>
 
