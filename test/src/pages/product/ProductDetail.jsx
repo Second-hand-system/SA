@@ -19,6 +19,7 @@ const ProductDetail = () => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [auctionStartTime, setAuctionStartTime] = useState('');
   const [auctionEndTime, setAuctionEndTime] = useState('');
+  const [saleType, setSaleType] = useState('先搶先贏');
 
   // 商品類別
   const categories = [
@@ -48,8 +49,8 @@ const ProductDetail = () => {
             data.createdAt = data.createdAt.toDate().toLocaleString('zh-TW');
           }
           setProduct({ id: docSnap.id, ...data });
+          setSaleType(data.saleType || '先搶先贏');
           
-          // Initialize auction status
           if (data.auctionEndTime) {
             const endTime = new Date(data.auctionEndTime);
             const now = new Date();
@@ -194,14 +195,17 @@ const ProductDetail = () => {
       await updateDoc(productRef, {
         auctionStartTime: start.toISOString(),
         auctionEndTime: end.toISOString(),
-        status: '未開始'
+        status: '未開始',
+        saleType: '競標'
       });
       setProduct(prev => ({ 
         ...prev, 
         auctionStartTime: start.toISOString(),
         auctionEndTime: end.toISOString(),
-        status: '未開始'
+        status: '未開始',
+        saleType: '競標'
       }));
+      setSaleType('競標');
       setShowTimePicker(false);
       alert('競標時間已設定');
     } catch (error) {
@@ -210,99 +214,75 @@ const ProductDetail = () => {
     }
   };
 
-  // 處理收藏/取消收藏
-  const handleToggleFavorite = async () => {
+  const handleFavoriteClick = async () => {
     if (!auth.currentUser) {
-      alert('請先登入才能收藏商品');
+      alert('請先登入');
       return;
     }
 
     try {
       const userId = auth.currentUser.uid;
-      console.log('Toggling favorite for user:', userId);
-
-      // 檢查用戶文檔
       const userRef = doc(db, 'users', userId);
-      const userDoc = await getDoc(userRef);
-
-      if (!userDoc.exists()) {
-        // 如果用戶文檔不存在，創建它
-        console.log('Creating user document for:', userId);
-        await setDoc(userRef, {
-          email: auth.currentUser.email,
-          createdAt: serverTimestamp(),
-          lastUpdated: serverTimestamp(),
-          favorites: {} // 添加一個空的收藏對象
-        });
-      }
-
-      // 更新收藏狀態
       const favoriteRef = doc(userRef, 'favorites', productId);
-      const favoriteDoc = await getDoc(favoriteRef);
 
-      if (favoriteDoc.exists()) {
-        // 從收藏中移除
-        console.log('Removing from favorites:', productId);
+      if (isFavorite) {
         await deleteDoc(favoriteRef);
         setIsFavorite(false);
-        alert('已從收藏移除');
       } else {
-        // 添加到收藏
-        console.log('Adding to favorites:', productId);
-        const favoriteData = {
-          productId: productId,
-          title: product.title,
-          price: product.price,
-          image: product.image,
-          description: product.description,
-          condition: product.condition,
-          category: product.category,
-          sellerName: product.sellerName,
-          sellerEmail: product.sellerEmail,
-          location: product.location,
-          createdAt: product.createdAt,
-          addedAt: serverTimestamp()
-        };
-        await setDoc(favoriteRef, favoriteData);
+        await setDoc(favoriteRef, {
+          productId,
+          addedAt: serverTimestamp(),
+          productData: {
+            title: product.title,
+            price: product.price,
+            imageUrl: product.imageUrl,
+            status: product.status
+          }
+        });
         setIsFavorite(true);
-        alert('已加入收藏');
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      alert('操作失敗，請稍後再試');
+      alert('操作收藏時發生錯誤');
     }
   };
 
-  const handleDeleteProduct = async () => {
+  const handleDelete = async () => {
+    if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
+      alert('只有賣家可以刪除商品');
+      return;
+    }
+
     if (!window.confirm('確定要刪除此商品嗎？此操作無法復原。')) {
       return;
     }
 
+    setIsDeleting(true);
     try {
-      setIsDeleting(true);
       await deleteDoc(doc(db, 'products', productId));
-      alert('商品已成功刪除！');
       navigate('/');
-    } catch (err) {
-      console.error('Error deleting product:', err);
-      alert('刪除商品時發生錯誤，請稍後再試。');
-    } finally {
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      alert('刪除商品時發生錯誤');
       setIsDeleting(false);
     }
   };
 
   if (loading) {
-    return <div className="product-detail-container">載入中...</div>;
+    return (
+      <div className="loading">
+        <div className="loading-spinner"></div>
+        <p>載入中...</p>
+      </div>
+    );
   }
 
   if (!product) {
     return (
-      <div className="product-detail-container">
-        <div className="not-found">
-          <h2>找不到產品</h2>
-          <p>您所尋找的產品不存在或已被移除。</p>
-          <Link to="/" className="back-home-btn">返回首頁</Link>
-        </div>
+      <div className="not-found">
+        <h2>找不到商品</h2>
+        <p>該商品可能已被刪除或不存在</p>
+        <Link to="/" className="back-home-btn">返回首頁</Link>
       </div>
     );
   }
@@ -313,155 +293,142 @@ const ProductDetail = () => {
     <div className="product-detail-container">
       <div className="product-detail-content">
         <div className="product-image">
-          <img src={product.image || 'https://via.placeholder.com/300x200?text=無圖片'} alt={product.title} />
+          <img src={product.imageUrl} alt={product.title} />
         </div>
         <div className="product-info">
           <h1>{product.title}</h1>
           <div className="product-price">NT$ {product.price}</div>
           
-          {/* Auction Information */}
-          <div className="auction-info">
-            <div className="auction-timer">
-              <h3>競標狀態</h3>
-              <p className="auction-status">{auctionStatus}</p>
-              {product.auctionEndTime ? (
-                <p className="time-left">
-                  開始時間：{new Date(product.auctionStartTime).toLocaleString('zh-TW')}
-                  <br />
-                  結束時間：{new Date(product.auctionEndTime).toLocaleString('zh-TW')}
-                  <br />
-                  剩餘時間：{timeLeft}
-                </p>
-              ) : (
-                isOwner && (
-                  <button 
-                    className="set-time-btn"
-                    onClick={() => setShowTimePicker(true)}
-                  >
-                    設定競標時間
-                  </button>
-                )
-              )}
+          <div className="sale-type-selector">
+            <h3>銷售方式</h3>
+            <div className="sale-type-buttons">
+              <button 
+                className={`sale-type-btn ${saleType === '先搶先贏' ? 'active' : ''}`}
+                onClick={() => setSaleType('先搶先贏')}
+                disabled={product.sellerId !== auth.currentUser?.uid}
+              >
+                先搶先贏
+              </button>
+              <button 
+                className={`sale-type-btn ${saleType === '競標' ? 'active' : ''}`}
+                onClick={() => {
+                  setSaleType('競標');
+                  setShowTimePicker(true);
+                }}
+                disabled={product.sellerId !== auth.currentUser?.uid}
+              >
+                競標
+              </button>
             </div>
-            
-            {/* Time Picker */}
-            {showTimePicker && (
-              <div className="time-picker">
-                <h3>設定競標時間</h3>
-                <div className="time-inputs">
-                  <div className="time-input">
-                    <label>開始時間：</label>
-                    <input
-                      type="datetime-local"
-                      value={auctionStartTime}
-                      onChange={(e) => setAuctionStartTime(e.target.value)}
-                    />
-                  </div>
-                  <div className="time-input">
-                    <label>結束時間：</label>
-                    <input
-                      type="datetime-local"
-                      value={auctionEndTime}
-                      onChange={(e) => setAuctionEndTime(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="time-picker-buttons">
-                  <button 
-                    className="confirm-btn"
-                    onClick={handleSetAuctionTime}
-                  >
-                    確認
-                  </button>
-                  <button 
-                    className="cancel-btn"
-                    onClick={() => setShowTimePicker(false)}
-                  >
-                    取消
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            {/* Status Update Controls */}
-            {isOwner && timeLeft === '已結束' && (
-              <div className="status-controls">
-                <h3>更新商品狀態</h3>
-                <div className="status-buttons">
-                  <button 
-                    className="status-btn"
-                    onClick={() => handleUpdateStatus('待付款')}
-                    disabled={auctionStatus === '待付款'}
-                  >
-                    待付款
-                  </button>
-                  <button 
-                    className="status-btn"
-                    onClick={() => handleUpdateStatus('已售出')}
-                    disabled={auctionStatus === '已售出'}
-                  >
-                    已售出
-                  </button>
-                  <button 
-                    className="status-btn"
-                    onClick={() => handleUpdateStatus('未售出')}
-                    disabled={auctionStatus === '未售出'}
-                  >
-                    未售出
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
+
+          {saleType === '競標' && (
+            <div className="auction-info">
+              <div className="auction-timer">
+                <h3>競標時間</h3>
+                <div className="time-left">{timeLeft || '未設定'}</div>
+              </div>
+              <div className="status-controls">
+                <h3>競標狀態: {auctionStatus}</h3>
+                {product.sellerId === auth.currentUser?.uid && (
+                  <div className="status-buttons">
+                    <button 
+                      className="status-btn"
+                      onClick={() => handleUpdateStatus('進行中')}
+                      disabled={auctionStatus === '進行中'}
+                    >
+                      開始競標
+                    </button>
+                    <button 
+                      className="status-btn"
+                      onClick={() => handleUpdateStatus('已結束')}
+                      disabled={auctionStatus === '已結束'}
+                    >
+                      結束競標
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {showTimePicker && (
+            <div className="time-picker">
+              <h3>設定競標時間</h3>
+              <div className="time-inputs">
+                <div className="time-input">
+                  <label>開始時間:</label>
+                  <input
+                    type="datetime-local"
+                    value={auctionStartTime}
+                    onChange={(e) => setAuctionStartTime(e.target.value)}
+                  />
+                </div>
+                <div className="time-input">
+                  <label>結束時間:</label>
+                  <input
+                    type="datetime-local"
+                    value={auctionEndTime}
+                    onChange={(e) => setAuctionEndTime(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="time-picker-buttons">
+                <button className="confirm-btn" onClick={handleSetAuctionTime}>
+                  確認
+                </button>
+                <button className="cancel-btn" onClick={() => setShowTimePicker(false)}>
+                  取消
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="product-description">
             <h3>商品描述</h3>
             <p>{product.description}</p>
           </div>
+          
           <div className="product-details">
-            <h3>商品詳情</h3>
+            <h3>商品資訊</h3>
             <ul>
-              <li><strong>商品狀態：</strong> {product.condition || '未指定'}</li>
-              <li><strong>賣家：</strong> {product.sellerName || '未知'}</li>
-              <li><strong>聯絡方式：</strong> {product.sellerEmail || '未提供'}</li>
-              <li><strong>上架時間：</strong> {product.createdAt || '未知'}</li>
-              <li><strong>商品類別：</strong> {getCategoryName(product.category) || '未分類'}</li>
-              <li><strong>面交地點：</strong> {product.location || '未指定'}</li>
+              <li><strong>類別:</strong> {getCategoryName(product.category)}</li>
+              <li><strong>狀態:</strong> {product.condition}</li>
+              <li><strong>上架時間:</strong> {product.createdAt}</li>
+              <li><strong>賣家:</strong> {product.sellerName}</li>
             </ul>
           </div>
+
           <div className="product-actions">
-            {isOwner ? (
+            <button className="contact-seller-btn">
+              聯絡賣家
+            </button>
+            <button 
+              className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+              onClick={handleFavoriteClick}
+            >
+              <span className="heart-icon"></span>
+            </button>
+            {auth.currentUser && product.sellerId === auth.currentUser.uid && (
               <>
-                <button
+                <Link to={`/edit/${productId}`} className="edit-product-btn">
+                  編輯
+                </Link>
+                <button 
                   className="delete-product-btn"
-                  onClick={handleDeleteProduct}
+                  onClick={handleDelete}
                   disabled={isDeleting}
                 >
-                  {isDeleting ? '刪除中...' : '刪除商品'}
+                  {isDeleting ? '刪除中...' : '刪除'}
                 </button>
-                <button
-                  className="edit-product-btn"
-                  onClick={() => navigate(`/product/edit/${productId}`)}
-                >
-                  編輯商品
-                </button>
-              </>
-            ) : (
-              <>
-                <button className="contact-seller-btn">聯絡賣家</button>
-                <button 
-                  className={`favorite-btn ${isFavorite ? 'active' : ''}`}
-                  onClick={handleToggleFavorite}
-                >
-                  <div className="heart-icon"></div>
-                </button>
-                <button className="share-product-btn">分享商品</button>
               </>
             )}
           </div>
-          <Link to="/" className="back-home-link">返回首頁</Link>
         </div>
       </div>
+      <Link to="/" className="back-home-link">
+        返回首頁
+      </Link>
     </div>
   );
 };

@@ -467,12 +467,10 @@
 .favorite-btn {
   background: none;
   border: none;
+  padding: 0.5rem;
   cursor: pointer;
-  padding: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.3s;
+  position: relative;
+  transition: transform 0.3s ease;
 }
 
 .favorite-btn:hover {
@@ -483,37 +481,118 @@
   width: 24px;
   height: 24px;
   position: relative;
-  transform: rotate(-45deg);
+  display: inline-block;
+  transition: all 0.3s ease;
 }
 
 .favorite-btn .heart-icon::before,
 .favorite-btn .heart-icon::after {
   content: '';
-  width: 24px;
-  height: 24px;
   position: absolute;
-  border-radius: 50%;
+  width: 12px;
+  height: 20px;
+  border-radius: 12px 12px 0 0;
   background-color: #ccc;
-  transition: background-color 0.3s;
+  left: 12px;
+  transform-origin: 0 100%;
+  transition: background-color 0.3s ease;
 }
 
 .favorite-btn .heart-icon::before {
-  top: -12px;
-  left: 0;
+  transform: rotate(-45deg);
 }
 
 .favorite-btn .heart-icon::after {
-  top: 0;
-  left: 12px;
+  transform: rotate(45deg);
 }
 
 .favorite-btn .heart-icon {
-  background-color: #ccc;
-  transition: background-color 0.3s;
+  transform: translateX(-6px);
 }
 
-.favorite-btn.active .heart-icon,
 .favorite-btn.active .heart-icon::before,
 .favorite-btn.active .heart-icon::after {
   background-color: #ff4b4b;
+}
+
+/* 銷售類型選擇器 */
+.sale-type-selector {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.sale-type-selector h3 {
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.sale-type-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.sale-type-btn {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  background-color: white;
+  color: #666;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sale-type-btn.active {
+  border-color: #e2af4a;
+  color: #e2af4a;
+  background-color: #fff8e8;
+}
+
+.sale-type-btn:hover {
+  border-color: #e2af4a;
+  color: #e2af4a;
+  transform: translateY(-2px);
+}
+
+.sale-type-btn.active:hover {
+  transform: translateY(-2px);
+}
+
+/* 先搶先贏狀態顯示 */
+.quick-sale-info {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.quick-sale-info h3 {
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.sale-status {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .sale-type-buttons {
+    flex-direction: column;
+  }
+
+  .sale-type-btn {
+    width: 100%;
+  }
 } 

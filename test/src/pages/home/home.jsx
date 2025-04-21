@@ -119,7 +119,6 @@ function Home() {
         });
       });
 
-      console.log('成功獲取商品:', fetchedProducts);
       setProducts(fetchedProducts);
       setError(null);
     } catch (err) {
@@ -167,7 +166,7 @@ function Home() {
         const product = doc.data();
         if (product.title.toLowerCase().includes(searchTerm.toLowerCase())) {
           results.push({
-            id: doc.id,
+          id: doc.id,
             ...product
           });
         }
@@ -182,7 +181,7 @@ function Home() {
     }
   };
 
-  // 清除搜索結果的函數
+  // 清除搜尋
   const handleClearSearch = () => {
     setSearchTerm('');
     setSearchResults([]);
@@ -224,21 +223,20 @@ function Home() {
           <p>買賣交流・資源共享</p>
         </div>
         
-        {/* 搜索欄 */}
         <form onSubmit={handleSearch} className="search-bar">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="搜尋商品..."
-          />
+            />
           <button type="submit">搜尋</button>
-          {searchTerm && (
+            {searchTerm && (
             <button type="button" onClick={handleClearSearch} className="clear-search">
               清除
-            </button>
-          )}
-        </form>
+              </button>
+            )}
+          </form>
       </div>
 
       {/* 商品類別區域 */}
@@ -264,16 +262,16 @@ function Home() {
       {/* 商品列表區域 */}
       <div className="section">
         <h2>{categories.find(c => c.id === selectedCategory)?.name || '全部商品'}</h2>
-        <div className="items-container">
+          <div className="items-container">
           {displayProducts.map((product) => (
             <Link to={`/product/${product.id}`} key={product.id} className="item-card">
-              <div className="item-image">
+                  <div className="item-image">
                 <img src={product.image} alt={product.title} />
-              </div>
-              <div className="item-details">
+                  </div>
+                  <div className="item-details">
                 <h3>{product.title}</h3>
                 <p className="item-price">NT$ {product.price}</p>
-                <div className="item-meta">
+                    <div className="item-meta">
                   <span className="item-condition">{product.condition}</span>
                   <span className="item-category">{getCategoryName(product.category)}</span>
                   <span>賣家：{product.sellerName}</span>
@@ -330,5 +328,4 @@ function Home() {
   );
 }
 
-// 導出 Home 組件
 export default Home;

@@ -30,12 +30,12 @@ function Sell() {
 
   // 定義表單數據狀態，包含所有表單字段
   const [formData, setFormData] = useState({
-    title: '',          // 商品標題
-    price: '',          // 商品價格
-    description: '',    // 商品描述
-    condition: '全新',  // 商品狀態
-    category: '書籍教材', // 商品類別
-    location: '',       // 交易地點
+    title: '',
+    price: '',
+    description: '',
+    condition: '全新',
+    category: '書籍教材',
+    location: '',
   });
 
   // 使用 useEffect 檢查用戶登入狀態
@@ -144,7 +144,8 @@ function Sell() {
         sellerEmail: currentUser.email,
         sellerId: currentUser.uid,
         createdAt: serverTimestamp(),
-        status: 'available'
+        status: 'available',
+        tradeMode: formData.tradeMode
       };
 
       console.log('準備上傳商品資料:', productData);
@@ -262,6 +263,21 @@ function Sell() {
             placeholder="請輸入希望的交易地點"
             disabled={loading}
           />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="tradeMode">交易模式</label>
+          <select
+            id="tradeMode"
+            name="tradeMode"
+            value={formData.tradeMode}
+            onChange={handleInputChange}
+            required
+            disabled={loading}
+          >
+            <option value="先搶先贏">先搶先贏</option>
+            <option value="競標模式">競標模式</option>
+          </select>
         </div>
 
         {/* 商品描述輸入框 */}
