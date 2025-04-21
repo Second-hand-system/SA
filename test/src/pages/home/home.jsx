@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 // 導入自定義的認證上下文
 import { useAuth } from '../../context/AuthContext';
 // 導入 Firebase Firestore 的查詢和過濾功能
-import { getFirestore, collection, getDocs, query, orderBy, limit, startAt, where } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, query, orderBy, limit, where, startAfter, doc, getDoc } from 'firebase/firestore';
 // 導入 React Router 的鏈接組件
 import { Link } from 'react-router-dom';
 // 導入 Firebase 應用實例
@@ -48,35 +48,40 @@ function Home() {
       console.log('當前頁碼:', page);
       console.log('當前類別:', category);
       
-      let baseQuery = collection(db, 'products');
+      let productsRef = collection(db, 'products');
+      let productsQuery;
       
       // 根據類別篩選商品
       if (category !== 'all') {
         console.log('應用類別過濾:', category);
-        baseQuery = query(baseQuery, where('category', '==', category));
+        productsQuery = query(
+          productsRef,
+          where('category', '==', category),
+          orderBy('createdAt', 'desc')
+        );
+      } else {
+        productsQuery = query(
+          productsRef,
+          orderBy('createdAt', 'desc')
+        );
       }
 
       // 獲取所有商品以計算總頁數
-      const allProductsQuery = query(
-        baseQuery,
-        orderBy('createdAt', 'desc')
-      );
-      
       console.log('正在獲取總商品數...');
-      const allProductsSnapshot = await getDocs(allProductsQuery);
+      const allProductsSnapshot = await getDocs(productsQuery);
       const totalProducts = allProductsSnapshot.docs.length;
       console.log('總商品數:', totalProducts);
       setTotalPages(Math.ceil(totalProducts / productsPerPage));
 
       // 獲取當前頁的商品
-      const productsQuery = query(
-        baseQuery,
-        orderBy('createdAt', 'desc'),
+      // 分頁處理
+      const paginatedQuery = query(
+        productsQuery,
         limit(productsPerPage)
       );
       
       console.log('正在獲取當前頁商品...');
-      const querySnapshot = await getDocs(productsQuery);
+      const querySnapshot = await getDocs(paginatedQuery);
       const fetchedProducts = [];
       
       // 處理獲取到的商品數據
@@ -122,8 +127,9 @@ function Home() {
     
     try {
       setLoading(true);
+      const productsRef = collection(db, 'products');
       const searchQuery = query(
-        collection(db, 'products'),
+        productsRef,
         orderBy('title'),
         limit(20)
       );

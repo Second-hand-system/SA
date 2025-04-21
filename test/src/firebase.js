@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getFirestore, enableIndexedDbPersistence, doc, getDoc, collection, connectFirestoreEmulator } from "firebase/firestore";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -24,6 +24,18 @@ try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
+  
+  // 如果需要使用Firebase本地模拟器（如果运行在开发环境中）
+  if (window.location.hostname === "localhost") {
+    try {
+      // 仅在开发环境中使用模拟器
+      // connectFirestoreEmulator(db, "localhost", 8080);
+      // connectAuthEmulator(auth, "http://localhost:9099");
+      console.log("Firebase emulators are available for use if needed");
+    } catch (error) {
+      console.warn("Firebase emulators setup error:", error);
+    }
+  }
   
   // 啟用離線持久化
   enableIndexedDbPersistence(db).catch((err) => {
@@ -69,7 +81,9 @@ initializeStorage();
 // 檢查 Firestore 連接
 const checkFirestoreConnection = async () => {
   try {
-    const testDoc = await db.collection('_test_').doc('_test_').get();
+    // Using v9 modular syntax instead of v8 syntax
+    const testDocRef = doc(db, '_test_', '_test_');
+    const testDocSnap = await getDoc(testDocRef);
     console.log('Firestore connection test successful');
     return true;
   } catch (error) {
