@@ -1,8 +1,47 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+    // 檢查用戶是否已登入
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // 檢查用戶是否是文檔擁有者
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 檢查收藏文檔 ID 是否符合格式
+    function isValidFavoriteId(favoriteId) {
+      return favoriteId.matches(request.auth.uid + '_.*');
+    }
+
+    // 產品集合規則
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && 
+        resource.data.sellerId == request.auth.uid;
+    }
+
+    // 收藏集合規則
+    match /favorites/{favoriteId} {
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      allow read, delete: if isAuthenticated() && 
+        (resource == null || resource.data.userId == request.auth.uid);
+    }
+
+    // 用戶集合規則
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId);
+    }
+
+    // 默認規則
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 } 

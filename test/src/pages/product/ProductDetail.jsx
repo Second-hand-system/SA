@@ -103,19 +103,39 @@ const ProductDetail = () => {
       }
 
       try {
-        const favoriteRef = doc(collection(db, 'favorites'), `${auth.currentUser.uid}_${productId}`);
+        console.log('Current user:', auth.currentUser.uid);
+        const favoriteId = `${auth.currentUser.uid}_${productId}`;
+        console.log('Checking favorite with ID:', favoriteId);
+        const favoriteRef = doc(db, 'favorites', favoriteId);
         const favoriteDoc = await getDoc(favoriteRef);
+        console.log('Favorite document exists:', favoriteDoc.exists());
         setIsFavorite(favoriteDoc.exists());
       } catch (error) {
         console.error('Error checking favorite status:', error);
+        if (error.code === 'permission-denied') {
+          console.log('Permission denied. User auth state:', !!auth.currentUser);
+        }
         setIsFavorite(false);
       }
     };
 
     if (auth.currentUser) {
       checkIfFavorite();
+    } else {
+      setIsFavorite(false);
     }
-  }, [auth.currentUser, productId]);
+
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      console.log('Auth state changed. User:', user?.uid);
+      if (user) {
+        checkIfFavorite();
+      } else {
+        setIsFavorite(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth, productId, db]);
 
   const handleUpdateStatus = async (newStatus) => {
     if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
@@ -193,28 +213,39 @@ const ProductDetail = () => {
     }
 
     try {
-      const favoriteRef = doc(collection(db, 'favorites'), `${auth.currentUser.uid}_${productId}`);
+      console.log('Current user:', auth.currentUser.uid);
+      const favoriteId = `${auth.currentUser.uid}_${productId}`;
+      console.log('Toggling favorite with ID:', favoriteId);
+      const favoriteRef = doc(db, 'favorites', favoriteId);
 
       if (isFavorite) {
         await deleteDoc(favoriteRef);
+        console.log('Favorite document deleted');
         setIsFavorite(false);
+        alert('已取消收藏');
       } else {
         const favoriteData = {
           userId: auth.currentUser.uid,
           productId: productId,
-          title: product.title,
-          price: product.price,
-          image: product.image,
-          condition: product.condition,
-          sellerName: product.sellerName,
-          addedAt: serverTimestamp()
+          createdAt: serverTimestamp(),
+          productTitle: product.title,
+          productImage: product.image,
+          productPrice: product.price
         };
+        console.log('Creating favorite document:', favoriteData);
         await setDoc(favoriteRef, favoriteData);
+        console.log('Favorite document created');
         setIsFavorite(true);
+        alert('已加入收藏');
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      alert('收藏操作失敗，請稍後再試');
+      if (error.code === 'permission-denied') {
+        console.log('Permission denied. User auth state:', !!auth.currentUser);
+        alert('權限不足，請確保您已登入');
+      } else {
+        alert('操作失敗，請稍後再試');
+      }
     }
   };
 
