@@ -133,8 +133,8 @@ export const ensureAuth = () => {
 };
 
 // 收藏相關函數
-export const getFavoritesCollection = () => {
-  return collection(db, 'favorites');
+export const getFavoritesCollection = (userId) => {
+  return collection(db, 'users', userId, 'favorites');
 };
 
 export const getFavoriteRef = (userId, productId) => {
@@ -142,19 +142,60 @@ export const getFavoriteRef = (userId, productId) => {
     console.error('Invalid parameters for getFavoriteRef:', { userId, productId });
     throw new Error('userId and productId are required');
   }
-  return doc(db, 'favorites', `${userId}_${productId}`);
+  return doc(db, 'users', userId, 'favorites', productId);
+};
+
+// 新增：獲取商品的收藏計數器引用
+export const getFavoriteCountRef = (productId) => {
+  return doc(db, 'products', productId, 'metadata', 'favorites');
+};
+
+// 新增：更新商品的收藏數
+export const updateFavoriteCount = async (productId, increment = true) => {
+  try {
+    const countRef = getFavoriteCountRef(productId);
+    const countDoc = await getDoc(countRef);
+    
+    if (!countDoc.exists()) {
+      // 如果文檔不存在，創建它
+      await setDoc(countRef, { count: increment ? 1 : 0 });
+      return increment ? 1 : 0;
+    } else {
+      // 如果文檔存在，更新計數
+      const currentCount = countDoc.data().count || 0;
+      const newCount = increment ? currentCount + 1 : currentCount - 1;
+      await setDoc(countRef, { count: Math.max(0, newCount) });
+      return Math.max(0, newCount);
+    }
+  } catch (error) {
+    console.error('Error updating favorite count:', error);
+    throw error;
+  }
+};
+
+// 新增：獲取商品的收藏數
+export const getFavoriteCount = async (productId) => {
+  try {
+    const countRef = getFavoriteCountRef(productId);
+    const countDoc = await getDoc(countRef);
+    return countDoc.exists() ? (countDoc.data().count || 0) : 0;
+  } catch (error) {
+    console.error('Error getting favorite count:', error);
+    return 0;
+  }
 };
 
 export const addToFavorites = async (userId, productId, productData) => {
   try {
     console.log('Adding to favorites:', { userId, productId, productData });
     const favoriteRef = getFavoriteRef(userId, productId);
-    await setDoc(favoriteRef, {
-      userId,
+    const favoriteData = {
       productId,
       productData,
       createdAt: serverTimestamp()
-    });
+    };
+    console.log('Favorite data to be saved:', favoriteData);
+    await setDoc(favoriteRef, favoriteData);
     console.log('Successfully added to favorites');
     return true;
   } catch (error) {
@@ -193,9 +234,8 @@ export const checkIsFavorite = async (userId, productId) => {
 export const getUserFavorites = async (userId) => {
   try {
     console.log('Getting user favorites for:', userId);
-    const favoritesRef = collection(db, 'favorites');
-    const q = query(favoritesRef, where('userId', '==', userId));
-    const querySnapshot = await getDocs(q);
+    const favoritesRef = getFavoritesCollection(userId);
+    const querySnapshot = await getDocs(favoritesRef);
     const favorites = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()

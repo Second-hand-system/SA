@@ -1,35 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getFirestore, collection, query, getDocs, where } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import app from '../../firebase';
+import { getUserFavorites } from '../../firebase';
 import './Favorites.css';
 
 const Favorites = () => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
+  const auth = getAuth();
 
   useEffect(() => {
     const fetchFavorites = async () => {
-      if (!auth.currentUser) return;
+      if (!auth.currentUser) {
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
-        const favoritesRef = collection(db, 'favorites');
-        const q = query(favoritesRef, where('userId', '==', auth.currentUser.uid));
-        const favoritesSnapshot = await getDocs(q);
-        
-        const favoritesData = favoritesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        // 按添加時間排序
-        favoritesData.sort((a, b) => b.createdAt?.toDate() - a.createdAt?.toDate());
-        
+        console.log('Fetching favorites for user:', auth.currentUser.uid);
+        const favoritesData = await getUserFavorites(auth.currentUser.uid);
+        console.log('Fetched favorites:', favoritesData);
         setFavorites(favoritesData);
       } catch (error) {
         console.error('Error fetching favorites:', error);
@@ -40,7 +32,7 @@ const Favorites = () => {
     };
 
     fetchFavorites();
-  }, [auth.currentUser, db]);
+  }, [auth.currentUser]);
 
   if (loading) {
     return <div className="favorites-container">載入中...</div>;
@@ -63,13 +55,20 @@ const Favorites = () => {
       ) : (
         <div className="favorites-grid">
           {favorites.map(favorite => (
-            <Link to={`/product/${favorite.productId}`} key={favorite.id} className="favorite-card">
+            <Link 
+              to={`/product/${favorite.productId}`} 
+              key={favorite.id} 
+              className="favorite-card"
+            >
               <div className="favorite-image">
-                <img src={favorite.productData.image || 'https://via.placeholder.com/300x200?text=無圖片'} alt={favorite.productData.title} />
+                <img 
+                  src={favorite.productData?.image || 'https://via.placeholder.com/300x200?text=無圖片'} 
+                  alt={favorite.productData?.title} 
+                />
               </div>
               <div className="favorite-details">
-                <h3>{favorite.productData.title}</h3>
-                <p className="favorite-price">NT$ {favorite.productData.price}</p>
+                <h3>{favorite.productData?.title}</h3>
+                <p className="favorite-price">NT$ {favorite.productData?.price}</p>
               </div>
             </Link>
           ))}

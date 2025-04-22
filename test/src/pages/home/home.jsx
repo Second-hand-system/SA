@@ -227,17 +227,24 @@ function Home() {
     try {
       setIsProcessing(true);
       const userId = currentUser.uid;
+      console.log('Current user ID:', userId);
+      console.log('Product:', product);
+
       const isFavorite = await checkIsFavorite(userId, product.id);
+      console.log('Is favorite:', isFavorite);
 
       if (isFavorite) {
+        console.log('Removing from favorites...');
         await removeFromFavorites(userId, product.id);
         removeFavorite(product.id);
         alert('已取消收藏');
       } else {
+        console.log('Adding to favorites...');
         const productData = {
           title: product.title,
           image: product.image,
-          price: product.price
+          price: product.price,
+          productId: product.id
         };
         await addToFavorites(userId, product.id, productData);
         addFavorite({
