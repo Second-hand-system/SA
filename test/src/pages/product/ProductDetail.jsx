@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import app from '../../firebase';
+import app, { getFavoriteRef } from '../../firebase';
 import './ProductDetail.css';
 
 const ProductDetail = () => {
@@ -103,9 +103,7 @@ const ProductDetail = () => {
       }
 
       try {
-        const userId = auth.currentUser.uid;
-        const favoriteId = `${userId}_${productId}`;
-        const favoriteRef = doc(db, 'favorites', favoriteId);
+        const favoriteRef = doc(collection(db, 'favorites'), `${auth.currentUser.uid}_${productId}`);
         const favoriteDoc = await getDoc(favoriteRef);
         setIsFavorite(favoriteDoc.exists());
       } catch (error) {
@@ -114,8 +112,10 @@ const ProductDetail = () => {
       }
     };
 
-    checkIfFavorite();
-  }, [auth.currentUser, productId, db]);
+    if (auth.currentUser) {
+      checkIfFavorite();
+    }
+  }, [auth.currentUser, productId]);
 
   const handleUpdateStatus = async (newStatus) => {
     if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
@@ -193,16 +193,14 @@ const ProductDetail = () => {
     }
 
     try {
-      const userId = auth.currentUser.uid;
-      const favoriteId = `${userId}_${productId}`;
-      const favoriteRef = doc(db, 'favorites', favoriteId);
+      const favoriteRef = doc(collection(db, 'favorites'), `${auth.currentUser.uid}_${productId}`);
 
       if (isFavorite) {
         await deleteDoc(favoriteRef);
         setIsFavorite(false);
       } else {
         const favoriteData = {
-          userId: userId,
+          userId: auth.currentUser.uid,
           productId: productId,
           title: product.title,
           price: product.price,

@@ -55,18 +55,18 @@ function Home() {
       console.log('當前類別:', category);
       
       let productsRef = collection(db, 'products');
-      let productsQuery;
+      let baseQuery;
       
       // 根據類別篩選商品
       if (category !== 'all') {
         console.log('應用類別過濾:', category);
-        productsQuery = query(
+        baseQuery = query(
           productsRef,
           where('category', '==', category),
           orderBy('createdAt', 'desc')
         );
       } else {
-        productsQuery = query(
+        baseQuery = query(
           productsRef,
           orderBy('createdAt', 'desc')
         );
@@ -74,52 +74,62 @@ function Home() {
 
       // 獲取所有商品以計算總頁數
       console.log('正在獲取總商品數...');
-      const allProductsSnapshot = await getDocs(productsQuery);
+      const allProductsSnapshot = await getDocs(baseQuery);
       const totalProducts = allProductsSnapshot.docs.length;
       console.log('總商品數:', totalProducts);
       setTotalPages(Math.ceil(totalProducts / productsPerPage));
 
-      // 計算分頁的起始位置
-      const startIndex = (page - 1) * productsPerPage;
-      
-      // 獲取當前頁的商品
-      const paginatedQuery = query(
-        productsQuery,
-        limit(productsPerPage)
-      );
-      
-      if (startIndex > 0) {
-        // 獲取前一頁的最後一個文檔
+      // 如果是第一頁，直接獲取前 productsPerPage 個商品
+      if (page === 1) {
+        const firstPageQuery = query(baseQuery, limit(productsPerPage));
+        const querySnapshot = await getDocs(firstPageQuery);
+        const fetchedProducts = [];
+        
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          console.log('商品數據:', { id: doc.id, ...data });
+          fetchedProducts.push({
+            id: doc.id,
+            ...data
+          });
+        });
+
+        setProducts(fetchedProducts);
+      } else {
+        // 對於後續頁面，先獲取前一頁的最後一個文檔
         const previousPageQuery = query(
-          productsQuery,
-          limit(startIndex)
+          baseQuery,
+          limit((page - 1) * productsPerPage)
         );
         const previousPageSnapshot = await getDocs(previousPageQuery);
         const lastVisible = previousPageSnapshot.docs[previousPageSnapshot.docs.length - 1];
         
-        // 使用 startAfter 來獲取下一頁
-        paginatedQuery = query(
-          productsQuery,
-          startAfter(lastVisible),
-          limit(productsPerPage)
-        );
+        if (lastVisible) {
+          // 使用 startAfter 獲取下一頁的商品
+          const nextPageQuery = query(
+            baseQuery,
+            startAfter(lastVisible),
+            limit(productsPerPage)
+          );
+          
+          const querySnapshot = await getDocs(nextPageQuery);
+          const fetchedProducts = [];
+          
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            console.log('商品數據:', { id: doc.id, ...data });
+            fetchedProducts.push({
+              id: doc.id,
+              ...data
+            });
+          });
+
+          setProducts(fetchedProducts);
+        } else {
+          setError('無法載入更多商品');
+        }
       }
       
-      console.log('正在獲取當前頁商品...');
-      const querySnapshot = await getDocs(paginatedQuery);
-      const fetchedProducts = [];
-      
-      // 處理獲取到的商品數據
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        console.log('商品數據:', { id: doc.id, ...data });
-        fetchedProducts.push({
-          id: doc.id,
-          ...data
-        });
-      });
-
-      setProducts(fetchedProducts);
       setError(null);
     } catch (err) {
       console.error('獲取商品時發生錯誤:', err);

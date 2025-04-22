@@ -1,93 +1,26 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { 
-  getFirestore, 
-  initializeFirestore, 
-  persistentLocalCache, 
-  persistentMultipleTabManager,
-  doc, 
-  getDoc, 
-  collection, 
-  setDoc 
-} from "firebase/firestore";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-export const firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyCnRJrHqH5FcWcP9FS0ZqhTxLdWKjAxbtU",
   authDomain: "sa-second-hand-system.firebaseapp.com",
   projectId: "sa-second-hand-system",
-  storageBucket: "sa-second-hand-system.firebasestorage.app",
+  storageBucket: "sa-second-hand-system.appspot.com",
   messagingSenderId: "476098508687",
   appId: "1:476098508687:web:b96e14ac565f9eb3b2fdfa",
   measurementId: "G-7Q5SH5YBPP"
 };
 
 // Initialize Firebase
-let app;
-let db;
-let auth;
-let storage;
-
-try {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  storage = getStorage(app);
-  
-  // 使用新的持久化配置初始化 Firestore
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache(
-      { tabManager: persistentMultipleTabManager() }
-    ),
-  });
-
-  // 監聽身份驗證狀態變化
-  auth.onAuthStateChanged(async (user) => {
-    if (user) {
-      console.log('User is signed in:', user.uid);
-      // 確保用戶文檔存在
-      const userRef = doc(db, 'users', user.uid);
-      try {
-        const userDoc = await getDoc(userRef);
-        if (!userDoc.exists()) {
-          await setDoc(userRef, {
-            email: user.email,
-            createdAt: new Date().toISOString(),
-            lastLogin: new Date().toISOString()
-          });
-          console.log('Created new user document');
-        } else {
-          await setDoc(userRef, {
-            lastLogin: new Date().toISOString()
-          }, { merge: true });
-          console.log('Updated user last login');
-        }
-      } catch (error) {
-        console.error('Error managing user document:', error);
-      }
-    } else {
-      console.log('User is signed out');
-    }
-  });
-  
-  // 如果需要使用Firebase本地模拟器（如果运行在开发环境中）
-  if (window.location.hostname === "localhost") {
-    try {
-      // 仅在开发环境中使用模拟器
-      // connectFirestoreEmulator(db, "localhost", 8080);
-      // connectAuthEmulator(auth, "http://localhost:9099");
-      console.log("Firebase emulators are available but not connected");
-    } catch (error) {
-      console.warn("Firebase emulators setup error:", error);
-    }
-  }
-
-  console.log('Firebase initialized successfully');
-} catch (error) {
-  console.error('Error initializing Firebase:', error);
-}
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
 // 確保用戶已登入
 const ensureAuth = () => {
@@ -107,21 +40,17 @@ const ensureAuth = () => {
   });
 };
 
-// 獲取用戶的收藏參考
-const getUserFavoritesRef = (userId) => {
-  return collection(db, 'users', userId, 'favorites');
-};
-
-// 獲取特定收藏商品的參考
+// 獲取收藏文檔參考
 const getFavoriteRef = (userId, productId) => {
-  return doc(db, 'users', userId, 'favorites', productId);
+  return doc(db, 'favorites', `${userId}_${productId}`);
 };
 
 // 檢查商品是否被收藏
 const checkIsFavorite = async (userId, productId) => {
   if (!userId || !productId) return false;
   try {
-    const favoriteDoc = await getDoc(getFavoriteRef(userId, productId));
+    const favoriteRef = getFavoriteRef(userId, productId);
+    const favoriteDoc = await getDoc(favoriteRef);
     return favoriteDoc.exists();
   } catch (error) {
     console.error('Error checking favorite status:', error);
@@ -129,25 +58,11 @@ const checkIsFavorite = async (userId, productId) => {
   }
 };
 
-// 初始化 Storage 的 CORS 設置
-const initializeStorage = async () => {
-  try {
-    // 在這裡可以添加其他 Storage 相關的初始化設置
-    console.log('Storage initialized successfully');
-  } catch (error) {
-    console.error('Error initializing storage:', error);
-  }
-};
-
-// 執行初始化
-initializeStorage();
-
 // 檢查 Firestore 連接
 const checkFirestoreConnection = async () => {
   try {
-    // Using v9 modular syntax instead of v8 syntax
     const testDocRef = doc(db, '_test_', '_test_');
-    const testDocSnap = await getDoc(testDocRef);
+    await getDoc(testDocRef);
     console.log('Firestore connection test successful');
     return true;
   } catch (error) {
@@ -162,7 +77,6 @@ export {
   storage, 
   ensureAuth, 
   checkFirestoreConnection,
-  getUserFavoritesRef,
   getFavoriteRef,
   checkIsFavorite 
 };
