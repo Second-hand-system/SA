@@ -195,43 +195,55 @@ const ProductDetail = () => {
   };
 
   const handleFavoriteClick = async () => {
+    console.log('handleFavoriteClick triggered');
     if (!auth.currentUser) {
+      console.log('No authenticated user');
       alert('請先登入');
       return;
     }
 
     if (isProcessing) {
+      console.log('Already processing a request');
       return;
     }
 
     try {
+      console.log('Starting favorite operation');
       setIsProcessing(true);
       const userId = auth.currentUser.uid;
+      console.log('Current user ID:', userId);
+      console.log('Current favorite status:', isFavorite);
       
       if (isFavorite) {
+        console.log('Attempting to remove from favorites');
         await removeFromFavorites(userId, productId);
+        console.log('Successfully removed from favorites');
         removeFavorite(productId);
         setIsFavorite(false);
-        alert('已取消收藏');
       } else {
+        console.log('Attempting to add to favorites');
         const productData = {
           title: product.title,
-          image: product.images?.[0] || product.image,
-          price: product.price
+          image: product.image,
+          price: product.price,
+          productId: productId
         };
+        console.log('Product data:', productData);
         await addToFavorites(userId, productId, productData);
+        console.log('Successfully added to favorites');
         addFavorite({
+          id: `${userId}_${productId}`,
           userId,
           productId,
           productData
         });
         setIsFavorite(true);
-        alert('已加入收藏');
       }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error('Error in handleFavoriteClick:', error);
       alert('操作失敗，請稍後再試');
     } finally {
+      console.log('Finishing favorite operation');
       setIsProcessing(false);
     }
   };
@@ -302,20 +314,22 @@ const ProductDetail = () => {
                   {isDeleting ? '刪除中...' : '刪除'}
                 </button>
               </>
-            ) : (
-              <button 
-                className={`favorite-btn ${isFavorite ? 'active' : ''}`}
-                onClick={handleFavoriteClick}
-                disabled={isProcessing}
-              >
-                <span className="heart-icon"></span>
-                {isProcessing ? '處理中...' : (isFavorite ? '已收藏' : '收藏')}
-              </button>
-            )}
+            ) : null}
           </div>
         </div>
         <div className="product-info">
-          <h1>{product.title}</h1>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h1>{product.title}</h1>
+            <button 
+              className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+              onClick={handleFavoriteClick}
+              disabled={isProcessing}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </button>
+          </div>
           <div className="product-price">NT$ {product.price}</div>
           
           <div className="sale-type-selector">

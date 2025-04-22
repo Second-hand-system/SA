@@ -96,51 +96,59 @@
 
 .product-actions {
   display: flex;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-  justify-content: flex-start;
-  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  width: 100%;
 }
 
 .contact-seller-btn,
 .edit-product-btn,
 .delete-product-btn {
-  flex: 1;
   padding: 0.75rem 1rem;
   border: none;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  font-weight: 500;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+  flex: 1;
   text-align: center;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 80px;
+  min-width: 120px;
 }
 
 .contact-seller-btn {
   background-color: #e2af4a;
   color: white;
+  width: 100%;
+  display: block;
+}
+
+.contact-seller-btn:hover {
+  background-color: #d19c35;
 }
 
 .edit-product-btn {
-  background-color: #4a90e2;
+  background-color: #2196F3;
   color: white;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.edit-product-btn:hover {
+  background-color: #1976D2;
 }
 
 .delete-product-btn {
-  background-color: #dc3545;
+  background-color: #f44336;
   color: white;
 }
 
-.contact-seller-btn:hover,
-.edit-product-btn:hover,
 .delete-product-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #d32f2f;
+}
+
+.delete-product-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 
 .back-home-link {
@@ -457,58 +465,63 @@
   justify-content: center;
   min-width: unset;
   margin-left: auto;
-}
-
-.favorite-btn:hover {
-  transform: none;
-  box-shadow: none;
-}
-
-/* 愛心圖標樣式 */
-.favorite-btn .heart-icon {
-  width: 16px;
-  height: 16px;
   position: relative;
-  transform: rotate(-45deg);
-  cursor: pointer;
-  margin-top: 4px;
+  transition: transform 0.3s ease;
 }
 
-.favorite-btn .heart-icon::before,
-.favorite-btn .heart-icon::after {
-  content: '';
-  width: 16px;
-  height: 16px;
+.favorite-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: #ccc;
+  transition: fill 0.3s ease, transform 0.3s ease;
+}
+
+.favorite-btn.active svg {
+  fill: #e2af4a;
+  animation: heartBeat 0.3s ease-in-out;
+}
+
+.favorite-btn:hover svg {
+  transform: scale(1.1);
+}
+
+@keyframes heartBeat {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Header favorite icon styles */
+.header-favorite-icon {
+  position: relative;
+}
+
+.header-favorite-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: #fff;
+}
+
+.favorite-count {
   position: absolute;
-  border-radius: 50%;
-  background-color: #666;
-  transition: background-color 0.3s;
-}
-
-.favorite-btn .heart-icon::before {
   top: -8px;
-  left: 0;
-}
-
-.favorite-btn .heart-icon::after {
-  top: 0;
-  left: 8px;
-}
-
-.favorite-btn .heart-icon {
-  background-color: #666;
-}
-
-.favorite-btn:hover .heart-icon,
-.favorite-btn:hover .heart-icon::before,
-.favorite-btn:hover .heart-icon::after {
+  right: -8px;
   background-color: #e2af4a;
-}
-
-.favorite-btn.active .heart-icon,
-.favorite-btn.active .heart-icon::before,
-.favorite-btn.active .heart-icon::after {
-  background-color: #e2af4a;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
 }
 
 /* 銷售類型選擇器 */

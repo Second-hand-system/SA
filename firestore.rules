@@ -12,11 +12,12 @@ service cloud.firestore {
     match /users/{userId} {
       allow create: if request.auth != null && request.auth.uid == userId;
       allow read, update, delete: if request.auth != null && request.auth.uid == userId;
-      
-      // 收藏夾規則
-      match /favorites/{favoriteId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
+    }
+    
+    // 收藏規則
+    match /favorites/{favoriteId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
     }
   }
 } 

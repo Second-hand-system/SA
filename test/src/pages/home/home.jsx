@@ -7,7 +7,9 @@ import { getFirestore, collection, getDocs, query, orderBy, limit, where, startA
 // 導入 React Router 的鏈接組件
 import { Link } from 'react-router-dom';
 // 導入 Firebase 應用實例
-import app from '../../firebase';
+import app, { checkIsFavorite, addToFavorites, removeFromFavorites } from '../../firebase';
+// 導入收藏上下文
+import { useFavorites } from '../../context/FavoritesContext';
 // 導入樣式文件
 import './home.css';
 
@@ -19,9 +21,11 @@ function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const productsPerPage = 6;
+  const [isProcessing, setIsProcessing] = useState(false);
   
   // Initialize Firestore
   const db = getFirestore(app);
+  const { addFavorite, removeFavorite } = useFavorites();
   
   // Search functionality
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,7 +52,7 @@ function Home() {
   const fetchProducts = async (page = 1, category = 'all') => {
     try {
       setLoading(true);
-      setError(null);  // 清除之前的錯誤
+      setError(null);
       
       console.log('開始獲取商品...');
       console.log('當前頁碼:', page);
@@ -57,7 +61,6 @@ function Home() {
       let productsRef = collection(db, 'products');
       let baseQuery;
       
-      // 根據類別篩選商品
       if (category !== 'all') {
         console.log('應用類別過濾:', category);
         baseQuery = query(
@@ -72,31 +75,27 @@ function Home() {
         );
       }
 
-      // 獲取所有商品以計算總頁數
-      console.log('正在獲取總商品數...');
       const allProductsSnapshot = await getDocs(baseQuery);
       const totalProducts = allProductsSnapshot.docs.length;
       console.log('總商品數:', totalProducts);
       setTotalPages(Math.ceil(totalProducts / productsPerPage));
 
-      // 如果是第一頁，直接獲取前 productsPerPage 個商品
+      let fetchedProducts = [];
+      
       if (page === 1) {
         const firstPageQuery = query(baseQuery, limit(productsPerPage));
         const querySnapshot = await getDocs(firstPageQuery);
-        const fetchedProducts = [];
         
-        querySnapshot.forEach((doc) => {
+        for (const doc of querySnapshot.docs) {
           const data = doc.data();
-          console.log('商品數據:', { id: doc.id, ...data });
+          const isFavorite = currentUser ? await checkIsFavorite(currentUser.uid, doc.id) : false;
           fetchedProducts.push({
             id: doc.id,
-            ...data
+            ...data,
+            isFavorite
           });
-        });
-
-        setProducts(fetchedProducts);
+        }
       } else {
-        // 對於後續頁面，先獲取前一頁的最後一個文檔
         const previousPageQuery = query(
           baseQuery,
           limit((page - 1) * productsPerPage)
@@ -105,7 +104,6 @@ function Home() {
         const lastVisible = previousPageSnapshot.docs[previousPageSnapshot.docs.length - 1];
         
         if (lastVisible) {
-          // 使用 startAfter 獲取下一頁的商品
           const nextPageQuery = query(
             baseQuery,
             startAfter(lastVisible),
@@ -113,28 +111,27 @@ function Home() {
           );
           
           const querySnapshot = await getDocs(nextPageQuery);
-          const fetchedProducts = [];
           
-          querySnapshot.forEach((doc) => {
+          for (const doc of querySnapshot.docs) {
             const data = doc.data();
-            console.log('商品數據:', { id: doc.id, ...data });
+            const isFavorite = currentUser ? await checkIsFavorite(currentUser.uid, doc.id) : false;
             fetchedProducts.push({
               id: doc.id,
-              ...data
+              ...data,
+              isFavorite
             });
-          });
-
-          setProducts(fetchedProducts);
+          }
         } else {
           setError('無法載入更多商品');
         }
       }
       
+      setProducts(fetchedProducts);
       setError(null);
     } catch (err) {
       console.error('獲取商品時發生錯誤:', err);
       setError(`載入商品時發生錯誤: ${err.message}`);
-      setProducts([]); // 清空商品列表
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -214,9 +211,56 @@ function Home() {
   const displayProducts = searchTerm ? searchResults : products;
 
   // 處理收藏的函數
-  const handleFavoriteClick = (productId) => {
-    // 實現收藏邏輯
-    console.log(`收藏商品: ${productId}`);
+  const handleFavoriteClick = async (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!currentUser) {
+      alert('請先登入');
+      return;
+    }
+
+    if (isProcessing) {
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const userId = currentUser.uid;
+      const isFavorite = await checkIsFavorite(userId, product.id);
+
+      if (isFavorite) {
+        await removeFromFavorites(userId, product.id);
+        removeFavorite(product.id);
+        alert('已取消收藏');
+      } else {
+        const productData = {
+          title: product.title,
+          image: product.image,
+          price: product.price
+        };
+        await addToFavorites(userId, product.id, productData);
+        addFavorite({
+          id: `${userId}_${product.id}`,
+          userId,
+          productId: product.id,
+          productData
+        });
+        alert('已加入收藏');
+      }
+
+      // 更新商品列表中的收藏狀態
+      setProducts(prevProducts =>
+        prevProducts.map(p =>
+          p.id === product.id ? { ...p, isFavorite: !isFavorite } : p
+        )
+      );
+    } catch (error) {
+      console.error('收藏操作失敗:', error);
+      alert('操作失敗，請稍後再試');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // 渲染組件
@@ -283,10 +327,7 @@ function Home() {
             <div key={product.id} className="item-card">
               <button
                 className={`favorite-button ${product.isFavorite ? 'active' : ''}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleFavoriteClick(product.id);
-                }}
+                onClick={(e) => handleFavoriteClick(e, product)}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>

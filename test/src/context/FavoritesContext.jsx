@@ -35,6 +35,7 @@ export const FavoritesProvider = ({ children }) => {
             id: doc.id,
             ...doc.data()
           }));
+          console.log('Loaded favorites:', favoritesData);
           setFavorites(favoritesData);
           setLoading(false);
         }, (error) => {
@@ -49,13 +50,21 @@ export const FavoritesProvider = ({ children }) => {
 
     loadFavorites();
     return () => unsubscribe();
-  }, []);
+  }, [auth.currentUser]);
 
   const addFavorite = (favorite) => {
-    setFavorites(prev => [...prev, favorite]);
+    console.log('Adding favorite:', favorite);
+    setFavorites(prev => {
+      const exists = prev.some(f => f.id === favorite.id);
+      if (exists) {
+        return prev;
+      }
+      return [...prev, favorite];
+    });
   };
 
   const removeFavorite = (productId) => {
+    console.log('Removing favorite:', productId);
     setFavorites(prev => prev.filter(fav => fav.productId !== productId));
   };
 
