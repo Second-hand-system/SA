@@ -11,6 +11,7 @@ import ProductDetail from './pages/product/ProductDetail'
 import EditProduct from './pages/product/edit/EditProduct'
 import Favorites from './pages/favorites/Favorites'
 import AuthProvider from './context/AuthContext'
+import { FavoritesProvider } from './context/FavoritesContext'
 import { useAuth } from './context/AuthContext'
 import { checkFirestoreConnection, auth } from './firebase'
 
@@ -93,42 +94,44 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          } />
-          <Route path="/sell" element={
-            <ProtectedRoute>
-              <Sell />
-            </ProtectedRoute>
-          } />
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          } />
-          <Route path="/favorites" element={
-            <ProtectedRoute>
-              <Favorites />
-            </ProtectedRoute>
-          } />
-          <Route path="/product/:productId" element={
-            <ProtectedRoute>
-              <ProductDetail />
-            </ProtectedRoute>
-          } />
-          <Route path="/product/edit/:productId" element={
-            <ProtectedRoute>
-              <EditProduct />
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </Router>
+      <FavoritesProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            } />
+            <Route path="/sell" element={
+              <ProtectedRoute>
+                <Sell />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/favorites" element={
+              <ProtectedRoute>
+                <Favorites />
+              </ProtectedRoute>
+            } />
+            <Route path="/product/:productId" element={
+              <ProtectedRoute>
+                <ProductDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/product/edit/:productId" element={
+              <ProtectedRoute>
+                <EditProduct />
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </Router>
+      </FavoritesProvider>
     </AuthProvider>
   )
 }

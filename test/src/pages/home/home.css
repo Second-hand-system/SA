@@ -1,12 +1,12 @@
 /* 主容器樣式 */
 .home-container {
-  max-width: 100%;    /* 最大寬度 */
-  margin: 0 auto;     /* 自動居中 */
-  font-family: 'Noto Sans TC', sans-serif; /* 字體 */
-  color: #333;        /* 文字顏色 */
-  padding-top: 64px;  /* 頂部內邊距（為 header 預留空間） */
-  min-height: 100vh;  /* 最小高度 */
-  overflow-y: auto;   /* 垂直滾動 */
+  width: 100%;
+  margin: 0;
+  font-family: 'Noto Sans TC', sans-serif;
+  color: #333;
+  padding-top: 64px;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* 用戶歡迎區域樣式 */
@@ -22,33 +22,50 @@
   font-size: 1.1rem;  /* 字體大小 */
 }
 
-/* 上架商品按鈕樣式 */
-.sell-button {
-  background-color: #e2af4a; /* 背景顏色 */
-  color: white;       /* 文字顏色 */
-  padding: 8px 20px;  /* 內邊距 */
-  border-radius: 20px; /* 圓角 */
-  text-decoration: none; /* 無下劃線 */
-  font-size: 0.9rem;  /* 字體大小 */
-  transition: background-color 0.3s; /* 過渡效果 */
+/* 通用連結樣式 */
+a {
+  text-decoration: none !important;
 }
 
-/* 上架商品按鈕懸停效果 */
+a:hover {
+  text-decoration: none !important;
+}
+
+/* 上架商品按鈕樣式 */
+.sell-button {
+  background-color: #e2af4a;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 20px;
+  text-decoration: none !important;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+}
+
 .sell-button:hover {
-  background-color: #357abd; /* 懸停時的背景顏色 */
+  background-color: #357abd;
+  text-decoration: none !important;
 }
 
 /* 英雄區域樣式 */
 .hero-section {
-  background: linear-gradient(rgba(225, 203, 188, 0.8), rgba(147, 122, 71, 0.9)), url('https://dorm.fju.edu.tw/dormstu/img/pbg.jpg'); /* 漸變背景和背景圖片 */
-  background-size: cover; /* 背景圖片大小 */
-  background-position: center; /* 背景圖片位置 */
-  color: white;       /* 文字顏色 */
-  padding: 60px 20px; /* 內邊距 */
-  text-align: center; /* 文字居中 */
-  margin-bottom: 40px; /* 底部外邊距 */
-  position: relative; /* 相對定位 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* 陰影 */
+  background: linear-gradient(rgba(225, 203, 188, 0.8), rgba(147, 122, 71, 0.9)), url('https://dorm.fju.edu.tw/dormstu/img/pbg.jpg');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  padding: 80px 20px;
+  text-align: center;
+  margin-bottom: 40px;
+  position: relative;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 英雄內容容器 */
+.hero-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 /* 英雄區域標題樣式 */
@@ -206,33 +223,39 @@
 
 /* 商品網格容器樣式 */
 .items-container {
-  display: grid;      /* 網格布局 */
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* 網格列 */
-  gap: 25px;         /* 網格間距 */
-  margin-top: 30px;  /* 頂部外邊距 */
-  max-width: 1200px; /* 最大寬度 */
-  margin-left: auto; /* 左側自動外邊距 */
-  margin-right: auto; /* 右側自動外邊距 */
-  justify-content: center; /* 水平居中 */
-  padding: 0 20px;   /* 左右內邊距 */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+  margin: 30px auto;
+  max-width: 1200px;
+  padding: 0 20px;
 }
 
 /* 商品卡片樣式 */
 .item-card {
-  background-color: white; /* 背景顏色 */
-  border-radius: 12px;    /* 圓角 */
-  overflow: hidden;       /* 隱藏溢出 */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* 陰影 */
-  transition: transform 0.3s, box-shadow 0.3s; /* 過渡效果 */
-  cursor: pointer;        /* 鼠標指針 */
-  text-decoration: none; /* 無下劃線 */
-  color: inherit;        /* 繼承文字顏色 */
+  background-color: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+  text-decoration: none !important;
+  color: inherit;
 }
 
-/* 商品卡片懸停效果 */
 .item-card:hover {
-  transform: translateY(-5px); /* 向上移動 */
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); /* 陰影 */
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  text-decoration: none !important;
+}
+
+/* 商品卡片內部所有連結樣式 */
+.item-card * {
+  text-decoration: none !important;
+}
+
+.item-card *:hover {
+  text-decoration: none !important;
 }
 
 /* 商品圖片容器樣式 */
@@ -355,8 +378,8 @@
 
 /* 頁腳鏈接懸停效果 */
 .home-footer a:hover {
-  text-decoration: underline; /* 下劃線 */
-  color: #357abd;    /* 文字顏色 */
+  text-decoration: none;
+  color: #357abd;
 }
 
 /* 錯誤信息樣式 */
@@ -409,4 +432,20 @@
   .search-bar button {
     border-radius: 25px; /* 圓角 */
   }
+}
+
+/* 個人資料連結樣式 */
+.nav-link {
+  color: #333;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+  background-color: #e2af4a;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(226, 175, 74, 0.3);
 } 

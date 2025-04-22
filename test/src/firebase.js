@@ -10,10 +10,11 @@ import {
   query,
   where,
   getDocs,
-  serverTimestamp
+  serverTimestamp,
+  connectFirestoreEmulator
 } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { getStorage } from "firebase/storage";
+import { getAuth, onAuthStateChanged, connectAuthEmulator } from "firebase/auth";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -27,34 +28,104 @@ const firebaseConfig = {
   measurementId: "G-7Q5SH5YBPP"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+let app;
+let auth;
+let db;
+let storage;
+
+try {
+  console.log('Initializing Firebase with config:', { ...firebaseConfig, apiKey: '***' });
+  
+  // Initialize Firebase
+  app = initializeApp(firebaseConfig);
+  console.log('Firebase app initialized successfully');
+
+  // Initialize Auth
+  auth = getAuth(app);
+  console.log('Firebase Auth initialized successfully');
+
+  // Initialize Firestore
+  db = getFirestore(app);
+  console.log('Firestore initialized successfully');
+
+  // Initialize Storage
+  storage = getStorage(app);
+  console.log('Firebase Storage initialized successfully');
+
+  // Add auth state change listener
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      console.log('User is signed in:', user.uid);
+    } else {
+      console.log('No user is signed in');
+    }
+  });
+
+} catch (error) {
+  console.error('Error initializing Firebase:', error);
+  throw error;
+}
 
 // 檢查 Firestore 連接
 export const checkFirestoreConnection = async () => {
   try {
-    const testDoc = await getDoc(doc(db, 'test', 'test'));
-    console.log('Firestore connection test:', testDoc ? 'success' : 'failed');
+    console.log('Testing Firestore connection...');
+    
+    // 等待用戶認證
+    if (!auth.currentUser) {
+      console.log('Waiting for authentication...');
+      return new Promise((resolve) => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+          unsubscribe();
+          if (user) {
+            console.log('User authenticated:', user.uid);
+            resolve(true);
+          } else {
+            console.log('No user authenticated');
+            resolve(false);
+          }
+        });
+      });
+    }
+
+    // 嘗試讀取或創建測試文檔
+    const testCollectionRef = collection(db, 'test_collection');
+    const testDocRef = doc(testCollectionRef, 'test_document');
+    
+    await setDoc(testDocRef, {
+      timestamp: serverTimestamp(),
+      userId: auth.currentUser.uid
+    });
+
+    console.log('Test document created successfully');
     return true;
   } catch (error) {
-    console.error('Firestore connection error:', error);
+    console.error('Firestore connection test failed:', error);
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
     return false;
   }
 };
 
 // 確保用戶已登入
-const ensureAuth = () => {
+export const ensureAuth = () => {
   return new Promise((resolve, reject) => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    if (auth.currentUser) {
+      console.log('User already authenticated:', auth.currentUser.uid);
+      resolve(auth.currentUser);
+      return;
+    }
+
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       unsubscribe();
       if (user) {
-        console.log('User is authenticated:', user.uid);
+        console.log('User authenticated:', user.uid);
         resolve(user);
       } else {
-        console.log('No user authenticated');
+        console.log('Authentication failed: No user found');
         reject(new Error('請先登入'));
       }
     });
@@ -67,72 +138,75 @@ export const getFavoritesCollection = () => {
 };
 
 export const getFavoriteRef = (userId, productId) => {
+  if (!userId || !productId) {
+    console.error('Invalid parameters for getFavoriteRef:', { userId, productId });
+    throw new Error('userId and productId are required');
+  }
   return doc(db, 'favorites', `${userId}_${productId}`);
 };
 
 export const addToFavorites = async (userId, productId, productData) => {
   try {
+    console.log('Adding to favorites:', { userId, productId, productData });
     const favoriteRef = getFavoriteRef(userId, productId);
     await setDoc(favoriteRef, {
       userId,
       productId,
       productData,
-      createdAt: new Date()
+      createdAt: serverTimestamp()
     });
+    console.log('Successfully added to favorites');
     return true;
   } catch (error) {
-    console.error('Error adding favorite:', error);
+    console.error('Error adding to favorites:', error);
     throw error;
   }
 };
 
 export const removeFromFavorites = async (userId, productId) => {
   try {
+    console.log('Removing from favorites:', { userId, productId });
     const favoriteRef = getFavoriteRef(userId, productId);
     await deleteDoc(favoriteRef);
+    console.log('Successfully removed from favorites');
     return true;
   } catch (error) {
-    console.error('Error removing favorite:', error);
+    console.error('Error removing from favorites:', error);
     throw error;
   }
 };
 
 export const checkIsFavorite = async (userId, productId) => {
   try {
+    console.log('Checking favorite status:', { userId, productId });
     const favoriteRef = getFavoriteRef(userId, productId);
     const docSnap = await getDoc(favoriteRef);
-    return docSnap.exists();
+    const exists = docSnap.exists();
+    console.log('Favorite status:', exists);
+    return exists;
   } catch (error) {
-    console.error('Error checking favorite:', error);
+    console.error('Error checking favorite status:', error);
     return false;
   }
 };
 
-// 獲取用戶的所有收藏
 export const getUserFavorites = async (userId) => {
   try {
+    console.log('Getting user favorites for:', userId);
     const favoritesRef = collection(db, 'favorites');
     const q = query(favoritesRef, where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
+    const favorites = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+    console.log('Retrieved favorites count:', favorites.length);
+    return favorites;
   } catch (error) {
     console.error('Error getting user favorites:', error);
     return [];
   }
 };
 
-export { 
-  app,
-  db, 
-  auth, 
-  storage, 
-  ensureAuth, 
-  checkFirestoreConnection,
-  setDoc,
-  deleteDoc
-};
-
+export { app, auth, db, storage };
 export default app;
