@@ -308,7 +308,7 @@ const ProductDetail = () => {
             </button>
             {auth.currentUser && product.sellerId === auth.currentUser.uid && (
               <>
-                <Link to={`/edit/${productId}`} className="edit-product-btn">
+                <Link to={`/product/edit/${productId}`} className="edit-product-btn">
                   編輯
                 </Link>
                 <button 

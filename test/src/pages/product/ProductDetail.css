@@ -99,10 +99,10 @@
   gap: 0.5rem;
   padding: 0.5rem 0;
   justify-content: space-between;
+  align-items: center;
 }
 
 .contact-seller-btn,
-.favorite-btn,
 .edit-product-btn,
 .delete-product-btn {
   flex: 1;
@@ -126,12 +126,6 @@
   color: white;
 }
 
-.favorite-btn {
-  background-color: #f8f9fa;
-  color: #333;
-  border: 1px solid #ddd;
-}
-
 .edit-product-btn {
   background-color: #4a90e2;
   color: white;
@@ -143,7 +137,6 @@
 }
 
 .contact-seller-btn:hover,
-.favorite-btn:hover,
 .edit-product-btn:hover,
 .delete-product-btn:hover {
   transform: translateY(-2px);
@@ -244,8 +237,8 @@
   }
 
   .contact-seller-btn,
-  .favorite-btn,
-  .edit-product-btn {
+  .edit-product-btn,
+  .delete-product-btn {
     width: 100%;
   }
 }
@@ -457,52 +450,65 @@
 .favorite-btn {
   background: none;
   border: none;
-  padding: 0.5rem;
+  padding: 8px;
   cursor: pointer;
-  position: relative;
-  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: unset;
+  flex: 0;
 }
 
 .favorite-btn:hover {
-  transform: scale(1.1);
+  transform: none;
+  box-shadow: none;
 }
 
+/* 愛心圖標樣式 */
 .favorite-btn .heart-icon {
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
   position: relative;
-  display: inline-block;
-  transition: all 0.3s ease;
+  transform: rotate(-45deg);
+  cursor: pointer;
+  margin-top: 4px;
 }
 
 .favorite-btn .heart-icon::before,
 .favorite-btn .heart-icon::after {
   content: '';
+  width: 16px;
+  height: 16px;
   position: absolute;
-  width: 12px;
-  height: 20px;
-  border-radius: 12px 12px 0 0;
-  background-color: #ccc;
-  left: 12px;
-  transform-origin: 0 100%;
-  transition: background-color 0.3s ease;
+  border-radius: 50%;
+  background-color: #666;
+  transition: background-color 0.3s;
 }
 
 .favorite-btn .heart-icon::before {
-  transform: rotate(-45deg);
+  top: -8px;
+  left: 0;
 }
 
 .favorite-btn .heart-icon::after {
-  transform: rotate(45deg);
+  top: 0;
+  left: 8px;
 }
 
 .favorite-btn .heart-icon {
-  transform: translateX(-6px);
+  background-color: #666;
 }
 
+.favorite-btn:hover .heart-icon,
+.favorite-btn:hover .heart-icon::before,
+.favorite-btn:hover .heart-icon::after {
+  background-color: #e2af4a;
+}
+
+.favorite-btn.active .heart-icon,
 .favorite-btn.active .heart-icon::before,
 .favorite-btn.active .heart-icon::after {
-  background-color: #ff4b4b;
+  background-color: #e2af4a;
 }
 
 /* 銷售類型選擇器 */
