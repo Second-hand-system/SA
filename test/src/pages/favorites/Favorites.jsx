@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getFirestore, collection, query, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, query, getDocs, where } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import app from '../../firebase';
 import './Favorites.css';
@@ -18,8 +18,9 @@ const Favorites = () => {
 
       try {
         setLoading(true);
-        const favoritesRef = collection(db, 'users', auth.currentUser.uid, 'favorites');
-        const favoritesSnapshot = await getDocs(favoritesRef);
+        const favoritesRef = collection(db, 'favorites');
+        const q = query(favoritesRef, where('userId', '==', auth.currentUser.uid));
+        const favoritesSnapshot = await getDocs(q);
         
         const favoritesData = favoritesSnapshot.docs.map(doc => ({
           id: doc.id,
@@ -27,7 +28,7 @@ const Favorites = () => {
         }));
 
         // 按添加時間排序
-        favoritesData.sort((a, b) => b.addedAt?.toDate() - a.addedAt?.toDate());
+        favoritesData.sort((a, b) => b.createdAt?.toDate() - a.createdAt?.toDate());
         
         setFavorites(favoritesData);
       } catch (error) {
@@ -61,18 +62,14 @@ const Favorites = () => {
         </div>
       ) : (
         <div className="favorites-grid">
-          {favorites.map(product => (
-            <Link to={`/product/${product.id}`} key={product.id} className="favorite-card">
+          {favorites.map(favorite => (
+            <Link to={`/product/${favorite.productId}`} key={favorite.id} className="favorite-card">
               <div className="favorite-image">
-                <img src={product.image || 'https://via.placeholder.com/300x200?text=無圖片'} alt={product.title} />
+                <img src={favorite.productData.image || 'https://via.placeholder.com/300x200?text=無圖片'} alt={favorite.productData.title} />
               </div>
               <div className="favorite-details">
-                <h3>{product.title}</h3>
-                <p className="favorite-price">NT$ {product.price}</p>
-                <div className="favorite-meta">
-                  <span className="favorite-condition">{product.condition}</span>
-                  <span>賣家：{product.sellerName}</span>
-                </div>
+                <h3>{favorite.productData.title}</h3>
+                <p className="favorite-price">NT$ {favorite.productData.price}</p>
               </div>
             </Link>
           ))}

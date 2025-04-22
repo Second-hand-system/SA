@@ -7,30 +7,22 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // 檢查用戶是否是文檔擁有者
+    // 檢查是否為文檔擁有者
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // 檢查收藏文檔 ID 是否符合格式
-    function isValidFavoriteId(favoriteId) {
-      return favoriteId.matches(request.auth.uid + '_.*');
+      return request.auth != null && request.auth.uid == userId;
     }
 
     // 產品集合規則
     match /products/{productId} {
       allow read: if true;
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && 
-        resource.data.sellerId == request.auth.uid;
+      allow write: if isAuthenticated();
     }
 
     // 收藏集合規則
     match /favorites/{favoriteId} {
-      allow create: if isAuthenticated() && 
-        request.resource.data.userId == request.auth.uid;
-      allow read, delete: if isAuthenticated() && 
-        (resource == null || resource.data.userId == request.auth.uid);
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
     // 用戶集合規則

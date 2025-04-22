@@ -213,7 +213,6 @@ const ProductDetail = () => {
     }
 
     try {
-      console.log('Current user:', auth.currentUser.uid);
       const favoriteId = `${auth.currentUser.uid}_${productId}`;
       console.log('Toggling favorite with ID:', favoriteId);
       const favoriteRef = doc(db, 'favorites', favoriteId);
@@ -228,9 +227,11 @@ const ProductDetail = () => {
           userId: auth.currentUser.uid,
           productId: productId,
           createdAt: serverTimestamp(),
-          productTitle: product.title,
-          productImage: product.image,
-          productPrice: product.price
+          productData: {
+            title: product.title,
+            image: product.image,
+            price: product.price
+          }
         };
         console.log('Creating favorite document:', favoriteData);
         await setDoc(favoriteRef, favoriteData);
@@ -240,12 +241,13 @@ const ProductDetail = () => {
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      if (error.code === 'permission-denied') {
-        console.log('Permission denied. User auth state:', !!auth.currentUser);
-        alert('權限不足，請確保您已登入');
-      } else {
-        alert('操作失敗，請稍後再試');
-      }
+      console.log('Error details:', {
+        code: error.code,
+        message: error.message,
+        authState: !!auth.currentUser,
+        userId: auth.currentUser?.uid
+      });
+      alert('操作失敗，請稍後再試');
     }
   };
 
