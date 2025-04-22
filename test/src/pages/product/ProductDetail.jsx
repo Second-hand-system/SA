@@ -104,46 +104,18 @@ const ProductDetail = () => {
 
       try {
         const userId = auth.currentUser.uid;
-        // 先檢查用戶是否已登入並獲取到 UID
-        console.log('Current user:', auth.currentUser.email, 'UID:', userId);
-        
-        // 檢查用戶文檔
-        const userRef = doc(db, 'users', userId);
-        const userDoc = await getDoc(userRef);
-
-        if (!userDoc.exists()) {
-          // 如果用戶文檔不存在，創建它
-          console.log('Creating user document for:', userId);
-          await setDoc(userRef, {
-            email: auth.currentUser.email,
-            createdAt: serverTimestamp(),
-            lastUpdated: serverTimestamp(),
-            favorites: {} // 添加一個空的收藏對象
-          });
-        }
-
-        // 檢查收藏狀態
-        const favoriteRef = doc(userRef, 'favorites', productId);
+        const favoriteId = `${userId}_${productId}`;
+        const favoriteRef = doc(db, 'favorites', favoriteId);
         const favoriteDoc = await getDoc(favoriteRef);
         setIsFavorite(favoriteDoc.exists());
-        console.log('Favorite status:', favoriteDoc.exists());
       } catch (error) {
         console.error('Error checking favorite status:', error);
         setIsFavorite(false);
       }
     };
 
-    // 確保用戶已登入後再檢查收藏狀態
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        checkIfFavorite();
-      } else {
-        setIsFavorite(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [auth, productId, db]);
+    checkIfFavorite();
+  }, [auth.currentUser, productId, db]);
 
   const handleUpdateStatus = async (newStatus) => {
     if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
@@ -222,28 +194,29 @@ const ProductDetail = () => {
 
     try {
       const userId = auth.currentUser.uid;
-      const userRef = doc(db, 'users', userId);
-      const favoriteRef = doc(userRef, 'favorites', productId);
+      const favoriteId = `${userId}_${productId}`;
+      const favoriteRef = doc(db, 'favorites', favoriteId);
 
       if (isFavorite) {
         await deleteDoc(favoriteRef);
         setIsFavorite(false);
       } else {
-        await setDoc(favoriteRef, {
-          productId,
-          addedAt: serverTimestamp(),
-          productData: {
-            title: product.title,
-            price: product.price,
-            image: product.image,
-            status: product.status
-          }
-        });
+        const favoriteData = {
+          userId: userId,
+          productId: productId,
+          title: product.title,
+          price: product.price,
+          image: product.image,
+          condition: product.condition,
+          sellerName: product.sellerName,
+          addedAt: serverTimestamp()
+        };
+        await setDoc(favoriteRef, favoriteData);
         setIsFavorite(true);
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      alert('操作收藏時發生錯誤');
+      alert('收藏操作失敗，請稍後再試');
     }
   };
 
@@ -300,13 +273,7 @@ const ProductDetail = () => {
             <button className="contact-seller-btn">
               聯絡賣家
             </button>
-            <button 
-              className={`favorite-btn ${isFavorite ? 'active' : ''}`}
-              onClick={handleFavoriteClick}
-            >
-              <span className="heart-icon"></span>
-            </button>
-            {auth.currentUser && product.sellerId === auth.currentUser.uid && (
+            {auth.currentUser && product.sellerId === auth.currentUser.uid ? (
               <>
                 <Link to={`/product/edit/${productId}`} className="edit-product-btn">
                   編輯
@@ -318,7 +285,20 @@ const ProductDetail = () => {
                 >
                   {isDeleting ? '刪除中...' : '刪除'}
                 </button>
+                <button 
+                  className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+                  onClick={handleFavoriteClick}
+                >
+                  <span className="heart-icon"></span>
+                </button>
               </>
+            ) : (
+              <button 
+                className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+                onClick={handleFavoriteClick}
+              >
+                <span className="heart-icon"></span>
+              </button>
             )}
           </div>
         </div>

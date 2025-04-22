@@ -34,8 +34,9 @@ function Sell() {
     price: '',
     description: '',
     condition: '全新',
-    category: '書籍教材',
+    category: 'books',
     location: '',
+    tradeMode: '先搶先贏'
   });
 
   // 使用 useEffect 檢查用戶登入狀態
@@ -125,20 +126,31 @@ function Sell() {
       return;
     }
 
+    if (!formData.category) {
+      setError('請選擇商品分類');
+      return;
+    }
+
+    if (!formData.location.trim()) {
+      setError('請輸入交易地點');
+      return;
+    }
+
     // 設置加載狀態
     setLoading(true);
     setError('');
     setSuccess('');
 
     try {
+      console.log('開始上傳商品...');
       // 準備要上傳的商品數據
       const productData = {
-        title: formData.title,
+        title: formData.title.trim(),
         price: Number(formData.price),
-        description: formData.description,
+        description: formData.description.trim(),
         category: formData.category,
         condition: formData.condition,
-        location: formData.location,
+        location: formData.location.trim(),
         image: imageFile,
         sellerName: currentUser.displayName || '未知賣家',
         sellerEmail: currentUser.email,
@@ -148,10 +160,11 @@ function Sell() {
         tradeMode: formData.tradeMode
       };
 
-      console.log('準備上傳商品資料:', productData);
+      console.log('準備上傳商品資料:', { ...productData, image: '圖片數據已省略' });
 
       // 將商品數據添加到 Firestore
-      const docRef = await addDoc(collection(db, 'products'), productData);
+      const productsRef = collection(db, 'products');
+      const docRef = await addDoc(productsRef, productData);
       console.log('商品上傳成功，ID:', docRef.id);
       
       setSuccess('商品上架成功！');
@@ -164,6 +177,13 @@ function Sell() {
     } catch (err) {
       console.error('上架商品錯誤:', err);
       setError(err.message || '上架商品時發生錯誤，請稍後再試');
+      // 顯示更詳細的錯誤信息
+      if (err.code) {
+        console.error('錯誤代碼:', err.code);
+      }
+      if (err.details) {
+        console.error('錯誤詳情:', err.details);
+      }
     } finally {
       setLoading(false);
     }

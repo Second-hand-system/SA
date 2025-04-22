@@ -11,6 +11,7 @@ import {
   setDoc 
 } from "firebase/firestore";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -28,10 +29,12 @@ export const firebaseConfig = {
 let app;
 let db;
 let auth;
+let storage;
 
 try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
+  storage = getStorage(app);
   
   // 使用新的持久化配置初始化 Firestore
   db = initializeFirestore(app, {
@@ -41,17 +44,29 @@ try {
   });
 
   // 監聽身份驗證狀態變化
-  auth.onAuthStateChanged((user) => {
+  auth.onAuthStateChanged(async (user) => {
     if (user) {
       console.log('User is signed in:', user.uid);
       // 確保用戶文檔存在
       const userRef = doc(db, 'users', user.uid);
-      setDoc(userRef, {
-        email: user.email,
-        lastLogin: new Date().toISOString()
-      }, { merge: true }).catch(error => {
-        console.error('Error updating user document:', error);
-      });
+      try {
+        const userDoc = await getDoc(userRef);
+        if (!userDoc.exists()) {
+          await setDoc(userRef, {
+            email: user.email,
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+          });
+          console.log('Created new user document');
+        } else {
+          await setDoc(userRef, {
+            lastLogin: new Date().toISOString()
+          }, { merge: true });
+          console.log('Updated user last login');
+        }
+      } catch (error) {
+        console.error('Error managing user document:', error);
+      }
     } else {
       console.log('User is signed out');
     }
@@ -144,6 +159,7 @@ const checkFirestoreConnection = async () => {
 export { 
   db, 
   auth, 
+  storage, 
   ensureAuth, 
   checkFirestoreConnection,
   getUserFavoritesRef,

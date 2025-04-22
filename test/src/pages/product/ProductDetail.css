@@ -98,7 +98,7 @@
   display: flex;
   gap: 0.5rem;
   padding: 0.5rem 0;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
 }
 
@@ -456,7 +456,7 @@
   align-items: center;
   justify-content: center;
   min-width: unset;
-  flex: 0;
+  margin-left: auto;
 }
 
 .favorite-btn:hover {
