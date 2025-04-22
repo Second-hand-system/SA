@@ -213,6 +213,12 @@ function Home() {
   // 決定要顯示的商品列表
   const displayProducts = searchTerm ? searchResults : products;
 
+  // 處理收藏的函數
+  const handleFavoriteClick = (productId) => {
+    // 實現收藏邏輯
+    console.log(`收藏商品: ${productId}`);
+  };
+
   // 渲染組件
   return (
     <div className="home-container">
@@ -274,20 +280,33 @@ function Home() {
         <h2>{categories.find(c => c.id === selectedCategory)?.name || '全部商品'}</h2>
           <div className="items-container">
           {displayProducts.map((product) => (
-            <Link to={`/product/${product.id}`} key={product.id} className="item-card">
-                  <div className="item-image">
-                <img src={product.image} alt={product.title} />
-                  </div>
-                  <div className="item-details">
-                <h3>{product.title}</h3>
-                <p className="item-price">NT$ {product.price}</p>
-                    <div className="item-meta">
-                  <span className="item-condition">{product.condition}</span>
-                  <span className="item-category">{getCategoryName(product.category)}</span>
-                  <span>賣家：{product.sellerName}</span>
+            <div key={product.id} className="item-card">
+              <button
+                className={`favorite-button ${product.isFavorite ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleFavoriteClick(product.id);
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </button>
+              <Link to={`/product/${product.id}`} className="item-link">
+                <div className="item-image">
+                  <img src={product.image} alt={product.title} />
                 </div>
-              </div>
-            </Link>
+                <div className="item-details">
+                  <h3>{product.title}</h3>
+                  <p className="item-price">NT$ {product.price}</p>
+                  <div className="item-meta">
+                    <span className="item-condition">{product.condition}</span>
+                    <span className="item-category">{getCategoryName(product.category)}</span>
+                    <span>賣家：{product.sellerName}</span>
+                  </div>
+                </div>
+              </Link>
+            </div>
           ))}
         </div>
 
