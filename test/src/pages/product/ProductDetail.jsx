@@ -235,7 +235,7 @@ const ProductDetail = () => {
           productData: {
             title: product.title,
             price: product.price,
-            imageUrl: product.imageUrl,
+            image: product.image,
             status: product.status
           }
         });
@@ -293,7 +293,7 @@ const ProductDetail = () => {
     <div className="product-detail-container">
       <div className="product-detail-content">
         <div className="product-image">
-          <img src={product.imageUrl} alt={product.title} />
+          <img src={product.image} alt={product.title} />
         </div>
         <div className="product-info">
           <h1>{product.title}</h1>
