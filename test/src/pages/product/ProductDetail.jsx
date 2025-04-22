@@ -292,8 +292,35 @@ const ProductDetail = () => {
   return (
     <div className="product-detail-container">
       <div className="product-detail-content">
-        <div className="product-image">
-          <img src={product.image} alt={product.title} />
+        <div className="product-image-section">
+          <div className="product-image">
+            <img src={product.image} alt={product.title} />
+          </div>
+          <div className="product-actions">
+            <button className="contact-seller-btn">
+              聯絡賣家
+            </button>
+            <button 
+              className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+              onClick={handleFavoriteClick}
+            >
+              <span className="heart-icon"></span>
+            </button>
+            {auth.currentUser && product.sellerId === auth.currentUser.uid && (
+              <>
+                <Link to={`/edit/${productId}`} className="edit-product-btn">
+                  編輯
+                </Link>
+                <button 
+                  className="delete-product-btn"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? '刪除中...' : '刪除'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
         <div className="product-info">
           <h1>{product.title}</h1>
@@ -397,32 +424,6 @@ const ProductDetail = () => {
               <li><strong>上架時間:</strong> {product.createdAt}</li>
               <li><strong>賣家:</strong> {product.sellerName}</li>
             </ul>
-          </div>
-
-          <div className="product-actions">
-            <button className="contact-seller-btn">
-              聯絡賣家
-            </button>
-            <button 
-              className={`favorite-btn ${isFavorite ? 'active' : ''}`}
-              onClick={handleFavoriteClick}
-            >
-              <span className="heart-icon"></span>
-            </button>
-            {auth.currentUser && product.sellerId === auth.currentUser.uid && (
-              <>
-                <Link to={`/edit/${productId}`} className="edit-product-btn">
-                  編輯
-                </Link>
-                <button 
-                  className="delete-product-btn"
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? '刪除中...' : '刪除'}
-                </button>
-              </>
-            )}
           </div>
         </div>
       </div>
