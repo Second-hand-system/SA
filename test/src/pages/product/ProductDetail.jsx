@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import app, { getFavoriteRef } from '../../firebase';
+import app, { getFavoriteRef, checkIsFavorite } from '../../firebase';
 import './ProductDetail.css';
 
 const ProductDetail = () => {
@@ -11,6 +11,7 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const db = getFirestore(app);
   const auth = getAuth(app);
   const navigate = useNavigate();
@@ -96,46 +97,30 @@ const ProductDetail = () => {
 
   // 檢查商品是否已收藏
   useEffect(() => {
-    const checkIfFavorite = async () => {
+    const checkFavoriteStatus = async () => {
       if (!auth.currentUser || !productId) {
         setIsFavorite(false);
         return;
       }
 
       try {
-        console.log('Current user:', auth.currentUser.uid);
-        const favoriteId = `${auth.currentUser.uid}_${productId}`;
-        console.log('Checking favorite with ID:', favoriteId);
-        const favoriteRef = doc(db, 'favorites', favoriteId);
-        const favoriteDoc = await getDoc(favoriteRef);
-        console.log('Favorite document exists:', favoriteDoc.exists());
-        setIsFavorite(favoriteDoc.exists());
+        console.log('Checking favorite status for:', {
+          userId: auth.currentUser.uid,
+          productId: productId
+        });
+        const isFav = await checkIsFavorite(auth.currentUser.uid, productId);
+        console.log('Favorite status:', isFav);
+        setIsFavorite(isFav);
       } catch (error) {
         console.error('Error checking favorite status:', error);
-        if (error.code === 'permission-denied') {
-          console.log('Permission denied. User auth state:', !!auth.currentUser);
-        }
         setIsFavorite(false);
       }
     };
 
     if (auth.currentUser) {
-      checkIfFavorite();
-    } else {
-      setIsFavorite(false);
+      checkFavoriteStatus();
     }
-
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      console.log('Auth state changed. User:', user?.uid);
-      if (user) {
-        checkIfFavorite();
-      } else {
-        setIsFavorite(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [auth, productId, db]);
+  }, [auth.currentUser, productId]);
 
   const handleUpdateStatus = async (newStatus) => {
     if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
@@ -212,42 +197,52 @@ const ProductDetail = () => {
       return;
     }
 
+    if (isProcessing) {
+      return;
+    }
+
     try {
-      const favoriteId = `${auth.currentUser.uid}_${productId}`;
-      console.log('Toggling favorite with ID:', favoriteId);
-      const favoriteRef = doc(db, 'favorites', favoriteId);
+      setIsProcessing(true);
+      console.log('Current user:', auth.currentUser.uid);
+      console.log('Product ID:', productId);
+      
+      const favoriteRef = getFavoriteRef(auth.currentUser.uid, productId);
+      console.log('Favorite reference:', favoriteRef.path);
 
       if (isFavorite) {
+        console.log('Attempting to delete favorite');
         await deleteDoc(favoriteRef);
-        console.log('Favorite document deleted');
+        console.log('Favorite deleted successfully');
         setIsFavorite(false);
         alert('已取消收藏');
       } else {
+        console.log('Attempting to create favorite');
         const favoriteData = {
           userId: auth.currentUser.uid,
           productId: productId,
           createdAt: serverTimestamp(),
           productData: {
             title: product.title,
-            image: product.image,
+            image: product.images ? product.images[0] : '',
             price: product.price
           }
         };
-        console.log('Creating favorite document:', favoriteData);
+        console.log('Favorite data:', favoriteData);
         await setDoc(favoriteRef, favoriteData);
-        console.log('Favorite document created');
+        console.log('Favorite created successfully');
         setIsFavorite(true);
         alert('已加入收藏');
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      console.log('Error details:', {
+      console.error('Error details:', {
         code: error.code,
         message: error.message,
-        authState: !!auth.currentUser,
-        userId: auth.currentUser?.uid
+        stack: error.stack
       });
       alert('操作失敗，請稍後再試');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -316,19 +311,15 @@ const ProductDetail = () => {
                 >
                   {isDeleting ? '刪除中...' : '刪除'}
                 </button>
-                <button 
-                  className={`favorite-btn ${isFavorite ? 'active' : ''}`}
-                  onClick={handleFavoriteClick}
-                >
-                  <span className="heart-icon"></span>
-                </button>
               </>
             ) : (
               <button 
                 className={`favorite-btn ${isFavorite ? 'active' : ''}`}
                 onClick={handleFavoriteClick}
+                disabled={isProcessing}
               >
                 <span className="heart-icon"></span>
+                {isProcessing ? '處理中...' : (isFavorite ? '已收藏' : '收藏')}
               </button>
             )}
           </div>

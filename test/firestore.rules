@@ -2,38 +2,8 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 檢查用戶是否已登入
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // 檢查是否為文檔擁有者
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    // 產品集合規則
-    match /products/{productId} {
-      allow read: if true;
-      allow write: if isAuthenticated();
-    }
-
-    // 收藏集合規則
-    match /favorites/{favoriteId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-    }
-
-    // 用戶集合規則
-    match /users/{userId} {
-      allow read: if true;
-      allow write: if isOwner(userId);
-    }
-
-    // 默認規則
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if request.auth != null;
     }
   }
 } 
