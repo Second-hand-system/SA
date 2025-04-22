@@ -59,43 +59,38 @@
 
 /* 愛心圖標樣式 */
 .heart-icon {
-  width: 16px;
-  height: 16px;
   position: relative;
-  transform: rotate(-45deg);
+  width: 24px;
+  height: 24px;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ffffff"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
   cursor: pointer;
-  margin-top: 4px;
 }
 
-.heart-icon::before,
-.heart-icon::after {
-  content: '';
-  width: 16px;
-  height: 16px;
+.favorites-count {
   position: absolute;
-  border-radius: 50%;
-  background-color: #666;
-  transition: background-color 0.3s;
-}
-
-.heart-icon::before {
   top: -8px;
-  left: 0;
+  right: -8px;
+  background-color: #ff4081;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
 }
 
-.heart-icon::after {
-  top: 0;
-  left: 8px;
-}
-
-.heart-icon {
-  background-color: #666;
-}
-
-.favorites-link:hover .heart-icon,
-.favorites-link:hover .heart-icon::before,
-.favorites-link:hover .heart-icon::after {
-  background-color: #e2af4a;
+.favorites-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
 }
 
 /* 為固定定位的 header 騰出空間 */

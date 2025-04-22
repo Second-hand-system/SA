@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import app, { getFavoriteRef, checkIsFavorite } from '../../firebase';
+import { useFavorites } from '../../context/FavoritesContext';
+import app, { getFavoriteRef, checkIsFavorite, removeFromFavorites, addToFavorites } from '../../firebase';
 import './ProductDetail.css';
 
 const ProductDetail = () => {
@@ -21,6 +22,8 @@ const ProductDetail = () => {
   const [auctionStartTime, setAuctionStartTime] = useState('');
   const [auctionEndTime, setAuctionEndTime] = useState('');
   const [saleType, setSaleType] = useState('先搶先贏');
+
+  const { addFavorite, removeFavorite } = useFavorites();
 
   // 商品類別
   const categories = [
@@ -203,43 +206,30 @@ const ProductDetail = () => {
 
     try {
       setIsProcessing(true);
-      console.log('Current user:', auth.currentUser.uid);
-      console.log('Product ID:', productId);
+      const userId = auth.currentUser.uid;
       
-      const favoriteRef = getFavoriteRef(auth.currentUser.uid, productId);
-      console.log('Favorite reference:', favoriteRef.path);
-
       if (isFavorite) {
-        console.log('Attempting to delete favorite');
-        await deleteDoc(favoriteRef);
-        console.log('Favorite deleted successfully');
+        await removeFromFavorites(userId, productId);
+        removeFavorite(productId);
         setIsFavorite(false);
         alert('已取消收藏');
       } else {
-        console.log('Attempting to create favorite');
-        const favoriteData = {
-          userId: auth.currentUser.uid,
-          productId: productId,
-          createdAt: serverTimestamp(),
-          productData: {
-            title: product.title,
-            image: product.images ? product.images[0] : '',
-            price: product.price
-          }
+        const productData = {
+          title: product.title,
+          image: product.images?.[0] || product.image,
+          price: product.price
         };
-        console.log('Favorite data:', favoriteData);
-        await setDoc(favoriteRef, favoriteData);
-        console.log('Favorite created successfully');
+        await addToFavorites(userId, productId, productData);
+        addFavorite({
+          userId,
+          productId,
+          productData
+        });
         setIsFavorite(true);
         alert('已加入收藏');
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      console.error('Error details:', {
-        code: error.code,
-        message: error.message,
-        stack: error.stack
-      });
       alert('操作失敗，請稍後再試');
     } finally {
       setIsProcessing(false);

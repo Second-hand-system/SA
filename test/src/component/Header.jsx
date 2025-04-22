@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useFavorites } from '../context/FavoritesContext';
 import './Header.css';
 
 const Header = () => {
   const { currentUser, logout } = useAuth();
+  const { totalFavorites } = useFavorites();
 
   const handleLogout = async () => {
     try {
@@ -26,7 +28,11 @@ const Header = () => {
           {currentUser ? (
             <>
               <Link to="/favorites" className="favorites-link">
-                <div className="heart-icon"></div>
+                <div className="heart-icon">
+                  {totalFavorites > 0 && (
+                    <span className="favorites-count">{totalFavorites}</span>
+                  )}
+                </div>
               </Link>
               <Link to="/profile" className="profile-link">
                 <span>個人資料</span>

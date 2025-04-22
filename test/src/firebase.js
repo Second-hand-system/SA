@@ -9,7 +9,8 @@ import {
   deleteDoc,
   query,
   where,
-  getDocs
+  getDocs,
+  serverTimestamp
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getStorage } from "firebase/storage";
@@ -33,14 +34,13 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 // 檢查 Firestore 連接
-const checkFirestoreConnection = async () => {
+export const checkFirestoreConnection = async () => {
   try {
-    const testDocRef = doc(db, '_test_', '_test_');
-    await getDoc(testDocRef);
-    console.log('Firestore connection successful');
+    const testDoc = await getDoc(doc(db, 'test', 'test'));
+    console.log('Firestore connection test:', testDoc ? 'success' : 'failed');
     return true;
   } catch (error) {
-    console.error('Firestore connection failed:', error);
+    console.error('Firestore connection error:', error);
     return false;
   }
 };
@@ -61,54 +61,66 @@ const ensureAuth = () => {
   });
 };
 
-// 獲取收藏集合
+// 收藏相關函數
 export const getFavoritesCollection = () => {
   return collection(db, 'favorites');
 };
 
-// 獲取特定用戶的收藏參考
 export const getFavoriteRef = (userId, productId) => {
-  if (!userId || !productId) {
-    throw new Error('userId and productId are required');
-  }
   return doc(db, 'favorites', `${userId}_${productId}`);
 };
 
-// 檢查商品是否已被收藏
-export const checkIsFavorite = async (userId, productId) => {
-  if (!userId || !productId) {
-    console.log('Missing userId or productId');
-    return false;
-  }
-  
+export const addToFavorites = async (userId, productId, productData) => {
   try {
     const favoriteRef = getFavoriteRef(userId, productId);
-    const favoriteDoc = await getDoc(favoriteRef);
-    const exists = favoriteDoc.exists();
-    console.log(`Favorite status for product ${productId}:`, exists);
-    return exists;
+    await setDoc(favoriteRef, {
+      userId,
+      productId,
+      productData,
+      createdAt: new Date()
+    });
+    return true;
   } catch (error) {
-    console.error('Error checking favorite status:', error);
+    console.error('Error adding favorite:', error);
+    throw error;
+  }
+};
+
+export const removeFromFavorites = async (userId, productId) => {
+  try {
+    const favoriteRef = getFavoriteRef(userId, productId);
+    await deleteDoc(favoriteRef);
+    return true;
+  } catch (error) {
+    console.error('Error removing favorite:', error);
+    throw error;
+  }
+};
+
+export const checkIsFavorite = async (userId, productId) => {
+  try {
+    const favoriteRef = getFavoriteRef(userId, productId);
+    const docSnap = await getDoc(favoriteRef);
+    return docSnap.exists();
+  } catch (error) {
+    console.error('Error checking favorite:', error);
     return false;
   }
 };
 
 // 獲取用戶的所有收藏
 export const getUserFavorites = async (userId) => {
-  if (!userId) {
-    throw new Error('userId is required');
-  }
-
   try {
-    const favoritesQuery = query(
-      collection(db, 'favorites'),
-      where('userId', '==', userId)
-    );
-    const querySnapshot = await getDocs(favoritesQuery);
-    return querySnapshot.docs.map(doc => doc.data());
+    const favoritesRef = collection(db, 'favorites');
+    const q = query(favoritesRef, where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
   } catch (error) {
     console.error('Error getting user favorites:', error);
-    throw error;
+    return [];
   }
 };
 

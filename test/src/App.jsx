@@ -16,8 +16,32 @@ import { checkFirestoreConnection, auth } from './firebase'
 
 // 保護需要登入的路由
 const ProtectedRoute = ({ children }) => {
-  const { currentUser } = useAuth();
-  
+  const { currentUser, loading } = useAuth();
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        await checkFirestoreConnection();
+        setIsChecking(false);
+      } catch (error) {
+        console.error('Connection check failed:', error);
+        setIsChecking(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  if (loading || isChecking) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>載入中...</p>
+      </div>
+    );
+  }
+
   if (!currentUser) {
     return <Navigate to="/login" />;
   }
@@ -31,13 +55,15 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
+  const [isConnected, setIsConnected] = useState(true);
+
   useEffect(() => {
     const testConnection = async () => {
       try {
         const isConnected = await checkFirestoreConnection();
+        setIsConnected(isConnected);
         console.log('Firebase connection test:', isConnected ? 'successful' : 'failed');
         
-        // 檢查認證狀態
         const unsubscribe = auth.onAuthStateChanged((user) => {
           console.log('Auth state changed:', user ? 'logged in' : 'logged out');
           if (user) {
@@ -48,11 +74,22 @@ function App() {
         return () => unsubscribe();
       } catch (error) {
         console.error('Connection test error:', error);
+        setIsConnected(false);
       }
     };
 
     testConnection();
   }, []);
+
+  if (!isConnected) {
+    return (
+      <div className="error-container">
+        <h1>連接錯誤</h1>
+        <p>無法連接到伺服器，請檢查網路連接後重試。</p>
+        <button onClick={() => window.location.reload()}>重新整理</button>
+      </div>
+    );
+  }
 
   return (
     <AuthProvider>
