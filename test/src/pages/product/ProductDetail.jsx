@@ -276,6 +276,51 @@ const ProductDetail = () => {
     }
   };
 
+  const handleSetSaleType = async (type) => {
+    if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
+      alert('只有賣家可以設定銷售類型');
+      return;
+    }
+
+    try {
+      const productRef = doc(db, 'products', productId);
+      const updates = {
+        saleType: type
+      };
+
+      // 如果是先搶先贏，清除競標相關的資料
+      if (type === '先搶先贏') {
+        updates.auctionStartTime = null;
+        updates.auctionEndTime = null;
+        updates.status = '進行中';
+      }
+
+      await updateDoc(productRef, updates);
+      setProduct(prev => ({ ...prev, ...updates }));
+      setSaleType(type);
+      
+      // 只有在選擇競標時才顯示時間選擇器
+      if (type === '競標') {
+        setShowTimePicker(true);
+      } else {
+        setShowTimePicker(false);
+      }
+      
+      alert('銷售類型已更新');
+    } catch (error) {
+      console.error('Error updating sale type:', error);
+      alert('更新銷售類型時發生錯誤');
+    }
+  };
+
+  // 檢查競標是否已結束
+  const isAuctionEnded = () => {
+    if (!product.auctionEndTime) return false;
+    const endTime = new Date(product.auctionEndTime);
+    const now = new Date();
+    return now > endTime;
+  };
+
   if (loading) {
     return (
       <div className="loading">
@@ -350,17 +395,14 @@ const ProductDetail = () => {
             <div className="sale-type-buttons">
               <button 
                 className={`sale-type-btn ${saleType === '先搶先贏' ? 'active' : ''}`}
-                onClick={() => setSaleType('先搶先贏')}
+                onClick={() => handleSetSaleType('先搶先贏')}
                 disabled={product.sellerId !== auth.currentUser?.uid}
               >
                 先搶先贏
               </button>
               <button 
                 className={`sale-type-btn ${saleType === '競標' ? 'active' : ''}`}
-                onClick={() => {
-                  setSaleType('競標');
-                  setShowTimePicker(true);
-                }}
+                onClick={() => handleSetSaleType('競標')}
                 disabled={product.sellerId !== auth.currentUser?.uid}
               >
                 競標
@@ -368,42 +410,99 @@ const ProductDetail = () => {
             </div>
           </div>
 
+          {/* 競標資訊 */}
           {saleType === '競標' && (
             <div className="auction-info">
               <div className="auction-timer">
                 <h3>競標時間</h3>
-                <div className="time-left">{timeLeft || '未設定'}</div>
+                {product.auctionEndTime ? (
+                  <div className="time-left">
+                    <p>開始時間：{new Date(product.auctionStartTime).toLocaleString('zh-TW')}</p>
+                    <p>結束時間：{new Date(product.auctionEndTime).toLocaleString('zh-TW')}</p>
+                    <p>剩餘時間：{timeLeft}</p>
+                  </div>
+                ) : (
+                  <p className="no-time-set">尚未設定競標時間</p>
+                )}
               </div>
-              <div className="status-controls">
-                <h3>競標狀態: {auctionStatus}</h3>
-                {product.sellerId === auth.currentUser?.uid && (
+              
+              {/* 競標結束後的狀態更新 */}
+              {isAuctionEnded() && product.sellerId === auth.currentUser?.uid && (
+                <div className="status-controls">
+                  <h3>競標已結束，請更新商品狀態</h3>
                   <div className="status-buttons">
                     <button 
                       className="status-btn"
-                      onClick={() => handleUpdateStatus('進行中')}
-                      disabled={auctionStatus === '進行中'}
+                      onClick={() => handleUpdateStatus('待售出')}
+                      disabled={product.status === '待售出'}
                     >
-                      開始競標
+                      待售出
                     </button>
                     <button 
                       className="status-btn"
-                      onClick={() => handleUpdateStatus('已結束')}
-                      disabled={auctionStatus === '已結束'}
+                      onClick={() => handleUpdateStatus('已售出')}
+                      disabled={product.status === '已售出'}
                     >
-                      結束競標
+                      已售出
+                    </button>
+                    <button 
+                      className="status-btn"
+                      onClick={() => handleUpdateStatus('未售出')}
+                      disabled={product.status === '未售出'}
+                    >
+                      未售出
                     </button>
                   </div>
-                )}
+                </div>
+              )}
+
+              {/* 競標進行中的提示 */}
+              {!isAuctionEnded() && product.auctionEndTime && (
+                <div className="auction-status-message">
+                  <p>競標進行中，結束後才能更新狀態</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 先搶先贏狀態顯示 */}
+          {saleType === '先搶先贏' && product.sellerId === auth.currentUser?.uid && (
+            <div className="quick-sale-info">
+              <h3>商品狀態</h3>
+              <div className="status-controls">
+                <div className="status-buttons">
+                  <button 
+                    className="status-btn"
+                    onClick={() => handleUpdateStatus('待售出')}
+                    disabled={product.status === '待售出'}
+                  >
+                    待售出
+                  </button>
+                  <button 
+                    className="status-btn"
+                    onClick={() => handleUpdateStatus('已售出')}
+                    disabled={product.status === '已售出'}
+                  >
+                    已售出
+                  </button>
+                  <button 
+                    className="status-btn"
+                    onClick={() => handleUpdateStatus('未售出')}
+                    disabled={product.status === '未售出'}
+                  >
+                    未售出
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
-          {showTimePicker && (
+          {showTimePicker && saleType === '競標' && !product.auctionEndTime && (
             <div className="time-picker">
               <h3>設定競標時間</h3>
               <div className="time-inputs">
                 <div className="time-input">
-                  <label>開始時間:</label>
+                  <label>開始時間：</label>
                   <input
                     type="datetime-local"
                     value={auctionStartTime}
@@ -411,7 +510,7 @@ const ProductDetail = () => {
                   />
                 </div>
                 <div className="time-input">
-                  <label>結束時間:</label>
+                  <label>結束時間：</label>
                   <input
                     type="datetime-local"
                     value={auctionEndTime}
@@ -420,10 +519,16 @@ const ProductDetail = () => {
                 </div>
               </div>
               <div className="time-picker-buttons">
-                <button className="confirm-btn" onClick={handleSetAuctionTime}>
+                <button 
+                  className="confirm-btn"
+                  onClick={handleSetAuctionTime}
+                >
                   確認
                 </button>
-                <button className="cancel-btn" onClick={() => setShowTimePicker(false)}>
+                <button 
+                  className="cancel-btn"
+                  onClick={() => setShowTimePicker(false)}
+                >
                   取消
                 </button>
               </div>

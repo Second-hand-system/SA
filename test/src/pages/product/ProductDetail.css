@@ -266,22 +266,24 @@
 .auction-timer h3 {
   color: #333;
   margin-top: 0;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   font-size: 1.1rem;
-}
-
-.auction-status {
-  font-size: 1.2rem;
   font-weight: 600;
-  color: #e2af4a;
-  margin: 0.5rem 0;
 }
 
 .time-left {
   color: #666;
   font-size: 0.95rem;
-  margin: 0.5rem 0;
-  line-height: 1.4;
+  line-height: 1.6;
+}
+
+.time-left p {
+  margin: 0.25rem 0;
+}
+
+.no-time-set {
+  color: #999;
+  font-style: italic;
 }
 
 /* Status Controls Styles */
@@ -296,6 +298,7 @@
   margin-top: 0;
   margin-bottom: 0.75rem;
   font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .status-buttons {
@@ -584,7 +587,7 @@
 .quick-sale-info h3 {
   color: #333;
   margin-top: 0;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   font-size: 1.1rem;
   font-weight: 600;
 }
@@ -604,4 +607,19 @@
   .sale-type-btn {
     width: 100%;
   }
+}
+
+/* 競標狀態消息 */
+.auction-status-message {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.auction-status-message p {
+  color: #666;
+  margin: 0;
+  font-size: 0.95rem;
 } 
