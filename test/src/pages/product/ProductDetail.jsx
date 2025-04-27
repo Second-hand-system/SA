@@ -707,15 +707,25 @@ const ProductDetail = () => {
           )}
 
           {/* 在商品資訊區域添加競價表單 */}
-          {saleType === '競標' && !isAuctionEnded() && (
+          {saleType === '競標' && (
             <div className="bid-section">
               <h3>競價資訊</h3>
               <div className="current-bid">
-                <p>當前最高出價：{currentBid ? `NT$ ${currentBid.amount}` : '尚無出價'}</p>
-                <p>出價者：{currentBid ? currentBid.userName : '-'}</p>
+                <p>
+                  當前最高出價：{currentBid ? `NT$ ${currentBid.amount}` : '尚無出價'}
+                  {isAuctionEnded() && currentBid && (
+                    <span style={{ color: '#e2af4a', fontWeight: 'bold', marginLeft: 12 }}>（得標）</span>
+                  )}
+                </p>
+                <p>
+                  出價者：{currentBid ? currentBid.userName : '-'}
+                  {isAuctionEnded() && currentBid && (
+                    <span style={{ color: '#e2af4a', fontWeight: 'bold', marginLeft: 12 }}>（得標者）</span>
+                  )}
+                </p>
               </div>
               
-              {auth.currentUser && product.sellerId !== auth.currentUser.uid && (
+              {auth.currentUser && product.sellerId !== auth.currentUser.uid && !isAuctionEnded() && (
                 <form onSubmit={handleBidSubmit} className="bid-form">
                   <div className="bid-input-group">
                     <input
@@ -741,7 +751,7 @@ const ProductDetail = () => {
               <div className="bid-history">
                 <h4>競價歷史</h4>
                 <ul>
-                  {bidHistory.map((bid) => {
+                  {bidHistory.map((bid, idx) => {
                     let formattedTime = '未知時間';
                     try {
                       if (bid.timestamp) {
@@ -752,14 +762,18 @@ const ProductDetail = () => {
                         }
                       }
                     } catch (error) {
-                      console.error('格式化時間時發生錯誤:', error);
+                      console.error('Error formatting timestamp:', error);
                     }
                     
+                    const isWinner = isAuctionEnded() && idx === 0;
+                    
                     return (
-                      <li key={bid.id}>
-                        <span className="bid-user">{bid.userName}</span>
+                      <li key={bid.id} className={isWinner ? 'winning-bid' : ''}>
+                        <div className="bid-info">
+                          <span className="bid-user">{bid.userName}</span>
+                          <span className="bid-time">{formattedTime}</span>
+                        </div>
                         <span className="bid-amount">NT$ {bid.amount}</span>
-                        <span className="bid-time">{formattedTime}</span>
                       </li>
                     );
                   })}
