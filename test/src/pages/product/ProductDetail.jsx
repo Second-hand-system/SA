@@ -20,6 +20,7 @@ const ProductDetail = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const db = getFirestore(app);
   const auth = getAuth(app);
   const navigate = useNavigate();
@@ -448,7 +449,24 @@ const ProductDetail = () => {
       setBidHistory(prev => [newBid, ...prev]);
       setBidAmount('');
       setBidError('');
-      alert('出價成功！');
+      
+      // 顯示成功提示
+      setShowSuccessMessage(true);
+      
+      // 3秒後自動隱藏成功提示
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
+      
+      // 重新獲取最新的出價歷史
+      const updatedBidsQuery = query(bidsRef, orderBy('timestamp', 'desc'));
+      const updatedBidsSnapshot = await getDocs(updatedBidsQuery);
+      const updatedHistory = updatedBidsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setBidHistory(updatedHistory);
+      
     } catch (error) {
       console.error('出價失敗，詳細錯誤:', error);
       console.error('錯誤訊息:', error.message);
@@ -463,7 +481,6 @@ const ProductDetail = () => {
         errorMessage = error.message;
       }
       
-      alert(errorMessage);
       setBidError(errorMessage);
     }
   };
@@ -491,6 +508,13 @@ const ProductDetail = () => {
 
   return (
     <div className="product-detail-container">
+      {/* 添加成功提示 */}
+      {showSuccessMessage && (
+        <div className="success-message">
+          出價成功！
+        </div>
+      )}
+      
       <div className="product-detail-content">
         <div className="product-image-section">
           <div className="product-image">
@@ -702,7 +726,11 @@ const ProductDetail = () => {
                       min={currentBid ? currentBid.amount + 1 : product.price + 1}
                       step="1"
                     />
-                    <button type="submit" className="bid-submit-btn">
+                    <button 
+                      type="button" 
+                      className="bid-submit-btn"
+                      onClick={handleBidSubmit}
+                    >
                       出價
                     </button>
                   </div>
@@ -713,15 +741,28 @@ const ProductDetail = () => {
               <div className="bid-history">
                 <h4>競價歷史</h4>
                 <ul>
-                  {bidHistory.map((bid) => (
-                    <li key={bid.id}>
-                      <span className="bid-user">{bid.userName}</span>
-                      <span className="bid-amount">NT$ {bid.amount}</span>
-                      <span className="bid-time">
-                        {bid.timestamp?.toDate().toLocaleString('zh-TW')}
-                      </span>
-                    </li>
-                  ))}
+                  {bidHistory.map((bid) => {
+                    let formattedTime = '未知時間';
+                    try {
+                      if (bid.timestamp) {
+                        if (typeof bid.timestamp.toDate === 'function') {
+                          formattedTime = bid.timestamp.toDate().toLocaleString('zh-TW');
+                        } else if (bid.timestamp.seconds) {
+                          formattedTime = new Date(bid.timestamp.seconds * 1000).toLocaleString('zh-TW');
+                        }
+                      }
+                    } catch (error) {
+                      console.error('格式化時間時發生錯誤:', error);
+                    }
+                    
+                    return (
+                      <li key={bid.id}>
+                        <span className="bid-user">{bid.userName}</span>
+                        <span className="bid-amount">NT$ {bid.amount}</span>
+                        <span className="bid-time">{formattedTime}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </div>
