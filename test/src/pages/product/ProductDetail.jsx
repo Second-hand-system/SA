@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp, collection, query, orderBy, limit, getDocs, addDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useFavorites } from '../../context/FavoritesContext';
 import app, { 
@@ -29,6 +29,10 @@ const ProductDetail = () => {
   const [auctionStartTime, setAuctionStartTime] = useState('');
   const [auctionEndTime, setAuctionEndTime] = useState('');
   const [saleType, setSaleType] = useState('先搶先贏');
+  const [currentBid, setCurrentBid] = useState(null);
+  const [bidAmount, setBidAmount] = useState('');
+  const [bidError, setBidError] = useState('');
+  const [bidHistory, setBidHistory] = useState([]);
 
   const { addFavorite, removeFavorite, favoriteCount } = useFavorites();
 
@@ -131,6 +135,51 @@ const ProductDetail = () => {
       checkFavoriteStatus();
     }
   }, [auth.currentUser, productId]);
+
+  // 獲取當前最高出價
+  useEffect(() => {
+    const fetchCurrentBid = async () => {
+      if (product?.saleType === '競標') {
+        try {
+          const bidsRef = collection(db, 'products', productId, 'bids');
+          const q = query(bidsRef, orderBy('amount', 'desc'), limit(1));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const highestBid = querySnapshot.docs[0].data();
+            setCurrentBid(highestBid);
+          }
+        } catch (error) {
+          console.error('Error fetching current bid:', error);
+        }
+      }
+    };
+
+    fetchCurrentBid();
+  }, [productId, product?.saleType]);
+
+  // 獲取競價歷史
+  useEffect(() => {
+    const fetchBidHistory = async () => {
+      if (product?.saleType === '競標') {
+        try {
+          const bidsRef = collection(db, 'products', productId, 'bids');
+          const q = query(bidsRef, orderBy('timestamp', 'desc'));
+          const querySnapshot = await getDocs(q);
+          
+          const history = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setBidHistory(history);
+        } catch (error) {
+          console.error('Error fetching bid history:', error);
+        }
+      }
+    };
+
+    fetchBidHistory();
+  }, [productId, product?.saleType]);
 
   const handleUpdateStatus = async (newStatus) => {
     if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
@@ -319,6 +368,104 @@ const ProductDetail = () => {
     const endTime = new Date(product.auctionEndTime);
     const now = new Date();
     return now > endTime;
+  };
+
+  // 處理競價提交
+  const handleBidSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!auth.currentUser) {
+      alert('請先登入');
+      return;
+    }
+
+    if (product.sellerId === auth.currentUser.uid) {
+      alert('賣家不能參與競價');
+      return;
+    }
+
+    const bidAmountNum = parseFloat(bidAmount);
+    
+    // 驗證出價金額
+    if (isNaN(bidAmountNum) || bidAmountNum <= 0) {
+      setBidError('請輸入有效的金額');
+      return;
+    }
+
+    if (currentBid && bidAmountNum <= currentBid.amount) {
+      setBidError(`出價必須高於當前最高出價 (NT$ ${currentBid.amount})`);
+      return;
+    }
+
+    if (bidAmountNum <= product.price) {
+      setBidError(`出價必須高於底價 (NT$ ${product.price})`);
+      return;
+    }
+
+    try {
+      console.log('開始提交出價...');
+      console.log('出價金額:', bidAmountNum);
+      console.log('商品ID:', productId);
+      console.log('用戶ID:', auth.currentUser.uid);
+
+      // 檢查商品是否存在
+      const productRef = doc(db, 'products', productId);
+      const productDoc = await getDoc(productRef);
+      
+      if (!productDoc.exists()) {
+        throw new Error('商品不存在');
+      }
+
+      // 確保商品是競標模式
+      const productData = productDoc.data();
+      if (productData.saleType !== '競標') {
+        throw new Error('此商品不是競標模式');
+      }
+
+      // 創建或獲取 bids 子集合
+      const bidsRef = collection(db, 'products', productId, 'bids');
+      
+      // 檢查是否已有出價記錄
+      const bidsQuery = query(bidsRef, orderBy('amount', 'desc'), limit(1));
+      const bidsSnapshot = await getDocs(bidsQuery);
+      
+      const newBid = {
+        amount: bidAmountNum,
+        userId: auth.currentUser.uid,
+        userName: auth.currentUser.displayName || '匿名用戶',
+        timestamp: serverTimestamp(),
+        productId: productId
+      };
+
+      console.log('準備添加的出價資料:', newBid);
+
+      // 添加出價記錄
+      const docRef = await addDoc(bidsRef, newBid);
+      console.log('出價成功，文檔ID:', docRef.id);
+
+      // 更新當前最高出價
+      setCurrentBid(newBid);
+      setBidHistory(prev => [newBid, ...prev]);
+      setBidAmount('');
+      setBidError('');
+      alert('出價成功！');
+    } catch (error) {
+      console.error('出價失敗，詳細錯誤:', error);
+      console.error('錯誤訊息:', error.message);
+      console.error('錯誤堆疊:', error.stack);
+      
+      let errorMessage = '出價失敗，請稍後再試';
+      if (error.message.includes('permission-denied')) {
+        errorMessage = '出價權限被拒絕，請確認您已登入';
+      } else if (error.message.includes('not-found')) {
+        errorMessage = '商品不存在或已被刪除';
+      } else if (error.message.includes('競標模式')) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
+      setBidError(errorMessage);
+    }
   };
 
   if (loading) {
@@ -531,6 +678,51 @@ const ProductDetail = () => {
                 >
                   取消
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* 在商品資訊區域添加競價表單 */}
+          {saleType === '競標' && !isAuctionEnded() && (
+            <div className="bid-section">
+              <h3>競價資訊</h3>
+              <div className="current-bid">
+                <p>當前最高出價：{currentBid ? `NT$ ${currentBid.amount}` : '尚無出價'}</p>
+                <p>出價者：{currentBid ? currentBid.userName : '-'}</p>
+              </div>
+              
+              {auth.currentUser && product.sellerId !== auth.currentUser.uid && (
+                <form onSubmit={handleBidSubmit} className="bid-form">
+                  <div className="bid-input-group">
+                    <input
+                      type="number"
+                      value={bidAmount}
+                      onChange={(e) => setBidAmount(e.target.value)}
+                      placeholder="輸入出價金額"
+                      min={currentBid ? currentBid.amount + 1 : product.price + 1}
+                      step="1"
+                    />
+                    <button type="submit" className="bid-submit-btn">
+                      出價
+                    </button>
+                  </div>
+                  {bidError && <p className="bid-error">{bidError}</p>}
+                </form>
+              )}
+
+              <div className="bid-history">
+                <h4>競價歷史</h4>
+                <ul>
+                  {bidHistory.map((bid) => (
+                    <li key={bid.id}>
+                      <span className="bid-user">{bid.userName}</span>
+                      <span className="bid-amount">NT$ {bid.amount}</span>
+                      <span className="bid-time">
+                        {bid.timestamp?.toDate().toLocaleString('zh-TW')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           )}
