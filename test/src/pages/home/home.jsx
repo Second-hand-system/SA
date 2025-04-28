@@ -342,10 +342,10 @@ function Home() {
               </button>
               <Link to={`/product/${product.id}`} className="item-link">
                   <div className="item-image">
-                  <img src={product.image} alt={product.title} />
-                  {product.status === '已售出' && (
-                    <div className="sold-badge">已售出</div>
-                  )}
+                    <img src={product.image} alt={product.title} />
+                    {(product.status === '已結標' || (product.auctionEndTime && new Date() > new Date(product.auctionEndTime))) && (
+                      <div className="sold-badge">已結標</div>
+                    )}
                   </div>
                   <div className="item-details">
                   <h3>{product.title}</h3>

@@ -530,8 +530,8 @@ const ProductDetail = () => {
         <div className="product-image-section">
           <div className="product-image">
             <img src={product.image} alt={product.title} />
-            {product.status === '已售出' && (
-              <div className="sold-badge">已售出</div>
+            {(product.status === '已結標' || (product.auctionEndTime && new Date() > new Date(product.auctionEndTime))) && (
+              <div className="sold-badge">已結標</div>
             )}
           </div>
           <div className="product-actions">
