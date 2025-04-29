@@ -753,82 +753,6 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* 在商品資訊區域添加競價表單 */}
-          {saleType === '競標' && (
-            <div className="bid-section">
-              <h3>競價資訊</h3>
-              <div className="current-bid">
-                <p>
-                  當前最高出價：{currentBid ? `NT$ ${currentBid.amount}` : '尚無出價'}
-                  {isAuctionEnded() && currentBid && (
-                    <span style={{ color: '#e2af4a', fontWeight: 'bold', marginLeft: 12 }}>（得標）</span>
-                  )}
-                </p>
-                <p>
-                  出價者：{currentBid ? currentBid.userName : '-'}
-                  {isAuctionEnded() && currentBid && (
-                    <span style={{ color: '#e2af4a', fontWeight: 'bold', marginLeft: 12 }}>（得標者）</span>
-                  )}
-                </p>
-              </div>
-              
-              {auth.currentUser && product.sellerId !== auth.currentUser.uid && !isAuctionEnded() && (
-                <form onSubmit={handleBidSubmit} className="bid-form">
-                  <div className="bid-input-group">
-                    <input
-                      type="number"
-                      value={bidAmount}
-                      onChange={(e) => setBidAmount(e.target.value)}
-                      placeholder="輸入出價金額"
-                      min={currentBid ? currentBid.amount + 1 : product.price + 1}
-                      step="1"
-                    />
-                    <button 
-                      type="button" 
-                      className="bid-submit-btn"
-                      onClick={handleBidSubmit}
-                    >
-                      出價
-                    </button>
-                  </div>
-                  {bidError && <p className="bid-error">{bidError}</p>}
-                </form>
-              )}
-
-              <div className="bid-history">
-                <h4>競價歷史</h4>
-                <ul>
-                  {bidHistory.map((bid, idx) => {
-                    let formattedTime = '未知時間';
-                    try {
-                      if (bid.timestamp) {
-                        if (typeof bid.timestamp.toDate === 'function') {
-                          formattedTime = bid.timestamp.toDate().toLocaleString('zh-TW');
-                        } else if (bid.timestamp.seconds) {
-                          formattedTime = new Date(bid.timestamp.seconds * 1000).toLocaleString('zh-TW');
-                        }
-                      }
-                    } catch (error) {
-                      console.error('Error formatting timestamp:', error);
-                    }
-                    
-                    const isWinner = isAuctionEnded() && idx === 0;
-                    
-                    return (
-                      <li key={bid.id} className={isWinner ? 'winning-bid' : ''}>
-                        <div className="bid-info">
-                          <span className="bid-user">{bid.userName}</span>
-                          <span className="bid-time">{formattedTime}</span>
-                        </div>
-                        <span className="bid-amount">NT$ {bid.amount}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            </div>
-          )}
-
           <div className="product-description">
             <h3>商品描述</h3>
             <p>{product.description}</p>
@@ -848,6 +772,83 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* 在這裡移動競價區域到主要內容外面 */}
+      {saleType === '競標' && (
+        <div className="bid-section">
+          <h3>競價資訊</h3>
+          <div className="current-bid">
+            <p>
+              當前最高出價：{currentBid ? `NT$ ${currentBid.amount}` : '尚無出價'}
+              {isAuctionEnded() && currentBid && (
+                <span style={{ color: '#e2af4a', fontWeight: 'bold', marginLeft: 12 }}>（得標）</span>
+              )}
+            </p>
+            <p>
+              出價者：{currentBid ? currentBid.userName : '-'}
+              {isAuctionEnded() && currentBid && (
+                <span style={{ color: '#e2af4a', fontWeight: 'bold', marginLeft: 12 }}>（得標者）</span>
+              )}
+            </p>
+          </div>
+          
+          {auth.currentUser && product.sellerId !== auth.currentUser.uid && !isAuctionEnded() && (
+            <form onSubmit={handleBidSubmit} className="bid-form">
+              <div className="bid-input-group">
+                <input
+                  type="number"
+                  value={bidAmount}
+                  onChange={(e) => setBidAmount(e.target.value)}
+                  placeholder="輸入出價金額"
+                  min={currentBid ? currentBid.amount + 1 : product.price + 1}
+                  step="1"
+                />
+                <button 
+                  type="button" 
+                  className="bid-submit-btn"
+                  onClick={handleBidSubmit}
+                >
+                  出價
+                </button>
+              </div>
+              {bidError && <p className="bid-error">{bidError}</p>}
+            </form>
+          )}
+
+          <div className="bid-history">
+            <h4>競價歷史</h4>
+            <ul>
+              {bidHistory.map((bid, idx) => {
+                let formattedTime = '未知時間';
+                try {
+                  if (bid.timestamp) {
+                    if (typeof bid.timestamp.toDate === 'function') {
+                      formattedTime = bid.timestamp.toDate().toLocaleString('zh-TW');
+                    } else if (bid.timestamp.seconds) {
+                      formattedTime = new Date(bid.timestamp.seconds * 1000).toLocaleString('zh-TW');
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error formatting timestamp:', error);
+                }
+                
+                const isWinner = isAuctionEnded() && idx === 0;
+                
+                return (
+                  <li key={bid.id} className={isWinner ? 'winning-bid' : ''}>
+                    <div className="bid-info">
+                      <span className="bid-user">{bid.userName}</span>
+                      <span className="bid-time">{formattedTime}</span>
+                    </div>
+                    <span className="bid-amount">NT$ {bid.amount}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      )}
+
       <Link to="/" className="back-home-link">
         返回首頁
       </Link>

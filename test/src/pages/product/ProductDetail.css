@@ -1,20 +1,40 @@
 .product-detail-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-  padding-top: 6rem;
+  padding: 20px;
+  padding-top: 80px;
+  position: relative;
+}
+
+.product-header {
+  width: 100%;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.product-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #333;
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
 }
 
 .product-detail-content {
   display: flex;
+  flex-wrap: wrap;
   gap: 2rem;
   margin-bottom: 2rem;
-  align-items: flex-start;
 }
 
 .product-image-section {
-  flex: 0 0 500px;
-  position: relative;
+  flex: 1;
+  min-width: 300px;
 }
 
 .product-image {
@@ -34,23 +54,39 @@
 
 .product-info {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  min-width: 300px;
 }
 
-.product-header {
+.favorite-section {
+  flex-shrink: 0;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
 }
 
-.product-title {
-  font-size: 1.8rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
+.favorite-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1rem;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.favorite-button:hover {
+  transform: scale(1.1);
+}
+
+.favorite-button span {
+  font-size: 1.2rem;
+}
+
+.favorite-count {
+  font-size: 0.9rem;
+  color: #666;
 }
 
 .product-price {
@@ -265,14 +301,14 @@
   }
 
   .product-image-section {
-    flex: 0 0 auto;
+    flex: none;
     width: 100%;
   }
 
   .product-image {
     width: 100%;
-    height: 100vw;
-    max-height: 500px;
+    height: auto;
+    aspect-ratio: 1;
   }
 
   .product-details ul {
@@ -298,6 +334,10 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+  }
+
+  .bid-section {
+    width: 100%;
   }
 }
 
@@ -676,11 +716,12 @@
 
 /* 競價區域樣式 */
 .bid-section {
-  background-color: #f8f9fa;
-  padding: 1.5rem;
+  width: 100%;
+  padding: 2rem;
+  background-color: #fff;
   border-radius: 8px;
-  order: 5;
-  margin-top: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
 }
 
 .bid-section h3 {
@@ -691,12 +732,14 @@
 
 .bid-form {
   margin-bottom: 2rem;
+  width: 100%;
 }
 
 .bid-input-group {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
+  width: 100%;
 }
 
 .bid-input-group input {
@@ -727,6 +770,7 @@
   padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  width: 100%;
 }
 
 .bid-history h4 {
