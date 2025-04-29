@@ -22,6 +22,7 @@ const ProductDetail = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [purchaserInfo, setPurchaserInfo] = useState(null);
   const db = getFirestore(app);
   const auth = getAuth(app);
   const navigate = useNavigate();
@@ -193,6 +194,41 @@ const ProductDetail = () => {
 
     fetchBidHistory();
   }, [productId, product?.saleType]);
+
+  // 獲取購買者資訊
+  useEffect(() => {
+    const fetchPurchaserInfo = async () => {
+      console.log('開始獲取購買者資訊');
+      console.log('商品狀態:', product?.status);
+      console.log('購買者ID:', product?.soldTo);
+      console.log('當前用戶ID:', auth.currentUser?.uid);
+      console.log('賣家ID:', product?.sellerId);
+
+      if (product?.soldTo) {
+        try {
+          const userRef = doc(db, 'users', product.soldTo);
+          const userDoc = await getDoc(userRef);
+          console.log('用戶文檔存在:', userDoc.exists());
+          
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            console.log('用戶資料:', userData);
+            setPurchaserInfo(userData);
+          } else {
+            console.log('找不到購買者用戶資料');
+          }
+        } catch (error) {
+          console.error('獲取購買者資訊失敗:', error);
+        }
+      } else {
+        console.log('商品未售出或無購買者資訊');
+      }
+    };
+
+    if (product) {
+      fetchPurchaserInfo();
+    }
+  }, [product, auth.currentUser, db]);
 
   const handleUpdateStatus = async (newStatus) => {
     if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
@@ -532,16 +568,24 @@ const ProductDetail = () => {
           throw new Error('商品已售出');
         }
         
-        // 更新商品状态
+        // 更新商品狀態，同時保存購買者資訊
         transaction.update(productRef, {
           status: '已售出',
           soldTo: auth.currentUser.uid,
-          soldAt: serverTimestamp()
+          soldAt: serverTimestamp(),
+          buyerName: auth.currentUser.displayName || '匿名用戶',
+          buyerEmail: auth.currentUser.email || '未提供'
         });
       });
 
       setPurchaseSuccess(true);
-      setProduct(prev => ({ ...prev, status: '已售出' }));
+      setProduct(prev => ({ 
+        ...prev, 
+        status: '已售出',
+        soldTo: auth.currentUser.uid,
+        buyerName: auth.currentUser.displayName || '匿名用戶',
+        buyerEmail: auth.currentUser.email || '未提供'
+      }));
       alert('購買成功！');
     } catch (error) {
       console.error('購買失敗:', error);
@@ -620,7 +664,10 @@ const ProductDetail = () => {
         </div>
         <div className="product-info">
           <div className="product-header">
-            <h1>{product.title}</h1>
+            <div className="title-section">
+              <h1>{product.title}</h1>
+              <span className="sale-type">{product.saleType || '先搶先贏'}</span>
+            </div>
             <div className="favorite-section">
               <button
                 onClick={handleFavoriteClick}
@@ -636,8 +683,21 @@ const ProductDetail = () => {
               </button>
             </div>
           </div>
+          
           <div className="product-price">NT$ {product.price}</div>
           
+          {/* 購買者資訊 - 只有賣家可以看到 */}
+          {product.status === '已售出' && auth.currentUser && product.sellerId === auth.currentUser.uid && (
+            <div className="purchaser-info">
+              <h3>購買者資訊</h3>
+              <div className="purchaser-details">
+                <p><strong>購買者：</strong>{product.buyerName || '匿名用戶'}</p>
+                <p><strong>購買時間：</strong>{product.soldAt ? new Date(product.soldAt.toDate()).toLocaleString('zh-TW') : '未知'}</p>
+                <p><strong>聯絡方式：</strong>{product.buyerEmail || '未提供'}</p>
+              </div>
+            </div>
+          )}
+
           {/* 競標倒數計時 */}
           {product.auctionEndTime && (
             <div className="auction-timer">
