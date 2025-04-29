@@ -1,82 +1,92 @@
 .favorites-container {
-  padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  padding: 80px 1rem 2rem 1rem;
 }
 
 .favorites-container h1 {
-  margin-bottom: 2rem;
+  text-align: center;
+  margin: 1rem 0 2rem 0;
   color: #333;
+  font-size: 1.8rem;
 }
 
 .favorites-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
+  margin-bottom: 2rem;
 }
 
-.favorite-card {
-  text-decoration: none;
-  color: inherit;
+.product-card {
+  position: relative;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
   transition: transform 0.2s ease-in-out;
-  overflow: hidden;
+  cursor: pointer;
 }
 
-.favorite-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+.product-card:hover {
+  transform: translateY(-5px);
 }
 
-.favorite-image {
-  position: relative;
-  padding-top: 75%;
-  overflow: hidden;
-}
-
-.favorite-image img {
-  position: absolute;
-  top: 0;
-  left: 0;
+.card-content img {
   width: 100%;
-  height: 100%;
+  height: 200px;
   object-fit: cover;
 }
 
-.favorite-details {
+.info {
   padding: 1rem;
 }
 
-.favorite-details h3 {
+.info h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1.1rem;
   color: #333;
 }
 
-.favorite-price {
-  margin: 0;
+.info p {
+  margin: 0.25rem 0;
+  color: #666;
+}
+
+.price {
   font-weight: bold;
+  color: #e53e3e !important;
+}
+
+.favorite-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
   color: #e53e3e;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 1;
+  padding: 0.5rem;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.favorite-button:hover {
+  transform: scale(1.1);
 }
 
 .no-favorites {
   text-align: center;
-  padding: 3rem;
-  background: #f9f9f9;
-  border-radius: 8px;
-}
-
-.no-favorites p {
-  margin-bottom: 1rem;
-  color: #666;
+  padding: 2rem;
 }
 
 .browse-link {
   display: inline-block;
+  margin-top: 1rem;
   padding: 0.5rem 1rem;
-  background-color: #4299e1;
+  background-color: #e2af4a;
   color: white;
   text-decoration: none;
   border-radius: 4px;
@@ -84,25 +94,99 @@
 }
 
 .browse-link:hover {
-  background-color: #3182ce;
+  background-color: #d4a043;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.page-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  background-color: #e2af4a;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.page-button:disabled {
+  background-color: #cbd5e0;
+  cursor: not-allowed;
+}
+
+.page-button:hover:not(:disabled) {
+  background-color: #d4a043;
+}
+
+.page-info {
+  color: #4a5568;
+}
+
+.success-message {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #48bb78;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
 }
 
 .error-message {
-  text-align: center;
-  color: #e53e3e;
+  background-color: #f56565;
+  color: white;
   padding: 1rem;
-  background: #fff5f5;
   border-radius: 4px;
+  text-align: center;
   margin: 1rem 0;
 }
 
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 2rem auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
 @media (max-width: 768px) {
-  .favorites-container {
-    padding: 10px;
-  }
-  
   .favorites-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .card-content img {
+    height: 150px;
+  }
+
+  .info h3 {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .favorites-grid {
+    grid-template-columns: 1fr;
   }
 } 

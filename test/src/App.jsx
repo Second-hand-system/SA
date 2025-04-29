@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Provider } from 'react-redux'
+import { store } from './store/index'
 import './App.css'
 import Header from './component/Header'
 import Login from './pages/login'
@@ -93,46 +95,48 @@ function App() {
   }
 
   return (
-    <AuthProvider>
-      <FavoritesProvider>
-        <Router>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            } />
-            <Route path="/sell" element={
-              <ProtectedRoute>
-                <Sell />
-              </ProtectedRoute>
-            } />
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } />
-            <Route path="/favorites" element={
-              <ProtectedRoute>
-                <Favorites />
-              </ProtectedRoute>
-            } />
-            <Route path="/product/:productId" element={
-              <ProtectedRoute>
-                <ProductDetail />
-              </ProtectedRoute>
-            } />
-            <Route path="/product/edit/:productId" element={
-              <ProtectedRoute>
-                <EditProduct />
-              </ProtectedRoute>
-            } />
-          </Routes>
-        </Router>
-      </FavoritesProvider>
-    </AuthProvider>
+    <Provider store={store}>
+      <AuthProvider>
+        <FavoritesProvider>
+          <Router>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              } />
+              <Route path="/sell" element={
+                <ProtectedRoute>
+                  <Sell />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/favorites" element={
+                <ProtectedRoute>
+                  <Favorites />
+                </ProtectedRoute>
+              } />
+              <Route path="/product/:productId" element={
+                <ProtectedRoute>
+                  <ProductDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/product/edit/:productId" element={
+                <ProtectedRoute>
+                  <EditProduct />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </Router>
+        </FavoritesProvider>
+      </AuthProvider>
+    </Provider>
   )
 }
 

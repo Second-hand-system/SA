@@ -8,8 +8,9 @@ import { getFirestore, collection, getDocs, query, orderBy, limit, where, startA
 import { Link } from 'react-router-dom';
 // 導入 Firebase 應用實例
 import app, { checkIsFavorite, addToFavorites, removeFromFavorites } from '../../firebase';
-// 導入收藏上下文
-import { useFavorites } from '../../context/FavoritesContext';
+// 導入 Redux hooks 和 actions
+import { useDispatch, useSelector } from 'react-redux';
+import { addFavorite, removeFavorite } from '../../store/slices/favoriteSlice';
 // 導入樣式文件
 import './home.css';
 
@@ -23,9 +24,10 @@ function Home() {
   const productsPerPage = 6;
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // Initialize Firestore
+  // Initialize Firestore and Redux
   const db = getFirestore(app);
-  const { addFavorite, removeFavorite } = useFavorites();
+  const dispatch = useDispatch();
+  const favorites = useSelector(state => state.favorites.favorites);
   
   // Search functionality
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,7 +90,8 @@ function Home() {
         
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
-          const isFavorite = currentUser ? await checkIsFavorite(currentUser.uid, doc.id) : false;
+          // 使用 Redux store 中的收藏狀態
+          const isFavorite = favorites.some(fav => fav.productId === doc.id);
           fetchedProducts.push({
             id: doc.id,
             ...data,
@@ -114,7 +117,8 @@ function Home() {
           
           for (const doc of querySnapshot.docs) {
             const data = doc.data();
-            const isFavorite = currentUser ? await checkIsFavorite(currentUser.uid, doc.id) : false;
+            // 使用 Redux store 中的收藏狀態
+            const isFavorite = favorites.some(fav => fav.productId === doc.id);
             fetchedProducts.push({
               id: doc.id,
               ...data,
@@ -146,7 +150,7 @@ function Home() {
   // 當頁碼改變時獲取商品
   useEffect(() => {
     fetchProducts(currentPage, selectedCategory);
-  }, [currentPage]);
+  }, [currentPage, favorites]);
 
   // 處理搜索的函數
   const handleSearch = async (e) => {
@@ -227,32 +231,29 @@ function Home() {
     try {
       setIsProcessing(true);
       const userId = currentUser.uid;
-      console.log('Current user ID:', userId);
-      console.log('Product:', product);
 
-      const isFavorite = await checkIsFavorite(userId, product.id);
-      console.log('Is favorite:', isFavorite);
+      const isFavorite = favorites.some(fav => fav.productId === product.id);
 
       if (isFavorite) {
         console.log('Removing from favorites...');
         await removeFromFavorites(userId, product.id);
-        removeFavorite(product.id);
+        dispatch(removeFavorite(product.id));
         alert('已取消收藏');
       } else {
         console.log('Adding to favorites...');
         const productData = {
-          title: product.title,
+          name: product.title,
           image: product.image,
           price: product.price,
-          productId: product.id
+          category: product.category
         };
         await addToFavorites(userId, product.id, productData);
-        addFavorite({
+        dispatch(addFavorite({
           id: `${userId}_${product.id}`,
           userId,
           productId: product.id,
           productData
-        });
+        }));
         alert('已加入收藏');
       }
 
