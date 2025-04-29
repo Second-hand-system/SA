@@ -290,11 +290,11 @@ function Home() {
           <p>買賣交流・資源共享</p>
         </div>
         
-        <form onSubmit={handleSearch} className="search-bar">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+          <form onSubmit={handleSearch} className="search-bar">
+            <input 
+              type="text" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="搜尋商品..."
             />
           <button type="submit">搜尋</button>
@@ -341,13 +341,16 @@ function Home() {
                 </svg>
               </button>
               <Link to={`/product/${product.id}`} className="item-link">
-                <div className="item-image">
-                  <img src={product.image} alt={product.title} />
-                </div>
-                <div className="item-details">
+                  <div className="item-image">
+                    <img src={product.image} alt={product.title} />
+                    {(product.status === '已結標' || (product.auctionEndTime && new Date() > new Date(product.auctionEndTime))) && (
+                      <div className="sold-badge">已結標</div>
+                    )}
+                  </div>
+                  <div className="item-details">
                   <h3>{product.title}</h3>
                   <p className="item-price">NT$ {product.price}</p>
-                  <div className="item-meta">
+                    <div className="item-meta">
                     <span className="item-condition">{product.condition}</span>
                     <span className="item-category">{getCategoryName(product.category)}</span>
                     <span>賣家：{product.sellerName}</span>
@@ -378,7 +381,7 @@ function Home() {
             >
               下一頁
             </button>
-          </div>
+              </div>
         )}
 
         {/* 無商品時的提示 */}
@@ -405,4 +408,4 @@ function Home() {
   );
 }
 
-export default Home;
+export default Home; 

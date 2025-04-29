@@ -149,6 +149,17 @@ const ProductDetail = () => {
           if (!querySnapshot.empty) {
             const highestBid = querySnapshot.docs[0].data();
             setCurrentBid(highestBid);
+            
+            // 檢查競標是否已結束且有得標者
+            if (product.auctionEndTime && new Date() > new Date(product.auctionEndTime)) {
+              const productRef = doc(db, 'products', productId);
+              await updateDoc(productRef, {
+                status: '已售出',
+                soldTo: highestBid.userId,
+                soldAt: serverTimestamp()
+              });
+              setProduct(prev => ({ ...prev, status: '已售出', soldTo: highestBid.userId }));
+            }
           }
         } catch (error) {
           console.error('Error fetching current bid:', error);
@@ -157,7 +168,7 @@ const ProductDetail = () => {
     };
 
     fetchCurrentBid();
-  }, [productId, product?.saleType]);
+  }, [productId, product?.saleType, product?.auctionEndTime]);
 
   // 獲取競價歷史
   useEffect(() => {
@@ -519,6 +530,9 @@ const ProductDetail = () => {
         <div className="product-image-section">
           <div className="product-image">
             <img src={product.image} alt={product.title} />
+            {(product.status === '已結標' || (product.auctionEndTime && new Date() > new Date(product.auctionEndTime))) && (
+              <div className="sold-badge">已結標</div>
+            )}
           </div>
           <div className="product-actions">
             <button className="contact-seller-btn">
