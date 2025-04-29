@@ -479,7 +479,9 @@ a:hover {
 .favorite-button svg {
   width: 20px;
   height: 20px;
-  fill: currentColor;
+  fill: none;  /* 設置為 none 使愛心預設為空心 */
+  stroke: currentColor; /* 添加邊框顏色 */
+  stroke-width: 2;     /* 設置邊框寬度 */
 }
 
 .favorite-button:hover {
@@ -492,6 +494,10 @@ a:hover {
 .favorite-button.active {
   color: #e2af4a;
   background: rgba(255, 255, 255, 0.98);
+}
+
+.favorite-button.active svg {
+  fill: currentColor;  /* active 狀態時填充顏色 */
 }
 
 /* Header 收藏連結樣式 */

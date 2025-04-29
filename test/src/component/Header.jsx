@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useFavorites } from '../context/FavoritesContext';
+import { useSelector } from 'react-redux';
 import './Header.css';
 
 const Header = () => {
   const { currentUser, logout } = useAuth();
-  const { totalFavorites } = useFavorites();
+  const favorites = useSelector(state => state.favorites.favorites);
+  const totalFavorites = favorites ? favorites.length : 0;
 
   const handleLogout = async () => {
     try {
