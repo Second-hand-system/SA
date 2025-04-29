@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp, collection, query, orderBy, limit, getDocs, addDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp, collection, query, orderBy, limit, getDocs, addDoc, runTransaction } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useFavorites } from '../../context/FavoritesContext';
 import app, { 
@@ -21,6 +21,7 @@ const ProductDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const db = getFirestore(app);
   const auth = getAuth(app);
   const navigate = useNavigate();
@@ -496,6 +497,60 @@ const ProductDetail = () => {
     }
   };
 
+  // 處理購買
+  const handlePurchase = async () => {
+    if (!auth.currentUser) {
+      alert('請先登入');
+      return;
+    }
+
+    if (product.sellerId === auth.currentUser.uid) {
+      alert('不能購買自己的商品');
+      return;
+    }
+
+    if (product.status === '已售出') {
+      alert('商品已售出');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const productRef = doc(db, 'products', productId);
+      
+      // 使用事务来确保原子性操作
+      await runTransaction(db, async (transaction) => {
+        const productDoc = await transaction.get(productRef);
+        
+        if (!productDoc.exists()) {
+          throw new Error('商品不存在');
+        }
+        
+        const productData = productDoc.data();
+        
+        if (productData.status === '已售出') {
+          throw new Error('商品已售出');
+        }
+        
+        // 更新商品状态
+        transaction.update(productRef, {
+          status: '已售出',
+          soldTo: auth.currentUser.uid,
+          soldAt: serverTimestamp()
+        });
+      });
+
+      setPurchaseSuccess(true);
+      setProduct(prev => ({ ...prev, status: '已售出' }));
+      alert('購買成功！');
+    } catch (error) {
+      console.error('購買失敗:', error);
+      alert(error.message || '購買失敗，請稍後再試');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading">
@@ -535,6 +590,15 @@ const ProductDetail = () => {
             )}
           </div>
           <div className="product-actions">
+            {product.saleType === '先搶先贏' && product.status !== '已售出' && (
+              <button 
+                className="purchase-btn"
+                onClick={handlePurchase}
+                disabled={isProcessing || product.status === '已售出'}
+              >
+                {isProcessing ? '處理中...' : '立即購買'}
+              </button>
+            )}
             <button className="contact-seller-btn">
               聯絡賣家
             </button>
