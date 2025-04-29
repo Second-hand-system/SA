@@ -224,8 +224,8 @@ a:hover {
 /* 商品網格容器樣式 */
 .items-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
   margin: 30px auto;
   max-width: 1200px;
   padding: 0 20px;
@@ -242,6 +242,7 @@ a:hover {
   cursor: pointer;
   text-decoration: none !important;
   color: inherit;
+  min-height: 380px;
 }
 
 /* 商品卡片連結樣式 */
@@ -270,17 +271,16 @@ a:hover {
 .item-image {
   position: relative;
   width: 100%;
-  aspect-ratio: 1;
-  border-radius: 8px;
+  height: 280px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: #f8f8f8;
 }
 
 /* 商品圖片樣式 */
 .item-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: transform 0.3s;
 }
 
@@ -292,12 +292,13 @@ a:hover {
 /* 商品詳情樣式 */
 .item-details {
   padding: 15px;
+  background-color: white;
 }
 
 /* 商品標題樣式 */
 .item-details h3 {
-  margin: 0 0 8px 0;
-  font-size: 1.1rem;
+  margin: 0 0 10px 0;
+  font-size: 1rem;
   color: #333;
   line-height: 1.4;
   overflow: hidden;
@@ -309,18 +310,20 @@ a:hover {
 
 /* 商品價格樣式 */
 .item-price {
-  color: #e2af4a;    /* 文字顏色 */
-  font-size: 1.3rem; /* 字體大小 */
-  font-weight: bold; /* 字體粗細 */
-  margin: 5px 0 15px 0; /* 外邊距 */
+  color: #e2af4a;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 8px 0;
 }
 
 /* 商品元信息樣式 */
 .item-meta {
-  display: flex;      /* 彈性布局 */
-  justify-content: space-between; /* 兩端對齊 */
-  font-size: 0.9rem; /* 字體大小 */
-  color: #666;       /* 文字顏色 */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 8px;
 }
 
 /* 商品狀態樣式 */
@@ -414,41 +417,25 @@ a:hover {
 }
 
 /* 響應式設計：平板 */
-@media (max-width: 768px) {
-  .hero-content h1 {
-    font-size: 2rem;  /* 字體大小 */
-  }
-  
-  .hero-content p {
-    font-size: 1rem;  /* 字體大小 */
-  }
-  
-  .categories-container {
-    grid-template-columns: repeat(3, 1fr); /* 網格列 */
-  }
-  
+@media (max-width: 1024px) {
   .items-container {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* 網格列 */
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 /* 響應式設計：手機 */
-@media (max-width: 500px) {
-  .categories-container {
-    grid-template-columns: repeat(2, 1fr); /* 網格列 */
+@media (max-width: 640px) {
+  .items-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
   
-  .search-bar {
-    flex-direction: column; /* 垂直排列 */
+  .item-card {
+    min-height: 360px;
   }
-  
-  .search-bar input {
-    border-radius: 25px; /* 圓角 */
-    margin-bottom: 10px; /* 底部外邊距 */
-  }
-  
-  .search-bar button {
-    border-radius: 25px; /* 圓角 */
+
+  .item-image {
+    height: 260px;
   }
 }
 

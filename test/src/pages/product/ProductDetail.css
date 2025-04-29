@@ -9,17 +9,18 @@
   display: flex;
   gap: 2rem;
   margin-bottom: 2rem;
+  align-items: flex-start;
 }
 
 .product-image-section {
-  flex: 0 0 400px;
+  flex: 0 0 500px;
   position: relative;
 }
 
 .product-image {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1;
+  width: 500px;
+  height: 500px;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -240,10 +241,13 @@
 
   .product-image-section {
     flex: 0 0 auto;
+    width: 100%;
   }
 
   .product-image {
-    max-width: 100%;
+    width: 100%;
+    height: 100vw;
+    max-height: 500px;
   }
 
   .product-details ul {
