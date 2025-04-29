@@ -544,7 +544,6 @@ const ProductDetail = () => {
           <div className="product-header">
             <h1>{product.title}</h1>
             <div className="favorite-section">
-              <div className="favorite-title">我的收藏</div>
               <button
                 onClick={handleFavoriteClick}
                 disabled={isProcessing}
