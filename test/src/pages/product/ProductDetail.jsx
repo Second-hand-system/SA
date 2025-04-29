@@ -574,109 +574,79 @@ const ProductDetail = () => {
           </div>
           <div className="product-price">NT$ {product.price}</div>
           
-          <div className="sale-type-selector">
-            <h3>銷售方式</h3>
-            <div className="sale-type-buttons">
-              <button 
-                className={`sale-type-btn ${saleType === '先搶先贏' ? 'active' : ''}`}
-                onClick={() => handleSetSaleType('先搶先贏')}
-                disabled={product.sellerId !== auth.currentUser?.uid}
-              >
-                先搶先贏
-              </button>
-              <button 
-                className={`sale-type-btn ${saleType === '競標' ? 'active' : ''}`}
-                onClick={() => handleSetSaleType('競標')}
-                disabled={product.sellerId !== auth.currentUser?.uid}
-              >
-                競標
-              </button>
-            </div>
-          </div>
-
-          {/* 競標資訊 */}
-          {saleType === '競標' && (
-            <div className="auction-info">
-              <div className="auction-timer">
-                <h3>競標時間</h3>
-                {product.auctionEndTime ? (
-                  <div className="time-left">
-                    <p>開始時間：{new Date(product.auctionStartTime).toLocaleString('zh-TW')}</p>
-                    <p>結束時間：{new Date(product.auctionEndTime).toLocaleString('zh-TW')}</p>
-                    <p>剩餘時間：{timeLeft}</p>
-                  </div>
-                ) : (
-                  <p className="no-time-set">尚未設定競標時間</p>
-                )}
-              </div>
-              
-              {/* 競標結束後的狀態更新 */}
-              {isAuctionEnded() && product.sellerId === auth.currentUser?.uid && (
-                <div className="status-controls">
-                  <h3>競標已結束，請更新商品狀態</h3>
-                  <div className="status-buttons">
-                    <button 
-                      className="status-btn"
-                      onClick={() => handleUpdateStatus('待售出')}
-                      disabled={product.status === '待售出'}
-                    >
-                      待售出
-                    </button>
-                    <button 
-                      className="status-btn"
-                      onClick={() => handleUpdateStatus('已售出')}
-                      disabled={product.status === '已售出'}
-                    >
-                      已售出
-                    </button>
-                    <button 
-                      className="status-btn"
-                      onClick={() => handleUpdateStatus('未售出')}
-                      disabled={product.status === '未售出'}
-                    >
-                      未售出
-                    </button>
-                  </div>
+          {/* 競標倒數計時 */}
+          {product.auctionEndTime && (
+            <div className="auction-timer">
+              <h3>競標倒數</h3>
+              {!isAuctionEnded() ? (
+                <div className="time-left">
+                  <p>結束時間：{new Date(product.auctionEndTime).toLocaleString('zh-TW')}</p>
+                  <p>剩餘時間：{timeLeft}</p>
                 </div>
-              )}
-
-              {/* 競標進行中的提示 */}
-              {!isAuctionEnded() && product.auctionEndTime && (
-                <div className="auction-status-message">
-                  <p>競標進行中，結束後才能更新狀態</p>
+              ) : (
+                <div className="auction-ended">
+                  <p>競標已結束</p>
                 </div>
               )}
             </div>
           )}
 
-          {/* 先搶先贏狀態顯示 */}
-          {saleType === '先搶先贏' && product.sellerId === auth.currentUser?.uid && (
-            <div className="quick-sale-info">
+          {/* 商品狀態更新區域 - 只有在競標時間結束後才能更新 */}
+          {auth.currentUser && product.sellerId === auth.currentUser.uid && product.auctionEndTime && isAuctionEnded() && (
+            <div className="status-controls">
+              <h3>競標已結束，請更新商品狀態</h3>
+              <div className="status-buttons">
+                <button 
+                  className="status-btn"
+                  onClick={() => handleUpdateStatus('待售出')}
+                  disabled={product.status === '待售出'}
+                >
+                  待售出
+                </button>
+                <button 
+                  className="status-btn"
+                  onClick={() => handleUpdateStatus('已售出')}
+                  disabled={product.status === '已售出'}
+                >
+                  已售出
+                </button>
+                <button 
+                  className="status-btn"
+                  onClick={() => handleUpdateStatus('未售出')}
+                  disabled={product.status === '未售出'}
+                >
+                  未售出
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 先搶先贏模式的狀態更新 */}
+          {auth.currentUser && product.sellerId === auth.currentUser.uid && !product.auctionEndTime && (
+            <div className="status-controls">
               <h3>商品狀態</h3>
-              <div className="status-controls">
-                <div className="status-buttons">
-                  <button 
-                    className="status-btn"
-                    onClick={() => handleUpdateStatus('待售出')}
-                    disabled={product.status === '待售出'}
-                  >
-                    待售出
-                  </button>
-                  <button 
-                    className="status-btn"
-                    onClick={() => handleUpdateStatus('已售出')}
-                    disabled={product.status === '已售出'}
-                  >
-                    已售出
-                  </button>
-                  <button 
-                    className="status-btn"
-                    onClick={() => handleUpdateStatus('未售出')}
-                    disabled={product.status === '未售出'}
-                  >
-                    未售出
-                  </button>
-                </div>
+              <div className="status-buttons">
+                <button 
+                  className="status-btn"
+                  onClick={() => handleUpdateStatus('待售出')}
+                  disabled={product.status === '待售出'}
+                >
+                  待售出
+                </button>
+                <button 
+                  className="status-btn"
+                  onClick={() => handleUpdateStatus('已售出')}
+                  disabled={product.status === '已售出'}
+                >
+                  已售出
+                </button>
+                <button 
+                  className="status-btn"
+                  onClick={() => handleUpdateStatus('未售出')}
+                  disabled={product.status === '未售出'}
+                >
+                  未售出
+                </button>
               </div>
             </div>
           )}
@@ -807,6 +777,9 @@ const ProductDetail = () => {
               <li><strong>狀態:</strong> {product.condition}</li>
               <li><strong>上架時間:</strong> {product.createdAt}</li>
               <li><strong>賣家:</strong> {product.sellerName}</li>
+              {product.auctionEndTime && (
+                <li><strong>競標結束時間:</strong> {new Date(product.auctionEndTime).toLocaleString('zh-TW')}</li>
+              )}
             </ul>
           </div>
         </div>

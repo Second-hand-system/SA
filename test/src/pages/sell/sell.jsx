@@ -36,7 +36,9 @@ function Sell() {
     condition: '全新',
     category: 'books',
     location: '',
-    tradeMode: '先搶先贏'
+    tradeMode: '先搶先贏',
+    auctionStartTime: '',
+    auctionEndTime: ''
   });
 
   // 使用 useEffect 檢查用戶登入狀態
@@ -136,6 +138,28 @@ function Sell() {
       return;
     }
 
+    // 如果是競標模式，驗證競標時間
+    if (formData.tradeMode === '競標模式') {
+      if (!formData.auctionStartTime || !formData.auctionEndTime) {
+        setError('請設定競標開始和結束時間');
+        return;
+      }
+
+      const startTime = new Date(formData.auctionStartTime);
+      const endTime = new Date(formData.auctionEndTime);
+      const now = new Date();
+
+      if (startTime < now) {
+        setError('競標開始時間不能早於現在');
+        return;
+      }
+
+      if (endTime <= startTime) {
+        setError('競標結束時間必須晚於開始時間');
+        return;
+      }
+    }
+
     // 設置加載狀態
     setLoading(true);
     setError('');
@@ -157,7 +181,9 @@ function Sell() {
         sellerId: currentUser.uid,
         createdAt: serverTimestamp(),
         status: 'available',
-        tradeMode: formData.tradeMode
+        tradeMode: formData.tradeMode,
+        auctionStartTime: formData.tradeMode === '競標模式' ? formData.auctionStartTime : null,
+        auctionEndTime: formData.tradeMode === '競標模式' ? formData.auctionEndTime : null
       };
 
       console.log('準備上傳商品資料:', { ...productData, image: '圖片數據已省略' });
@@ -285,6 +311,7 @@ function Sell() {
           />
         </div>
 
+        {/* 交易模式選擇框 */}
         <div className="form-group">
           <label htmlFor="tradeMode">交易模式</label>
           <select
@@ -299,6 +326,36 @@ function Sell() {
             <option value="競標模式">競標模式</option>
           </select>
         </div>
+
+        {/* 競標時間設定（僅在競標模式下顯示） */}
+        {formData.tradeMode === '競標模式' && (
+          <>
+            <div className="form-group">
+              <label htmlFor="auctionStartTime">競標開始時間</label>
+              <input
+                type="datetime-local"
+                id="auctionStartTime"
+                name="auctionStartTime"
+                value={formData.auctionStartTime}
+                onChange={handleInputChange}
+                required
+                disabled={loading}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="auctionEndTime">競標結束時間</label>
+              <input
+                type="datetime-local"
+                id="auctionEndTime"
+                name="auctionEndTime"
+                value={formData.auctionEndTime}
+                onChange={handleInputChange}
+                required
+                disabled={loading}
+              />
+            </div>
+          </>
+        )}
 
         {/* 商品描述輸入框 */}
         <div className="form-group">

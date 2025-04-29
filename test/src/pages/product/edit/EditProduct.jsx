@@ -25,8 +25,11 @@ const EditProduct = () => {
     price: '',
     description: '',
     condition: '全新',
-    category: '',
-    meetupLocation: '輔大校園'
+    category: 'books',
+    location: '',
+    tradeMode: '先搶先贏',
+    auctionStartTime: '',
+    auctionEndTime: ''
   });
 
   const [loading, setLoading] = useState(true);
@@ -63,8 +66,11 @@ const EditProduct = () => {
           price: productData.price || '',
           description: productData.description || '',
           condition: productData.condition || '全新',
-          category: productData.category || '',
-          meetupLocation: productData.meetupLocation || '輔大校園'
+          category: productData.category || 'books',
+          location: productData.location || '',
+          tradeMode: productData.tradeMode || '先搶先贏',
+          auctionStartTime: productData.auctionStartTime || '',
+          auctionEndTime: productData.auctionEndTime || ''
         });
         setImagePreview(productData.image);
 
@@ -247,16 +253,60 @@ const EditProduct = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="meetupLocation">面交地點</label>
+          <label htmlFor="location">面交地點</label>
           <input
             type="text"
-            id="meetupLocation"
-            name="meetupLocation"
-            value={formData.meetupLocation}
+            id="location"
+            name="location"
+            value={formData.location}
             onChange={handleInputChange}
             placeholder="請填寫面交地點"
           />
         </div>
+
+        <div className="form-group">
+          <label htmlFor="tradeMode">交易模式</label>
+          <select
+            id="tradeMode"
+            name="tradeMode"
+            value={formData.tradeMode}
+            onChange={handleInputChange}
+            required
+            disabled={loading}
+          >
+            <option value="先搶先贏">先搶先贏</option>
+            <option value="競標模式">競標模式</option>
+          </select>
+        </div>
+
+        {formData.tradeMode === '競標模式' && (
+          <>
+            <div className="form-group">
+              <label htmlFor="auctionStartTime">競標開始時間</label>
+              <input
+                type="datetime-local"
+                id="auctionStartTime"
+                name="auctionStartTime"
+                value={formData.auctionStartTime}
+                onChange={handleInputChange}
+                required
+                disabled={loading}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="auctionEndTime">競標結束時間</label>
+              <input
+                type="datetime-local"
+                id="auctionEndTime"
+                name="auctionEndTime"
+                value={formData.auctionEndTime}
+                onChange={handleInputChange}
+                required
+                disabled={loading}
+              />
+            </div>
+          </>
+        )}
 
         <button 
           type="submit" 
