@@ -67,7 +67,7 @@ const ProductDetail = () => {
             data.createdAt = data.createdAt.toDate().toLocaleString('zh-TW');
           }
           setProduct({ id: docSnap.id, ...data });
-          setSaleType(data.saleType || '先搶先贏');
+          setSaleType(data.tradeMode || '先搶先贏');
           
           if (data.auctionEndTime) {
             const endTime = new Date(data.auctionEndTime);
@@ -834,8 +834,8 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* 在這裡移動競價區域到主要內容外面 */}
-      {saleType === '競標' && (
+      {/* 修改競價區的顯示條件 */}
+      {(saleType === '競標' || saleType === '競標模式') && (
         <div className="bid-section">
           <h3>競價資訊</h3>
           <div className="current-bid">
@@ -865,9 +865,8 @@ const ProductDetail = () => {
                   step="1"
                 />
                 <button 
-                  type="button" 
+                  type="submit" 
                   className="bid-submit-btn"
-                  onClick={handleBidSubmit}
                 >
                   出價
                 </button>
