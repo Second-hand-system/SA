@@ -636,13 +636,13 @@ const ProductDetail = () => {
             )}
           </div>
           <div className="product-actions">
-            {product.tradeMode === '先搶先贏' && product.status !== '已售出' && (
+            {product.tradeMode === '先搶先贏' && (
               <button 
                 className="purchase-btn"
                 onClick={handlePurchase}
                 disabled={isProcessing || product.status === '已售出'}
               >
-                {isProcessing ? '處理中...' : '立即購買'}
+                {isProcessing ? '處理中...' : product.status === '已售出' ? '已售出' : '立即購買'}
               </button>
             )}
             <button className="contact-seller-btn">
