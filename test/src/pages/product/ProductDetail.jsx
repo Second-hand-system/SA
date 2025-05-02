@@ -63,6 +63,7 @@ const ProductDetail = () => {
 
         if (docSnap.exists()) {
           const data = docSnap.data();
+          console.log('商品資料:', data);
           if (data.createdAt && typeof data.createdAt.toDate === 'function') {
             data.createdAt = data.createdAt.toDate().toLocaleString('zh-TW');
           }
@@ -142,7 +143,8 @@ const ProductDetail = () => {
   // 獲取當前最高出價
   useEffect(() => {
     const fetchCurrentBid = async () => {
-      if (product?.saleType === '競標') {
+      console.log('檢查競標模式:', product?.tradeMode);
+      if (product?.tradeMode === '競標模式') {
         try {
           const bidsRef = collection(db, 'products', productId, 'bids');
           const q = query(bidsRef, orderBy('amount', 'desc'), limit(1));
@@ -170,12 +172,12 @@ const ProductDetail = () => {
     };
 
     fetchCurrentBid();
-  }, [productId, product?.saleType, product?.auctionEndTime]);
+  }, [productId, product?.tradeMode, product?.auctionEndTime]);
 
   // 獲取競價歷史
   useEffect(() => {
     const fetchBidHistory = async () => {
-      if (product?.saleType === '競標') {
+      if (product?.tradeMode === '競標模式') {
         try {
           const bidsRef = collection(db, 'products', productId, 'bids');
           const q = query(bidsRef, orderBy('timestamp', 'desc'));
@@ -193,7 +195,7 @@ const ProductDetail = () => {
     };
 
     fetchBidHistory();
-  }, [productId, product?.saleType]);
+  }, [productId, product?.tradeMode]);
 
   // 獲取購買者資訊
   useEffect(() => {
@@ -467,7 +469,7 @@ const ProductDetail = () => {
 
       // 確保商品是競標模式
       const productData = productDoc.data();
-      if (productData.saleType !== '競標') {
+      if (productData.tradeMode !== '競標模式') {
         throw new Error('此商品不是競標模式');
       }
 
@@ -668,7 +670,7 @@ const ProductDetail = () => {
               <h1>{product.title}</h1>
             </div>
             <div className="price-section">
-              <span className="sale-type">{product.saleType || '先搶先贏'}</span>
+              <span className="sale-type">{product.tradeMode || '先搶先贏'}</span>
               <div className="product-price">NT$ {product.price}</div>
             </div>
             <div className="favorite-section">
@@ -835,7 +837,7 @@ const ProductDetail = () => {
       </div>
 
       {/* 修改競價區的顯示條件 */}
-      {(saleType === '競標' || saleType === '競標模式') && (
+      {product?.tradeMode === '競標模式' && (
         <div className="bid-section">
           <h3>競價資訊</h3>
           <div className="current-bid">
