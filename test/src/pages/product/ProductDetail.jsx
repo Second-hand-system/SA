@@ -636,7 +636,7 @@ const ProductDetail = () => {
             )}
           </div>
           <div className="product-actions">
-            {product.saleType === '先搶先贏' && product.status !== '已售出' && (
+            {product.tradeMode === '先搶先贏' && product.status !== '已售出' && (
               <button 
                 className="purchase-btn"
                 onClick={handlePurchase}
