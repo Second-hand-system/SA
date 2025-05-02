@@ -666,7 +666,10 @@ const ProductDetail = () => {
           <div className="product-header">
             <div className="title-section">
               <h1>{product.title}</h1>
+            </div>
+            <div className="price-section">
               <span className="sale-type">{product.saleType || '先搶先贏'}</span>
+              <div className="product-price">NT$ {product.price}</div>
             </div>
             <div className="favorite-section">
               <button
@@ -684,8 +687,6 @@ const ProductDetail = () => {
             </div>
           </div>
           
-          <div className="product-price">NT$ {product.price}</div>
-          
           {/* 購買者資訊 - 只有賣家可以看到 */}
           {product.status === '已售出' && auth.currentUser && product.sellerId === auth.currentUser.uid && (
             <div className="purchaser-info">
@@ -699,7 +700,7 @@ const ProductDetail = () => {
           )}
 
           {/* 競標倒數計時 */}
-          {product.auctionEndTime && (
+          {product.saleType === '競標' && product.auctionEndTime && (
             <div className="auction-timer">
               <h3>競標倒數</h3>
               {!isAuctionEnded() ? (

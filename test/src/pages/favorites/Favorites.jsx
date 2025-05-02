@@ -125,7 +125,13 @@ const Favorites = () => {
                   className="card-content"
                   onClick={() => handleCardClick(item.id)}
                 >
-                  <img src={item.productData?.image} alt={item.productData?.name} />
+                  <div className="item-image">
+                    <img src={item.productData?.image} alt={item.productData?.name} />
+                    {(item.productData?.status === '已結標' || 
+                      (item.productData?.auctionEndTime && new Date() > new Date(item.productData?.auctionEndTime))) && (
+                      <div className="sold-badge">已結標</div>
+                    )}
+                  </div>
                   <div className="info">
                     <h3>{item.productData?.name}</h3>
                     <p>{item.productData?.category}</p>

@@ -245,7 +245,10 @@ function Home() {
           name: product.title,
           image: product.image,
           price: product.price,
-          category: product.category
+          category: product.category,
+          status: product.status, // 添加狀態
+          auctionEndTime: product.auctionEndTime, // 添加競標結束時間
+          auctionStartTime: product.auctionStartTime // 添加競標開始時間
         };
         await addToFavorites(userId, product.id, productData);
         dispatch(addFavorite({
