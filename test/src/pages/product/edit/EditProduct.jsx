@@ -1,9 +1,31 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../../firebase';
 import { compressImage } from '../../../utils/imageUtils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../../../firebase';
+import './EditProduct.css';
+
+// 將 ISO 日期字符串轉換為本地日期時間格式
+const formatDateForInput = (isoString) => {
+  if (!isoString) return '';
+  try {
+    const date = new Date(isoString);
+    // 檢查是否為有效日期
+    if (isNaN(date.getTime())) return '';
+    // 轉換為本地時區的 ISO 字符串並截取前16個字符 (YYYY-MM-DDTHH:mm)
+    return date.toISOString().slice(0, 16);
+  } catch (error) {
+    console.error('日期格式轉換錯誤:', error);
+    return '';
+  }
+};
 
 const EditProduct = () => {
+  const { productId } = useParams();
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     title: '',
     price: '',
@@ -20,6 +42,36 @@ const EditProduct = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // 獲取商品資料
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const productDoc = await getDoc(doc(db, 'products', productId));
+        if (productDoc.exists()) {
+          const data = productDoc.data();
+          setFormData({
+            ...data,
+            auctionStartTime: formatDateForInput(data.auctionStartTime),
+            auctionEndTime: formatDateForInput(data.auctionEndTime),
+            images: data.images || []
+          });
+        } else {
+          setError('找不到商品');
+        }
+      } catch (error) {
+        console.error('獲取商品資料失敗:', error);
+        setError('獲取商品資料失敗');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (productId) {
+      fetchProduct();
+    }
+  }, [productId]);
+
   const handleImageChange = async (e) => {
     const files = Array.from(e.target.files);
     
@@ -33,26 +85,19 @@ const EditProduct = () => {
       const imageUrls = [];
       
       for (const file of files) {
-        // 驗證文件類型
         if (!file.type.startsWith('image/')) {
           setError('請上傳圖片文件');
           continue;
         }
         
-        // 驗證文件大小 (2MB)
         if (file.size > 2 * 1024 * 1024) {
           setError('圖片大小不能超過2MB');
           continue;
         }
 
-        // 壓縮圖片
         const compressedFile = await compressImage(file);
-        
-        // 上傳到 Firebase Storage
         const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
         await uploadBytes(storageRef, compressedFile);
-        
-        // 獲取下載URL
         const downloadURL = await getDownloadURL(storageRef);
         imageUrls.push(downloadURL);
       }
@@ -61,6 +106,7 @@ const EditProduct = () => {
         ...prev,
         images: [...prev.images, ...imageUrls]
       }));
+      setError('');
     } catch (error) {
       console.error('圖片上傳失敗:', error);
       setError('圖片上傳失敗，請重試');
@@ -77,9 +123,67 @@ const EditProduct = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // 處理表單提交邏輯
+    
+    try {
+      setLoading(true);
+      setError('');
+
+      // 驗證必填欄位
+      if (!formData.title || !formData.price || !formData.description || !formData.location) {
+        setError('請填寫所有必填欄位');
+        return;
+      }
+
+      // 如果是競標模式，驗證時間
+      if (formData.tradeMode === '競標模式') {
+        if (!formData.auctionStartTime || !formData.auctionEndTime) {
+          setError('請設定競標時間');
+          return;
+        }
+        
+        const startTime = new Date(formData.auctionStartTime);
+        const endTime = new Date(formData.auctionEndTime);
+        const now = new Date();
+
+        if (startTime < now) {
+          setError('競標開始時間不能早於現在');
+          return;
+        }
+
+        if (endTime <= startTime) {
+          setError('競標結束時間必須晚於開始時間');
+          return;
+        }
+      }
+
+      // 更新商品資料
+      const updateData = {
+        ...formData,
+        updatedAt: new Date(),
+        // 將本地時間轉換為 ISO 字符串
+        auctionStartTime: formData.auctionStartTime ? new Date(formData.auctionStartTime).toISOString() : null,
+        auctionEndTime: formData.auctionEndTime ? new Date(formData.auctionEndTime).toISOString() : null
+      };
+
+      await updateDoc(doc(db, 'products', productId), updateData);
+
+      // 導航回商品詳情頁
+      navigate(`/product/${productId}`);
+    } catch (error) {
+      console.error('更新商品失敗:', error);
+      setError('更新商品失敗，請重試');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteImage = (indexToDelete) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, index) => index !== indexToDelete)
+    }));
   };
 
   return (
@@ -102,7 +206,17 @@ const EditProduct = () => {
           {/* 圖片預覽區域 */}
           <div className="image-preview">
             {formData.images.map((url, index) => (
-              <img key={index} src={url} alt={`商品圖片 ${index + 1}`} />
+              <div key={index} className="image-preview-item">
+                <img src={url} alt={`商品圖片 ${index + 1}`} />
+                <button
+                  type="button"
+                  className="delete-image-btn"
+                  onClick={() => handleDeleteImage(index)}
+                  disabled={loading}
+                >
+                  ✕
+                </button>
+              </div>
             ))}
           </div>
         </div>
@@ -132,6 +246,7 @@ const EditProduct = () => {
               onChange={handleInputChange}
               required
               disabled={loading}
+              min="0"
             />
           </div>
 
@@ -241,7 +356,7 @@ const EditProduct = () => {
           {error && <div className="error-message">{error}</div>}
 
           <div className="bottom-buttons">
-            <button type="button" className="back-button" onClick={() => window.history.back()}>
+            <button type="button" className="back-button" onClick={() => navigate(-1)}>
               返回
             </button>
             <button type="submit" className="submit-button" disabled={loading}>
