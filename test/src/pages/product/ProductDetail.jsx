@@ -828,6 +828,7 @@ const ProductDetail = () => {
               <li><strong>狀態:</strong> {product.condition}</li>
               <li><strong>上架時間:</strong> {product.createdAt}</li>
               <li><strong>賣家:</strong> {product.sellerName}</li>
+              <li><strong>交易地點:</strong> {product.location || '未提供'}</li>
               {product.auctionEndTime && (
                 <li><strong>競標結束時間:</strong> {new Date(product.auctionEndTime).toLocaleString('zh-TW')}</li>
               )}
