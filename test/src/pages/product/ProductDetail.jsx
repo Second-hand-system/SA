@@ -700,7 +700,7 @@ const ProductDetail = () => {
           )}
 
           {/* 競標倒數計時 */}
-          {product.saleType === '競標' && product.auctionEndTime && (
+          {product.auctionEndTime && (
             <div className="auction-timer">
               <h3>競標倒數</h3>
               {!isAuctionEnded() ? (
