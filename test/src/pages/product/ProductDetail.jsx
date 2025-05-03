@@ -36,6 +36,7 @@ const ProductDetail = () => {
   const [bidAmount, setBidAmount] = useState('');
   const [bidError, setBidError] = useState('');
   const [bidHistory, setBidHistory] = useState([]);
+  const [error, setError] = useState(null);
 
   const { addFavorite, removeFavorite, favoriteCount } = useFavorites();
 
@@ -64,29 +65,56 @@ const ProductDetail = () => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           console.log('商品資料:', data);
-          if (data.createdAt && typeof data.createdAt.toDate === 'function') {
-            data.createdAt = data.createdAt.toDate().toLocaleString('zh-TW');
-          }
-          setProduct({ id: docSnap.id, ...data });
-          setSaleType(data.tradeMode || '先搶先贏');
           
+          // 處理時間戳
+          let processedData = {
+            ...data,
+            id: docSnap.id
+          };
+
+          if (data.createdAt) {
+            processedData.createdAt = typeof data.createdAt.toDate === 'function' 
+              ? data.createdAt.toDate().toLocaleString('zh-TW')
+              : new Date(data.createdAt).toLocaleString('zh-TW');
+          }
+
           if (data.auctionEndTime) {
             const endTime = new Date(data.auctionEndTime);
             const now = new Date();
             if (now > endTime) {
-              setAuctionStatus(data.status || '已結束');
+              processedData.status = data.status || '已結束';
             }
           }
+
+          // 檢查收藏狀態
+          if (auth.currentUser) {
+            const isFav = await checkIsFavorite(auth.currentUser.uid, productId);
+            setIsFavorite(isFav);
+          }
+
+          setProduct(processedData);
+          setSaleType(data.tradeMode || '先搶先贏');
+          
+          // 獲取收藏數
+          const favCount = await getFavoriteCount(productId);
+          console.log('收藏數:', favCount);
+          
+        } else {
+          console.log('找不到商品');
+          setError('找不到商品');
         }
       } catch (error) {
         console.error('Error fetching product:', error);
+        setError('載入商品資料時發生錯誤');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProduct();
-  }, [productId, db]);
+    if (productId) {
+      fetchProduct();
+    }
+  }, [productId, db, auth.currentUser]);
 
   useEffect(() => {
     if (product?.auctionEndTime) {
@@ -112,33 +140,6 @@ const ProductDetail = () => {
       return () => clearInterval(timer);
     }
   }, [product]);
-
-  // 檢查商品是否已收藏
-  useEffect(() => {
-    const checkFavoriteStatus = async () => {
-      if (!auth.currentUser || !productId) {
-        setIsFavorite(false);
-        return;
-      }
-
-      try {
-        console.log('Checking favorite status for:', {
-          userId: auth.currentUser.uid,
-          productId: productId
-        });
-        const isFav = await checkIsFavorite(auth.currentUser.uid, productId);
-        console.log('Favorite status:', isFav);
-        setIsFavorite(isFav);
-      } catch (error) {
-        console.error('Error checking favorite status:', error);
-        setIsFavorite(false);
-      }
-    };
-
-    if (auth.currentUser) {
-      checkFavoriteStatus();
-    }
-  }, [auth.currentUser, productId]);
 
   // 獲取當前最高出價
   useEffect(() => {

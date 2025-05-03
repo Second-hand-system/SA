@@ -77,59 +77,62 @@ function Home() {
         );
       }
 
+      // 獲取總商品數
       const allProductsSnapshot = await getDocs(baseQuery);
       const totalProducts = allProductsSnapshot.docs.length;
       console.log('總商品數:', totalProducts);
       setTotalPages(Math.ceil(totalProducts / productsPerPage));
 
+      // 計算分頁
+      const startIndex = (page - 1) * productsPerPage;
       let fetchedProducts = [];
-      
-      if (page === 1) {
-        const firstPageQuery = query(baseQuery, limit(productsPerPage));
-        const querySnapshot = await getDocs(firstPageQuery);
-        
-        for (const doc of querySnapshot.docs) {
-          const data = doc.data();
-          // 使用 Redux store 中的收藏狀態
-          const isFavorite = favorites.some(fav => fav.productId === doc.id);
-          fetchedProducts.push({
-            id: doc.id,
-            ...data,
-            isFavorite
-          });
-        }
-      } else {
+
+      // 獲取當前頁的商品
+      const paginatedQuery = query(
+        baseQuery,
+        limit(productsPerPage)
+      );
+
+      if (page > 1) {
         const previousPageQuery = query(
           baseQuery,
-          limit((page - 1) * productsPerPage)
+          limit(startIndex)
         );
         const previousPageSnapshot = await getDocs(previousPageQuery);
         const lastVisible = previousPageSnapshot.docs[previousPageSnapshot.docs.length - 1];
         
         if (lastVisible) {
-          const nextPageQuery = query(
+          const currentPageQuery = query(
             baseQuery,
             startAfter(lastVisible),
             limit(productsPerPage)
           );
+          const querySnapshot = await getDocs(currentPageQuery);
           
-          const querySnapshot = await getDocs(nextPageQuery);
-          
-          for (const doc of querySnapshot.docs) {
+          querySnapshot.forEach(doc => {
             const data = doc.data();
-            // 使用 Redux store 中的收藏狀態
             const isFavorite = favorites.some(fav => fav.productId === doc.id);
             fetchedProducts.push({
               id: doc.id,
               ...data,
               isFavorite
             });
-          }
-        } else {
-          setError('無法載入更多商品');
+          });
         }
+      } else {
+        const querySnapshot = await getDocs(paginatedQuery);
+        querySnapshot.forEach(doc => {
+          const data = doc.data();
+          const isFavorite = favorites.some(fav => fav.productId === doc.id);
+          fetchedProducts.push({
+            id: doc.id,
+            ...data,
+            isFavorite
+          });
+        });
       }
       
+      console.log('獲取到的商品:', fetchedProducts);
       setProducts(fetchedProducts);
       setError(null);
     } catch (err) {

@@ -1,0 +1,11 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read: if true;  // 允許所有人讀取圖片
+      allow write: if request.auth != null  // 登入用戶可以上傳圖片
+        && request.resource.size < 5 * 1024 * 1024  // 限制大小 5MB
+        && request.resource.contentType.matches('image/.*');  // 只允許圖片
+    }
+  }
+} 

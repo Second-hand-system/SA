@@ -1,11 +1,12 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../../firebase';
-import { compressImage } from '../../../utils/imageUtils';
+import { compressImage, fileToBase64 } from '../../../utils/imageUtils';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../firebase';
 import './EditProduct.css';
+import { auth } from '../../../firebase';
 
 // 將 ISO 日期字符串轉換為本地日期時間格式
 const formatDateForInput = (isoString) => {
@@ -82,34 +83,59 @@ const EditProduct = () => {
 
     try {
       setLoading(true);
-      const imageUrls = [];
-      
-      for (const file of files) {
+      const uploadPromises = files.map(async (file) => {
         if (!file.type.startsWith('image/')) {
-          setError('請上傳圖片文件');
-          continue;
+          throw new Error('請上傳圖片文件');
         }
         
-        if (file.size > 2 * 1024 * 1024) {
-          setError('圖片大小不能超過2MB');
-          continue;
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error('圖片大小不能超過5MB');
         }
 
-        const compressedFile = await compressImage(file);
-        const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
-        await uploadBytes(storageRef, compressedFile);
-        const downloadURL = await getDownloadURL(storageRef);
-        imageUrls.push(downloadURL);
-      }
+        try {
+          // 壓縮圖片並轉換為 Base64
+          const compressedFile = await compressImage(file);
+          const base64Data = await fileToBase64(compressedFile);
+          
+          // 生成唯一的文件名
+          const timestamp = Date.now();
+          const randomString = Math.random().toString(36).substring(7);
+          const safeFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+          const fileName = `products/${timestamp}_${randomString}_${safeFileName}`;
+          
+          // 創建存儲引用
+          const storageRef = ref(storage, fileName);
+
+          // 使用 Base64 數據上傳
+          const snapshot = await uploadString(storageRef, base64Data, 'data_url', {
+            contentType: 'image/jpeg',
+            customMetadata: {
+              uploadedBy: auth.currentUser.uid,
+              originalName: file.name
+            }
+          });
+
+          // 獲取下載 URL
+          const downloadURL = await getDownloadURL(snapshot.ref);
+          return downloadURL;
+        } catch (error) {
+          console.error('Error processing file:', error);
+          throw error;
+        }
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      console.log('Uploaded URLs:', uploadedUrls);
 
       setFormData(prev => ({
         ...prev,
-        images: [...prev.images, ...imageUrls]
+        images: [...prev.images, ...uploadedUrls]
       }));
+
       setError('');
     } catch (error) {
-      console.error('圖片上傳失敗:', error);
-      setError('圖片上傳失敗，請重試');
+      console.error('Error uploading images:', error);
+      setError(error.message || '上傳圖片失敗，請重試');
     } finally {
       setLoading(false);
     }
