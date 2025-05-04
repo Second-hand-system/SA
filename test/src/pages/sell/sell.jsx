@@ -38,7 +38,7 @@ function Sell() {
     price: '',
     description: '',
     condition: '全新',
-    category: 'books',
+    category: '',
     location: '',
     tradeMode: '先搶先贏',
     auctionStartTime: '',
@@ -285,7 +285,6 @@ function Sell() {
             value={formData.category}
             onChange={handleInputChange}
             required
-            disabled={loading}
           >
             <option value="">請選擇分類</option>
             <option value="books">書籍教材</option>

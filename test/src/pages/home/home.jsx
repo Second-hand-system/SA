@@ -385,9 +385,45 @@ function Home() {
             >
               上一頁
             </button>
-            <span className="page-info">
-              第 {currentPage} 頁，共 {totalPages} 頁
-            </span>
+            <div className="page-numbers">
+              {(() => {
+                let pages = [];
+                const maxVisible = 5;
+                let start = 1;
+                let end = totalPages;
+
+                if (totalPages > maxVisible) {
+                  // 計算起始和結束頁碼
+                  if (currentPage <= Math.ceil(maxVisible / 2)) {
+                    // 當前頁在前半部分
+                    end = maxVisible;
+                  } else if (currentPage > totalPages - Math.floor(maxVisible / 2)) {
+                    // 當前頁在後半部分
+                    start = totalPages - maxVisible + 1;
+                    end = totalPages;
+                  } else {
+                    // 當前頁在中間
+                    start = currentPage - Math.floor(maxVisible / 2);
+                    end = start + maxVisible - 1;
+                  }
+                }
+
+                // 生成頁碼按鈕
+                for (let i = start; i <= end; i++) {
+                  pages.push(
+                    <button
+                      key={i}
+                      onClick={() => handlePageChange(i)}
+                      className={`page-number ${currentPage === i ? 'active' : ''}`}
+                      disabled={currentPage === i}
+                    >
+                      {i}
+                    </button>
+                  );
+                }
+                return pages;
+              })()}
+            </div>
             <button 
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
@@ -395,7 +431,7 @@ function Home() {
             >
               下一頁
             </button>
-              </div>
+          </div>
         )}
 
         {/* 無商品時的提示 */}

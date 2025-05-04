@@ -365,6 +365,43 @@ a:hover {
   cursor: not-allowed;    /* 禁用鼠標指針 */
 }
 
+/* 頁碼容器樣式 */
+.page-numbers {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 頁碼按鈕樣式 */
+.page-number {
+  padding: 8px 12px;
+  background-color: white;
+  border: 1px solid #e2af4a;
+  color: #e2af4a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+/* 頁碼按鈕懸停效果 */
+.page-number:hover:not(.active):not(:disabled) {
+  background-color: #e2af4a;
+  color: white;
+}
+
+/* 當前頁碼按鈕樣式 */
+.page-number.active {
+  background-color: #e2af4a;
+  color: white;
+  cursor: default;
+}
+
+/* 禁用狀態的頁碼按鈕樣式 */
+.page-number:disabled {
+  cursor: default;
+}
+
 /* 分頁信息樣式 */
 .page-info {
   font-size: 1rem;   /* 字體大小 */
@@ -436,6 +473,20 @@ a:hover {
 
   .item-image {
     height: 260px;
+  }
+
+  .page-numbers {
+    gap: 4px;
+  }
+  
+  .page-number {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .page-button {
+    padding: 8px 16px;
+    font-size: 14px;
   }
 }
 
