@@ -410,6 +410,36 @@
   font-weight: 600;
 }
 
+.status-display {
+  margin-bottom: 1rem;
+}
+
+.status-tag {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: white;
+}
+
+.status-tag.sold {
+  background-color: #4CAF50;
+}
+
+.status-tag.pending {
+  background-color: #FFC107;
+  color: #333;
+}
+
+.status-tag.unsold {
+  background-color: #F44336;
+}
+
+.status-tag.active {
+  background-color: #2196F3;
+}
+
 .status-buttons {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -725,6 +755,7 @@
   border-radius: 8px;
   margin-top: 1rem;
   text-align: center;
+  border: 1px solid #ddd;
 }
 
 .auction-status-message p {
