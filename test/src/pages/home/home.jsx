@@ -23,6 +23,8 @@ function Home() {
   const [totalPages, setTotalPages] = useState(1);
   const productsPerPage = 6;
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showMessage, setShowMessage] = useState(false);
+  const [messageText, setMessageText] = useState('');
   
   // Initialize Firestore and Redux
   const db = getFirestore(app);
@@ -234,34 +236,45 @@ function Home() {
     try {
       setIsProcessing(true);
       const userId = currentUser.uid;
-
       const isFavorite = favorites.some(fav => fav.productId === product.id);
 
       if (isFavorite) {
-        console.log('Removing from favorites...');
         await removeFromFavorites(userId, product.id);
-        dispatch(removeFavorite(product.id));
-        alert('已取消收藏');
+        const favoriteToRemove = favorites.find(fav => fav.productId === product.id);
+        if (favoriteToRemove) {
+          dispatch(removeFavorite(favoriteToRemove.id));
+        }
+        setMessageText('已取消收藏');
       } else {
-        console.log('Adding to favorites...');
         const productData = {
-          name: product.title,
-          image: product.images && product.images.length > 0 ? product.images[0] : product.image,
-          price: product.price,
-          category: product.category,
-          status: product.status,
-          auctionEndTime: product.auctionEndTime,
-          auctionStartTime: product.auctionStartTime
+          title: product.title || '',
+          ...(product.images && product.images.length > 0 ? { images: product.images } : {}),
+          image: (product.images && product.images.length > 0) 
+            ? product.images[0] 
+            : (product.image || '/placeholder.jpg'),
+          price: product.price || 0,
+          category: product.category || 'others',
+          status: product.status || '販售中',
+          auctionEndTime: product.auctionEndTime || null,
+          auctionStartTime: product.auctionStartTime || null,
+          condition: product.condition || '未指定',
+          sellerName: product.sellerName || '未知賣家'
         };
+        
         await addToFavorites(userId, product.id, productData);
+        const newFavoriteId = `${userId}_${product.id}`;
         dispatch(addFavorite({
-          id: `${userId}_${product.id}`,
+          id: newFavoriteId,
           userId,
           productId: product.id,
-          productData
+          ...productData
         }));
-        alert('已加入收藏');
+        setMessageText('已加入收藏');
       }
+
+      // 顯示提示訊息
+      setShowMessage(true);
+      setTimeout(() => setShowMessage(false), 3000);
 
       // 更新商品列表中的收藏狀態
       setProducts(prevProducts =>
@@ -280,6 +293,13 @@ function Home() {
   // 渲染組件
   return (
     <div className="home-container">
+      {/* 顯示提示訊息 */}
+      {showMessage && (
+        <div className="success-message">
+          {messageText}
+        </div>
+      )}
+
       {/* 用戶歡迎區域 */}
       {currentUser && (
         <div className="user-welcome">

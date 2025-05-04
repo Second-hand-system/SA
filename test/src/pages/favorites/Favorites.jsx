@@ -8,6 +8,22 @@ import { FaHeart } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import './Favorites.css';
 
+// 商品類別
+const categories = [
+  { id: 'all', name: '全部商品', icon: '🛍️' },
+  { id: 'books', name: '書籍教材', icon: '📚' },
+  { id: 'electronics', name: '電子產品', icon: '📱' },
+  { id: 'furniture', name: '家具寢具', icon: '🛋️' },
+  { id: 'clothes', name: '衣物服飾', icon: '👕' },
+  { id: 'others', name: '其他', icon: '📦' }
+];
+
+// 將類別ID轉換為中文名稱的函數
+const getCategoryName = (categoryId) => {
+  const category = categories.find(cat => cat.id === categoryId);
+  return category ? category.name : '其他';
+};
+
 const Favorites = () => {
   const [showMessage, setShowMessage] = useState(false);
   const navigate = useNavigate();
@@ -44,10 +60,14 @@ const Favorites = () => {
     fetchFavorites();
   }, [currentUser, dispatch, navigate]);
 
-  const handleUnfavorite = async (id) => {
+  const handleUnfavorite = async (productId) => {
     try {
-      await removeFromFavorites(currentUser.uid, id);
-      dispatch(removeFavorite(id));
+      await removeFromFavorites(currentUser.uid, productId);
+      // 找到要刪除的收藏項目的ID
+      const favoriteToRemove = favorites.find(fav => fav.productId === productId);
+      if (favoriteToRemove) {
+        dispatch(removeFavorite(favoriteToRemove.id));
+      }
       setShowMessage(true);
       setTimeout(() => setShowMessage(false), 3000);
     } catch (error) {
@@ -116,26 +136,37 @@ const Favorites = () => {
                   className="favorite-button active"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleUnfavorite(item.id);
+                    handleUnfavorite(item.productId);
                   }}
                 >
                   <FaHeart />
                 </button>
                 <div
                   className="card-content"
-                  onClick={() => handleCardClick(item.id)}
+                  onClick={() => handleCardClick(item.productId)}
                 >
                   <div className="item-image">
-                  <img src={item.productData?.image} alt={item.productData?.name} />
-                    {(item.productData?.status === '已結標' || 
-                      (item.productData?.auctionEndTime && new Date() > new Date(item.productData?.auctionEndTime))) && (
+                    <img 
+                      src={
+                        item.images && item.images.length > 0
+                          ? item.images[0]
+                          : item.image || '/placeholder.jpg'
+                      } 
+                      alt={item.title} 
+                    />
+                    {(item.status === '已結標' || 
+                      (item.auctionEndTime && new Date() > new Date(item.auctionEndTime))) && (
                       <div className="sold-badge">已結標</div>
                     )}
                   </div>
                   <div className="info">
-                    <h3>{item.productData?.name}</h3>
-                    <p>{item.productData?.category}</p>
-                    <p className="price">NT$ {item.productData?.price}</p>
+                    <h3>{item.title}</h3>
+                    <p>{getCategoryName(item.category)}</p>
+                    <p className="price">NT$ {item.price}</p>
+                    <div className="item-meta">
+                      <span className="item-condition">{item.condition}</span>
+                      <span>賣家：{item.sellerName}</span>
+                    </div>
                   </div>
                 </div>
               </div>
