@@ -250,6 +250,13 @@ const ProductDetail = () => {
       return;
     }
 
+    // 檢查是否要設置為已售出或待售出，但沒有人競標
+    if (product.tradeMode === '競標模式' && (!currentBid || bidHistory.length === 0) && 
+        (newStatus === '已售出' || newStatus === '待售出')) {
+      alert('無人競標，不可設置為已售出或待售出');
+      return;
+    }
+
     try {
       const productRef = doc(db, 'products', productId);
       await updateDoc(productRef, {
@@ -735,9 +742,17 @@ const ProductDetail = () => {
           )}
 
           {/* 商品狀態更新區域 - 只有在競標時間結束後才能更新 */}
-          {auth.currentUser && product.sellerId === auth.currentUser.uid && product.auctionEndTime && isAuctionEnded() && (
-            <div className="status-controls">
-              <h3>競標已結束，請更新商品狀態</h3>
+          <div className="status-controls">
+            <h3>商品狀態</h3>
+            <div className="status-display">
+              <span className={`status-tag ${product.status === '已售出' ? 'sold' : 
+                               product.status === '待售出' ? 'pending' : 
+                               product.status === '未售出' ? 'unsold' : 'active'}`}>
+                {product.status || '進行中'}
+              </span>
+            </div>
+            {auth.currentUser && product.sellerId === auth.currentUser.uid && 
+             (product.tradeMode !== '競標模式' || (product.tradeMode === '競標模式' && isAuctionEnded())) && (
               <div className="status-buttons">
                 <button 
                   className="status-btn"
@@ -761,38 +776,14 @@ const ProductDetail = () => {
                   未售出
                 </button>
               </div>
-            </div>
-          )}
-
-          {/* 先搶先贏模式的狀態更新 */}
-          {auth.currentUser && product.sellerId === auth.currentUser.uid && !product.auctionEndTime && (
-            <div className="status-controls">
-              <h3>商品狀態</h3>
-              <div className="status-buttons">
-                <button 
-                  className="status-btn"
-                  onClick={() => handleUpdateStatus('待售出')}
-                  disabled={product.status === '待售出'}
-                >
-                  待售出
-                </button>
-                <button 
-                  className="status-btn"
-                  onClick={() => handleUpdateStatus('已售出')}
-                  disabled={product.status === '已售出'}
-                >
-                  已售出
-                </button>
-                <button 
-                  className="status-btn"
-                  onClick={() => handleUpdateStatus('未售出')}
-                  disabled={product.status === '未售出'}
-                >
-                  未售出
-                </button>
+            )}
+            {auth.currentUser && product.sellerId === auth.currentUser.uid && 
+             product.tradeMode === '競標模式' && !isAuctionEnded() && (
+              <div className="auction-status-message">
+                <p>競標尚未結束，無法更新商品狀態</p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {showTimePicker && saleType === '競標' && !product.auctionEndTime && (
             <div className="time-picker">
