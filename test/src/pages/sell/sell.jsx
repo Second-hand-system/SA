@@ -7,7 +7,11 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 // 導入自定義的認證上下文
 import { useAuth } from '../../context/AuthContext';
 // 導入 Firebase 數據庫實例
-import { db } from '../../firebase';
+import { db, storage } from '../../firebase';
+// 導入 Firebase Storage 的引用、上傳和下載功能
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+// 導入自定義的圖片處理函數
+import { compressImage } from '../../utils/imageUtils';
 // 導入樣式文件
 import './sell.css';
 
@@ -58,23 +62,13 @@ function Sell() {
     setError('');
   };
 
-  // 將圖片轉換為 base64 格式的函數
-  const convertToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
-    });
-  };
-
   // 處理圖片上傳和預覽的函數
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      // 檢查文件大小（限制為 2MB）
-      if (file.size > 2 * 1024 * 1024) {
-        setError('圖片大小不能超過 2MB');
+      // 檢查文件大小（限制為 5MB）
+      if (file.size > 5 * 1024 * 1024) {
+        setError('圖片大小不能超過 5MB');
         return;
       }
       
@@ -85,13 +79,19 @@ function Sell() {
       }
 
       try {
-        // 轉換圖片為 base64
-        const base64 = await convertToBase64(file);
-        setImageFile(base64);
-        setImagePreview(base64);
+        // 壓縮圖片
+        const compressedFile = await compressImage(file);
+        
+        // 創建預覽
+        const reader = new FileReader();
+        reader.onload = (e) => setImagePreview(e.target.result);
+        reader.readAsDataURL(compressedFile);
+        
+        // 保存壓縮後的文件
+        setImageFile(compressedFile);
         setError('');
       } catch (error) {
-        console.error('圖片轉換錯誤:', error);
+        console.error('圖片處理錯誤:', error);
         setError('圖片處理失敗，請重試');
       }
     }
@@ -167,6 +167,33 @@ function Sell() {
 
     try {
       console.log('開始上傳商品...');
+
+      // 上傳圖片到 Storage
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(7);
+      const extension = imageFile.name.split('.').pop();
+      const fileName = `products/temp_${timestamp}_${randomString}.${extension}`;
+      
+      // 創建存儲引用
+      const storageRef = ref(storage, fileName);
+
+      // 設置元數據
+      const metadata = {
+        contentType: 'image/jpeg',
+        customMetadata: {
+          uploadedBy: currentUser.uid,
+          originalName: imageFile.name
+        }
+      };
+
+      // 上傳壓縮後的文件
+      const snapshot = await uploadBytes(storageRef, imageFile, metadata);
+      console.log('圖片上傳成功:', snapshot.ref.fullPath);
+
+      // 獲取下載URL
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      console.log('圖片下載URL:', downloadURL);
+
       // 準備要上傳的商品數據
       const productData = {
         title: formData.title.trim(),
@@ -175,7 +202,7 @@ function Sell() {
         category: formData.category,
         condition: formData.condition,
         location: formData.location.trim(),
-        image: imageFile,
+        images: [downloadURL],  // 改為數組格式，與 EditProduct 一致
         sellerName: currentUser.displayName || '未知賣家',
         sellerEmail: currentUser.email,
         sellerId: currentUser.uid,
@@ -185,8 +212,6 @@ function Sell() {
         auctionStartTime: formData.tradeMode === '競標模式' ? formData.auctionStartTime : null,
         auctionEndTime: formData.tradeMode === '競標模式' ? formData.auctionEndTime : null
       };
-
-      console.log('準備上傳商品資料:', { ...productData, image: '圖片數據已省略' });
 
       // 將商品數據添加到 Firestore
       const productsRef = collection(db, 'products');
@@ -203,13 +228,6 @@ function Sell() {
     } catch (err) {
       console.error('上架商品錯誤:', err);
       setError(err.message || '上架商品時發生錯誤，請稍後再試');
-      // 顯示更詳細的錯誤信息
-      if (err.code) {
-        console.error('錯誤代碼:', err.code);
-      }
-      if (err.details) {
-        console.error('錯誤詳情:', err.details);
-      }
     } finally {
       setLoading(false);
     }

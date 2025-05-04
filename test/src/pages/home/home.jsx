@@ -246,12 +246,12 @@ function Home() {
         console.log('Adding to favorites...');
         const productData = {
           name: product.title,
-          image: product.image,
+          image: product.images && product.images.length > 0 ? product.images[0] : product.image,
           price: product.price,
           category: product.category,
-          status: product.status, // 添加狀態
-          auctionEndTime: product.auctionEndTime, // 添加競標結束時間
-          auctionStartTime: product.auctionStartTime // 添加競標開始時間
+          status: product.status,
+          auctionEndTime: product.auctionEndTime,
+          auctionStartTime: product.auctionStartTime
         };
         await addToFavorites(userId, product.id, productData);
         dispatch(addFavorite({
@@ -349,7 +349,14 @@ function Home() {
               </button>
               <Link to={`/product/${product.id}`} className="item-link">
                   <div className="item-image">
-                    <img src={product.image} alt={product.title} />
+                    <img 
+                      src={
+                        (product.images && product.images.length > 0) 
+                          ? product.images[0] 
+                          : (product.image || '/placeholder.jpg')
+                      } 
+                      alt={product.title} 
+                    />
                     {(product.status === '已結標' || (product.auctionEndTime && new Date() > new Date(product.auctionEndTime))) && (
                       <div className="sold-badge">已結標</div>
                     )}

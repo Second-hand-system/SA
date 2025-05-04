@@ -1,5 +1,7 @@
 /**
- * 將 File 對象轉換為 base64 字符串
+ * 將文件轉換為 base64 字符串
+ * @param {File} file - 要轉換的文件
+ * @returns {Promise<string>} base64 字符串
  */
 const fileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
@@ -48,6 +50,8 @@ const compressImage = async (file) => {
           canvas.height = height;
           
           const ctx = canvas.getContext('2d');
+          ctx.fillStyle = 'white';  // 設置白色背景
+          ctx.fillRect(0, 0, width, height);  // 填充白色背景
           ctx.drawImage(img, 0, 0, width, height);
           
           // 轉換為 Blob

@@ -42,6 +42,7 @@ const EditProduct = () => {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState('');
 
   // 獲取商品資料
   useEffect(() => {
@@ -108,17 +109,21 @@ const EditProduct = () => {
       if (productData.sellerId !== auth.currentUser.uid) {
         throw new Error('只有賣家可以更新商品照片');
       }
-      
-      const uploadPromises = files.map(async (file) => {
-        if (!file.type.startsWith('image/')) {
-          throw new Error('請上傳圖片文件');
-        }
-        
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error('圖片大小不能超過5MB');
-        }
 
+      // 壓縮並上傳圖片
+      const uploadPromises = files.map(async (file) => {
         try {
+          if (!file.type.startsWith('image/')) {
+            throw new Error('請上傳圖片文件');
+          }
+          
+          if (file.size > 5 * 1024 * 1024) {
+            throw new Error('圖片大小不能超過5MB');
+          }
+
+          // 壓縮圖片
+          const compressedFile = await compressImage(file);
+          
           // 生成唯一的文件名
           const timestamp = Date.now();
           const randomString = Math.random().toString(36).substring(7);
@@ -130,7 +135,7 @@ const EditProduct = () => {
 
           // 設置元數據
           const metadata = {
-            contentType: file.type,
+            contentType: 'image/jpeg',
             customMetadata: {
               uploadedBy: auth.currentUser.uid,
               originalName: file.name,
@@ -138,13 +143,23 @@ const EditProduct = () => {
             }
           };
 
-          // 上傳文件
-          const snapshot = await uploadBytes(storageRef, file, metadata);
+          // 上傳壓縮後的文件
+          const snapshot = await uploadBytes(storageRef, compressedFile, metadata);
           console.log('上傳成功:', snapshot.ref.fullPath);
 
           // 獲取下載URL
           const downloadURL = await getDownloadURL(snapshot.ref);
           console.log('下載URL:', downloadURL);
+
+          // 創建預覽
+          const reader = new FileReader();
+          reader.readAsDataURL(compressedFile);
+          await new Promise((resolve) => {
+            reader.onload = (e) => {
+              setImagePreview(e.target.result);
+              resolve();
+            };
+          });
           
           return downloadURL;
         } catch (uploadError) {
@@ -156,12 +171,12 @@ const EditProduct = () => {
       const uploadedUrls = await Promise.all(uploadPromises);
       console.log('新圖片URLs:', uploadedUrls);
 
-      // 更新到 Firestore
+      // 更新到 Firestore，保留原有的 sellerId
       const productRef = doc(db, 'products', productId);
       await updateDoc(productRef, {
         images: uploadedUrls,
         updatedAt: serverTimestamp(),
-        sellerId: auth.currentUser.uid  // 確保 sellerId 保持不變
+        sellerId: productData.sellerId  // 使用原有的 sellerId
       });
 
       // 更新本地狀態

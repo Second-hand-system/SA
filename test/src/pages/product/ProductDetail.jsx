@@ -653,11 +653,38 @@ const ProductDetail = () => {
       <div className="product-detail-content">
         <div className="product-image-section">
           <div className="product-image">
-            <img src={product.image} alt={product.title} />
+            <img 
+              src={
+                (product.images && product.images.length > 0)
+                  ? product.images[0]
+                  : (product.image || '/placeholder.jpg')
+              } 
+              alt={product.title} 
+            />
             {(product.status === '已結標' || (product.auctionEndTime && new Date() > new Date(product.auctionEndTime))) && (
               <div className="sold-badge">已結標</div>
             )}
           </div>
+          {/* 如果有多張圖片，顯示縮略圖 */}
+          {product.images && product.images.length > 1 && (
+            <div className="product-thumbnails">
+              {product.images.map((image, index) => (
+                <img 
+                  key={index}
+                  src={image}
+                  alt={`${product.title} - 圖片 ${index + 1}`}
+                  className="thumbnail"
+                  onClick={() => {
+                    const newProduct = { ...product };
+                    const temp = newProduct.images[0];
+                    newProduct.images[0] = newProduct.images[index];
+                    newProduct.images[index] = temp;
+                    setProduct(newProduct);
+                  }}
+                />
+              ))}
+            </div>
+          )}
           <div className="product-actions">
             {product.tradeMode === '先搶先贏' && auth.currentUser && product.sellerId !== auth.currentUser.uid && (
               <button 

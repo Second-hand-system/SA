@@ -1115,4 +1115,45 @@
   .purchaser-details {
     grid-template-columns: 1fr;
   }
+}
+
+.product-thumbnails {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  overflow-x: auto;
+  padding: 10px;
+}
+
+.thumbnail {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.thumbnail:hover {
+  border-color: #4a90e2;
+  transform: scale(1.05);
+}
+
+/* 確保主圖片容器的樣式正確 */
+.product-image {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.product-image img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
 } 
