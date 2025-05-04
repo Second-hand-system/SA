@@ -11,65 +11,68 @@ const fileToBase64 = (file) => {
 };
 
 /**
- * 將 base64 字符串轉換為 Blob 對象
- */
-const base64ToBlob = async (base64) => {
-  const response = await fetch(base64);
-  const blob = await response.blob();
-  return blob;
-};
-
-/**
  * 壓縮圖片
  * @param {File} file - 要壓縮的圖片文件
  * @returns {Promise<File>} 壓縮後的圖片 File
  */
 const compressImage = async (file) => {
   try {
-    // 轉換為 Base64
-    const base64 = await fileToBase64(file);
-    
-    // 創建圖片對象
-    const img = new Image();
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = reject;
-      img.src = base64;
-    });
-
-    // 計算新的尺寸
-    let width = img.width;
-    let height = img.height;
-    const maxSize = 1024;
-
-    if (width > height && width > maxSize) {
-      height = Math.round((height * maxSize) / width);
-      width = maxSize;
-    } else if (height > maxSize) {
-      width = Math.round((width * maxSize) / height);
-      height = maxSize;
-    }
-
-    // 創建 canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, width, height);
-
-    // 轉換為 Blob
-    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-    const compressedBlob = await base64ToBlob(compressedBase64);
-    
-    // 創建新的 File 對象
-    return new File([compressedBlob], file.name, {
-      type: 'image/jpeg',
-      lastModified: Date.now(),
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // 如果圖片太大，進行縮放
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = Math.round((width * MAX_HEIGHT) / height);
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // 轉換為 Blob
+          canvas.toBlob((blob) => {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          }, 'image/jpeg', 0.7); // 使用 JPEG 格式，70% 質量
+        };
+        img.onerror = (error) => {
+          console.error('Error loading image:', error);
+          reject(new Error('圖片載入失敗'));
+        };
+      };
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        reject(new Error('讀取文件失敗'));
+      };
     });
   } catch (error) {
-    console.error('圖片壓縮失敗:', error);
-    throw error;
+    console.error('Error compressing image:', error);
+    throw new Error('圖片壓縮失敗');
   }
 };
 
-export { compressImage, fileToBase64, base64ToBlob }; 
+export { compressImage, fileToBase64 }; 

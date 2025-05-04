@@ -2,36 +2,57 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 商品
-    match /products/{productId} {
-      allow read: if true;  // 允許所有人讀取商品
-      allow create: if request.auth != null;  // 登入用戶可以創建
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.sellerId;  // 只有賣家可以更新和刪除
+    // 基本函數
+    function isAuthenticated() {
+      return request.auth != null;
+    }
 
-      // 商品底下的競價 bids
+    function isProductOwner(resource) {
+      return isAuthenticated() && request.auth.uid == resource.data.sellerId;
+    }
+    
+    // 商品集合
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isProductOwner(resource);
+
+      // 商品的競價子集合
       match /bids/{bidId} {
-        allow create: if request.auth != null;  // 登入的人可以出價
-        allow read: if true;    // 所有人可以看競價記錄
-        allow update, delete: if false;         // 出價之後不能改、不能刪
+        allow read: if true;
+        allow create: if isAuthenticated();
+        allow update, delete: if false;
+      }
+
+      // 商品的元數據（如收藏數）
+      match /metadata/{metaId} {
+        allow read: if true;
+        allow write: if isAuthenticated();
       }
     }
     
-    // 使用者
+    // 用戶集合
     match /users/{userId} {
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow read: if true;  // 允許所有人讀取用戶資料
-      allow update, delete: if request.auth != null && request.auth.uid == userId;
+      allow read: if true;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
       
-      // 收藏夾
-      match /favorites/{favoriteId} {
-        allow create, read, update, delete: if request.auth != null && request.auth.uid == userId;
+      // 用戶的收藏子集合
+      match /favorites/{productId} {
+        allow read: if true;
+        allow write: if isAuthenticated() && request.auth.uid == userId;
       }
     }
 
-    // 收藏計數
+    // 收藏計數集合（如果使用獨立集合）
     match /favorites_count/{productId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAuthenticated();
+    }
+
+    // 收藏集合（如果是獨立的集合）
+    match /favorites/{favoriteId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
   }
 } 

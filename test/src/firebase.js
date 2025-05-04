@@ -73,48 +73,56 @@ const checkFirestoreConnection = async () => {
 
 // 收藏相關函數
 const getFavoritesCollection = (userId) => {
+  if (!userId) {
+    throw new Error('userId is required');
+  }
   return collection(db, 'users', userId, 'favorites');
 };
 
 const getFavoriteRef = (userId, productId) => {
   if (!userId || !productId) {
-    console.error('Invalid parameters for getFavoriteRef:', { userId, productId });
     throw new Error('userId and productId are required');
   }
   return doc(db, 'users', userId, 'favorites', productId);
 };
 
-// 新增：獲取商品的收藏計數器引用
 const getFavoriteCountRef = (productId) => {
+  if (!productId) {
+    throw new Error('productId is required');
+  }
   return doc(db, 'products', productId, 'metadata', 'favorites');
 };
 
-// 新增：更新商品的收藏數
 const updateFavoriteCount = async (productId, increment = true) => {
   try {
+    if (!productId) {
+      throw new Error('productId is required');
+    }
+
     const countRef = getFavoriteCountRef(productId);
     const countDoc = await getDoc(countRef);
     
-    if (!countDoc.exists()) {
-      // 如果文檔不存在，創建它
-      await setDoc(countRef, { count: increment ? 1 : 0 });
-      return increment ? 1 : 0;
-    } else {
-      // 如果文檔存在，更新計數
-      const currentCount = countDoc.data().count || 0;
-      const newCount = increment ? currentCount + 1 : currentCount - 1;
-      await setDoc(countRef, { count: Math.max(0, newCount) });
-      return Math.max(0, newCount);
-    }
+    const currentCount = countDoc.exists() ? (countDoc.data().count || 0) : 0;
+    const newCount = increment ? currentCount + 1 : Math.max(0, currentCount - 1);
+    
+    await setDoc(countRef, { 
+      count: newCount,
+      updatedAt: serverTimestamp()
+    });
+    
+    return newCount;
   } catch (error) {
     console.error('Error updating favorite count:', error);
     throw error;
   }
 };
 
-// 新增：獲取商品的收藏數
 const getFavoriteCount = async (productId) => {
   try {
+    if (!productId) {
+      throw new Error('productId is required');
+    }
+
     const countRef = getFavoriteCountRef(productId);
     const countDoc = await getDoc(countRef);
     return countDoc.exists() ? (countDoc.data().count || 0) : 0;
@@ -126,16 +134,21 @@ const getFavoriteCount = async (productId) => {
 
 const addToFavorites = async (userId, productId, productData) => {
   try {
-    console.log('Adding to favorites:', { userId, productId, productData });
+    if (!userId || !productId || !productData) {
+      throw new Error('userId, productId, and productData are required');
+    }
+
     const favoriteRef = getFavoriteRef(userId, productId);
-    const favoriteData = {
+    await setDoc(favoriteRef, {
+      ...productData,
+      userId,
       productId,
-      productData,
       createdAt: serverTimestamp()
-    };
-    console.log('Favorite data to be saved:', favoriteData);
-    await setDoc(favoriteRef, favoriteData);
-    console.log('Successfully added to favorites');
+    });
+
+    // 更新收藏計數
+    await updateFavoriteCount(productId, true);
+    
     return true;
   } catch (error) {
     console.error('Error adding to favorites:', error);
@@ -145,10 +158,16 @@ const addToFavorites = async (userId, productId, productData) => {
 
 const removeFromFavorites = async (userId, productId) => {
   try {
-    console.log('Removing from favorites:', { userId, productId });
+    if (!userId || !productId) {
+      throw new Error('userId and productId are required');
+    }
+
     const favoriteRef = getFavoriteRef(userId, productId);
     await deleteDoc(favoriteRef);
-    console.log('Successfully removed from favorites');
+
+    // 更新收藏計數
+    await updateFavoriteCount(productId, false);
+    
     return true;
   } catch (error) {
     console.error('Error removing from favorites:', error);
@@ -158,12 +177,13 @@ const removeFromFavorites = async (userId, productId) => {
 
 const checkIsFavorite = async (userId, productId) => {
   try {
-    console.log('Checking favorite status:', { userId, productId });
+    if (!userId || !productId) {
+      throw new Error('userId and productId are required');
+    }
+
     const favoriteRef = getFavoriteRef(userId, productId);
     const docSnap = await getDoc(favoriteRef);
-    const exists = docSnap.exists();
-    console.log('Favorite status:', exists);
-    return exists;
+    return docSnap.exists();
   } catch (error) {
     console.error('Error checking favorite status:', error);
     throw error;
@@ -172,15 +192,16 @@ const checkIsFavorite = async (userId, productId) => {
 
 const getUserFavorites = async (userId) => {
   try {
-    console.log('Getting user favorites for:', userId);
+    if (!userId) {
+      throw new Error('userId is required');
+    }
+
     const favoritesRef = getFavoritesCollection(userId);
     const querySnapshot = await getDocs(favoritesRef);
-    const favorites = querySnapshot.docs.map(doc => ({
+    return querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
-    console.log('Retrieved favorites:', favorites);
-    return favorites;
   } catch (error) {
     console.error('Error getting user favorites:', error);
     throw error;

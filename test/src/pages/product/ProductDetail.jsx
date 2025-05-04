@@ -86,27 +86,38 @@ const ProductDetail = () => {
             }
           }
 
-          // 檢查收藏狀態
-          if (auth.currentUser) {
-            const isFav = await checkIsFavorite(auth.currentUser.uid, productId);
-            setIsFavorite(isFav);
-          }
-
           setProduct(processedData);
           setSaleType(data.tradeMode || '先搶先贏');
+
+          // 檢查收藏狀態
+          if (auth.currentUser) {
+            try {
+              const isFav = await checkIsFavorite(auth.currentUser.uid, productId);
+              setIsFavorite(isFav);
+            } catch (error) {
+              console.error('檢查收藏狀態時發生錯誤:', error);
+              // 不中斷整個流程，只是收藏狀態可能不準確
+            }
+          }
           
           // 獲取收藏數
-          const favCount = await getFavoriteCount(productId);
-          console.log('收藏數:', favCount);
+          try {
+            const favCount = await getFavoriteCount(productId);
+            console.log('收藏數:', favCount);
+          } catch (error) {
+            console.error('獲取收藏數時發生錯誤:', error);
+            // 不中斷整個流程，只是收藏數可能不準確
+          }
           
+          setLoading(false);
         } else {
           console.log('找不到商品');
           setError('找不到商品');
+          setLoading(false);
         }
       } catch (error) {
         console.error('Error fetching product:', error);
-        setError('載入商品資料時發生錯誤');
-      } finally {
+        setError('載入商品時發生錯誤');
         setLoading(false);
       }
     };
@@ -303,42 +314,40 @@ const ProductDetail = () => {
   };
 
   const handleFavoriteClick = async () => {
-    console.log('handleFavoriteClick triggered');
     if (!auth.currentUser) {
-      console.log('No authenticated user');
       alert('請先登入');
       return;
     }
 
     if (isProcessing) {
-      console.log('Already processing a request');
       return;
     }
 
     try {
-      console.log('Starting favorite operation');
       setIsProcessing(true);
       const userId = auth.currentUser.uid;
-      console.log('Current user ID:', userId);
-      console.log('Current favorite status:', isFavorite);
       
       if (isFavorite) {
-        console.log('Attempting to remove from favorites');
         await removeFromFavorites(userId, productId);
-        console.log('Successfully removed from favorites');
         removeFavorite(productId);
         setIsFavorite(false);
+        
+        // 更新收藏數
+        try {
+          await updateFavoriteCount(productId, false);
+        } catch (error) {
+          console.error('更新收藏數時發生錯誤:', error);
+        }
       } else {
-        console.log('Attempting to add to favorites');
         const productData = {
           title: product.title,
           image: product.image,
           price: product.price,
-          productId: productId
+          productId: productId,
+          createdAt: serverTimestamp()
         };
-        console.log('Product data:', productData);
+        
         await addToFavorites(userId, productId, productData);
-        console.log('Successfully added to favorites');
         addFavorite({
           id: `${userId}_${productId}`,
           userId,
@@ -346,12 +355,18 @@ const ProductDetail = () => {
           productData
         });
         setIsFavorite(true);
+        
+        // 更新收藏數
+        try {
+          await updateFavoriteCount(productId, true);
+        } catch (error) {
+          console.error('更新收藏數時發生錯誤:', error);
+        }
       }
     } catch (error) {
-      console.error('Error in handleFavoriteClick:', error);
+      console.error('收藏操作失敗:', error);
       alert('操作失敗，請稍後再試');
     } finally {
-      console.log('Finishing favorite operation');
       setIsProcessing(false);
     }
   };

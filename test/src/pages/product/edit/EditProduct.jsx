@@ -1,9 +1,9 @@
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../../firebase';
 import { compressImage, fileToBase64 } from '../../../utils/imageUtils';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../firebase';
 import './EditProduct.css';
 import { auth } from '../../../firebase';
@@ -76,13 +76,39 @@ const EditProduct = () => {
   const handleImageChange = async (e) => {
     const files = Array.from(e.target.files);
     
+    if (!auth.currentUser) {
+      setError('請先登入');
+      return;
+    }
+
     if (files.length > 5) {
       setError('最多只能上傳5張圖片');
       return;
     }
 
+    // 確認是否要替換現有圖片
+    if (formData.images.length > 0) {
+      if (!window.confirm('這將會替換掉現有的商品照片，確定要繼續嗎？')) {
+        e.target.value = ''; // 清空文件選擇
+        return;
+      }
+    }
+
     try {
       setLoading(true);
+      setError('');
+
+      // 檢查是否為商品擁有者
+      const productDoc = await getDoc(doc(db, 'products', productId));
+      if (!productDoc.exists()) {
+        throw new Error('找不到商品');
+      }
+      
+      const productData = productDoc.data();
+      if (productData.sellerId !== auth.currentUser.uid) {
+        throw new Error('只有賣家可以更新商品照片');
+      }
+      
       const uploadPromises = files.map(async (file) => {
         if (!file.type.startsWith('image/')) {
           throw new Error('請上傳圖片文件');
@@ -93,48 +119,64 @@ const EditProduct = () => {
         }
 
         try {
-          // 壓縮圖片並轉換為 Base64
-          const compressedFile = await compressImage(file);
-          const base64Data = await fileToBase64(compressedFile);
-          
           // 生成唯一的文件名
           const timestamp = Date.now();
           const randomString = Math.random().toString(36).substring(7);
-          const safeFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-          const fileName = `products/${timestamp}_${randomString}_${safeFileName}`;
+          const extension = file.name.split('.').pop();
+          const fileName = `products/${productId}/${timestamp}_${randomString}.${extension}`;
           
           // 創建存儲引用
           const storageRef = ref(storage, fileName);
 
-          // 使用 Base64 數據上傳
-          const snapshot = await uploadString(storageRef, base64Data, 'data_url', {
-            contentType: 'image/jpeg',
+          // 設置元數據
+          const metadata = {
+            contentType: file.type,
             customMetadata: {
               uploadedBy: auth.currentUser.uid,
-              originalName: file.name
+              originalName: file.name,
+              productId: productId
             }
-          });
+          };
 
-          // 獲取下載 URL
+          // 上傳文件
+          const snapshot = await uploadBytes(storageRef, file, metadata);
+          console.log('上傳成功:', snapshot.ref.fullPath);
+
+          // 獲取下載URL
           const downloadURL = await getDownloadURL(snapshot.ref);
+          console.log('下載URL:', downloadURL);
+          
           return downloadURL;
-        } catch (error) {
-          console.error('Error processing file:', error);
-          throw error;
+        } catch (uploadError) {
+          console.error('上傳錯誤:', uploadError);
+          throw new Error(`上傳失敗: ${uploadError.message}`);
         }
       });
 
       const uploadedUrls = await Promise.all(uploadPromises);
-      console.log('Uploaded URLs:', uploadedUrls);
+      console.log('新圖片URLs:', uploadedUrls);
 
+      // 更新到 Firestore
+      const productRef = doc(db, 'products', productId);
+      await updateDoc(productRef, {
+        images: uploadedUrls,
+        updatedAt: serverTimestamp(),
+        sellerId: auth.currentUser.uid  // 確保 sellerId 保持不變
+      });
+
+      // 更新本地狀態
       setFormData(prev => ({
         ...prev,
-        images: [...prev.images, ...uploadedUrls]
+        images: uploadedUrls
       }));
 
       setError('');
+      alert('圖片上傳成功！');
+      
+      // 清空文件選擇
+      e.target.value = '';
     } catch (error) {
-      console.error('Error uploading images:', error);
+      console.error('上傳圖片時發生錯誤:', error);
       setError(error.message || '上傳圖片失敗，請重試');
     } finally {
       setLoading(false);
@@ -205,6 +247,38 @@ const EditProduct = () => {
     }
   };
 
+  // 修改圖片預覽組件，添加替換按鈕
+  const ImagePreview = ({ src, onDelete }) => {
+    return (
+      <div className="image-preview-item" style={{ position: 'relative' }}>
+        <img 
+          src={src} 
+          alt="Product preview" 
+          style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+        />
+        <div className="image-actions" style={{ position: 'absolute', top: '5px', right: '5px' }}>
+          <button 
+            onClick={onDelete}
+            className="delete-image"
+            style={{
+              background: 'red',
+              color: 'white',
+              border: 'none',
+              borderRadius: '50%',
+              width: '20px',
+              height: '20px',
+              cursor: 'pointer',
+              marginLeft: '5px'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // 添加刪除圖片的功能
   const handleDeleteImage = (indexToDelete) => {
     setFormData(prev => ({
       ...prev,
@@ -232,17 +306,7 @@ const EditProduct = () => {
           {/* 圖片預覽區域 */}
           <div className="image-preview">
             {formData.images.map((url, index) => (
-              <div key={index} className="image-preview-item">
-                <img src={url} alt={`商品圖片 ${index + 1}`} />
-                <button
-                  type="button"
-                  className="delete-image-btn"
-                  onClick={() => handleDeleteImage(index)}
-                  disabled={loading}
-                >
-                  ✕
-                </button>
-              </div>
+              <ImagePreview key={index} src={url} onDelete={() => handleDeleteImage(index)} />
             ))}
           </div>
         </div>
