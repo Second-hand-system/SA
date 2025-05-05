@@ -252,8 +252,8 @@ const ProductDetail = () => {
 
     // 檢查是否要設置為已售出或待售出，但沒有人競標
     if (product.tradeMode === '競標模式' && (!currentBid || bidHistory.length === 0) && 
-        (newStatus === '已售出' || newStatus === '待售出')) {
-      alert('無人競標，不可設置為已售出或待售出');
+        (newStatus === '已售出' || newStatus === '待付款')) {
+      alert('無人競標，不可設置為已售出或待付款');
       return;
     }
 
@@ -773,7 +773,7 @@ const ProductDetail = () => {
             <h3>商品狀態</h3>
             <div className="status-display">
               <span className={`status-tag ${product.status === '已售出' ? 'sold' : 
-                               product.status === '待售出' ? 'pending' : 
+                               product.status === '待付款' ? 'pending' : 
                                product.status === '未售出' ? 'unsold' : 'active'}`}>
                 {product.status || '進行中'}
               </span>
@@ -783,10 +783,10 @@ const ProductDetail = () => {
               <div className="status-buttons">
                 <button 
                   className="status-btn"
-                  onClick={() => handleUpdateStatus('待售出')}
-                  disabled={product.status === '待售出'}
+                  onClick={() => handleUpdateStatus('待付款')}
+                  disabled={product.status === '待付款'}
                 >
-                  待售出
+                  待付款
                 </button>
                 <button 
                   className="status-btn"
