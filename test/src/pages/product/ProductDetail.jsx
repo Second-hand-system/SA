@@ -129,7 +129,7 @@ const ProductDetail = () => {
 
   useEffect(() => {
     if (product?.auctionEndTime) {
-      const timer = setInterval(() => {
+      const timer = setInterval(async () => {
         const now = new Date();
         const endTime = new Date(product.auctionEndTime);
         const difference = endTime - now;
@@ -138,6 +138,31 @@ const ProductDetail = () => {
           setTimeLeft('已結束');
           setAuctionStatus(product.status || '已結束');
           clearInterval(timer);
+
+          // 檢查是否已經更新過狀態
+          if (product.status !== '已售出' && currentBid) {
+            try {
+              const productRef = doc(db, 'products', productId);
+              await updateDoc(productRef, {
+                status: '已售出',
+                soldTo: currentBid.userId,
+                soldAt: serverTimestamp(),
+                buyerName: currentBid.userName,
+                buyerEmail: currentBid.userEmail || '未提供'
+              });
+
+              // 更新本地狀態
+              setProduct(prev => ({ 
+                ...prev, 
+                status: '已售出',
+                soldTo: currentBid.userId,
+                buyerName: currentBid.userName,
+                buyerEmail: currentBid.userEmail || '未提供'
+              }));
+            } catch (error) {
+              console.error('更新得標資訊時發生錯誤:', error);
+            }
+          }
         } else {
           const days = Math.floor(difference / (1000 * 60 * 60 * 24));
           const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -150,7 +175,7 @@ const ProductDetail = () => {
 
       return () => clearInterval(timer);
     }
-  }, [product]);
+  }, [product?.auctionEndTime, currentBid, productId, db]);
 
   // 獲取當前最高出價
   useEffect(() => {
@@ -477,84 +502,31 @@ const ProductDetail = () => {
     }
 
     try {
-      console.log('開始提交出價...');
-      console.log('出價金額:', bidAmountNum);
-      console.log('商品ID:', productId);
-      console.log('用戶ID:', auth.currentUser.uid);
-
-      // 檢查商品是否存在
-      const productRef = doc(db, 'products', productId);
-      const productDoc = await getDoc(productRef);
-      
-      if (!productDoc.exists()) {
-        throw new Error('商品不存在');
-      }
-
-      // 確保商品是競標模式
-      const productData = productDoc.data();
-      if (productData.tradeMode !== '競標模式') {
-        throw new Error('此商品不是競標模式');
-      }
-
-      // 創建或獲取 bids 子集合
-      const bidsRef = collection(db, 'products', productId, 'bids');
-      
-      // 檢查是否已有出價記錄
-      const bidsQuery = query(bidsRef, orderBy('amount', 'desc'), limit(1));
-      const bidsSnapshot = await getDocs(bidsQuery);
-      
       const newBid = {
         amount: bidAmountNum,
         userId: auth.currentUser.uid,
         userName: auth.currentUser.displayName || '匿名用戶',
+        userEmail: auth.currentUser.email || '未提供',
         timestamp: serverTimestamp(),
         productId: productId
       };
 
-      console.log('準備添加的出價資料:', newBid);
-
-      // 添加出價記錄
+      const bidsRef = collection(db, 'products', productId, 'bids');
       const docRef = await addDoc(bidsRef, newBid);
-      console.log('出價成功，文檔ID:', docRef.id);
-
-      // 更新當前最高出價
+      
       setCurrentBid(newBid);
       setBidHistory(prev => [newBid, ...prev]);
       setBidAmount('');
       setBidError('');
-      
-      // 顯示成功提示
       setShowSuccessMessage(true);
       
-      // 3秒後自動隱藏成功提示
       setTimeout(() => {
         setShowSuccessMessage(false);
       }, 3000);
       
-      // 重新獲取最新的出價歷史
-      const updatedBidsQuery = query(bidsRef, orderBy('timestamp', 'desc'));
-      const updatedBidsSnapshot = await getDocs(updatedBidsQuery);
-      const updatedHistory = updatedBidsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setBidHistory(updatedHistory);
-      
     } catch (error) {
-      console.error('出價失敗，詳細錯誤:', error);
-      console.error('錯誤訊息:', error.message);
-      console.error('錯誤堆疊:', error.stack);
-      
-      let errorMessage = '出價失敗，請稍後再試';
-      if (error.message.includes('permission-denied')) {
-        errorMessage = '出價權限被拒絕，請確認您已登入';
-      } else if (error.message.includes('not-found')) {
-        errorMessage = '商品不存在或已被刪除';
-      } else if (error.message.includes('競標模式')) {
-        errorMessage = error.message;
-      }
-      
-      setBidError(errorMessage);
+      console.error('出價失敗:', error);
+      setBidError(error.message || '出價失敗，請稍後再試');
     }
   };
 
