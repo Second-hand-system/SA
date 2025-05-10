@@ -335,34 +335,46 @@ a:hover {
 
 /* 分頁樣式 */
 .pagination {
-  display: flex;      /* 彈性布局 */
-  justify-content: center; /* 水平居中 */
-  align-items: center; /* 垂直居中 */
-  gap: 20px;         /* 元素間距 */
-  margin: 40px 0;    /* 外邊距 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 40px 0 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
 }
 
-/* 分頁按鈕樣式 */
-.page-button {
-  padding: 10px 20px; /* 內邊距 */
-  background-color: #e2af4a; /* 背景顏色 */
-  color: white;       /* 文字顏色 */
-  border: none;       /* 無邊框 */
-  border-radius: 8px; /* 圓角 */
-  cursor: pointer;    /* 鼠標指針 */
-  font-size: 16px;   /* 字體大小 */
-  transition: background-color 0.3s; /* 過渡效果 */
+.page-button, .page-number {
+  padding: 0.5rem 1rem;
+  border: none;
+  background-color: #e2af4a;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 16px;
 }
 
-/* 分頁按鈕懸停效果 */
-.page-button:hover {
-  background-color: #357abd; /* 背景顏色 */
+.page-button:hover, .page-number:hover:not(:disabled),
+.page-number.active, .page-button.active {
+  background-color: #e2af4a;
+  color: white;
+  border: none;
 }
 
-/* 禁用狀態的分頁按鈕樣式 */
-.page-button:disabled {
-  background-color: #ccc; /* 背景顏色 */
-  cursor: not-allowed;    /* 禁用鼠標指針 */
+.page-button:disabled, .page-number:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.7;
+  color: #bbb;
+  border: none;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 /* 頁碼容器樣式 */
