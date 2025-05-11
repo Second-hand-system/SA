@@ -60,7 +60,8 @@ const checkFirestoreConnection = async () => {
     }
 
     // 如果用戶已登入，則測試連接
-    const testRef = collection(db, '_test_');
+    // 使用 products 集合進行測試，因為它允許所有用戶讀取
+    const testRef = collection(db, 'products');
     const q = query(testRef, limit(1));
     await getDocs(q);
     console.log('Firestore connection test successful');

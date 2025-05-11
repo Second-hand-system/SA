@@ -27,8 +27,8 @@ export const FavoritesProvider = ({ children }) => {
       }
 
       try {
-        const favoritesRef = collection(db, 'favorites');
-        const q = query(favoritesRef, where('userId', '==', auth.currentUser.uid));
+        const favoritesRef = collection(db, 'users', auth.currentUser.uid, 'favorites');
+        const q = query(favoritesRef);
         
         unsubscribe = onSnapshot(q, (snapshot) => {
           const favoritesData = snapshot.docs.map(doc => ({

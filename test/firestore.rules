@@ -10,6 +10,13 @@ service cloud.firestore {
     function isProductOwner(resource) {
       return isAuthenticated() && request.auth.uid == resource.data.sellerId;
     }
+
+    function isBuyerOrSeller(resource) {
+      return isAuthenticated() && (
+        request.auth.uid == resource.data.buyerId || 
+        request.auth.uid == resource.data.sellerId
+      );
+    }
     
     // 商品集合
     match /products/{productId} {
@@ -20,7 +27,7 @@ service cloud.firestore {
       // 商品的競價子集合
       match /bids/{bidId} {
         allow read: if true;
-        allow create: if isAuthenticated();
+        allow create: if isAuthenticated() && request.auth.uid != resource.data.sellerId;
         allow update, delete: if false;
       }
 
@@ -33,26 +40,49 @@ service cloud.firestore {
     
     // 用戶集合
     match /users/{userId} {
-      allow read: if true;
+      allow read: if isAuthenticated();
       allow write: if isAuthenticated() && request.auth.uid == userId;
       
       // 用戶的收藏子集合
       match /favorites/{productId} {
-        allow read: if true;
+        allow read: if isAuthenticated() && request.auth.uid == userId;
         allow write: if isAuthenticated() && request.auth.uid == userId;
       }
     }
 
-    // 收藏計數集合（如果使用獨立集合）
+    // 收藏計數集合
     match /favorites_count/{productId} {
       allow read: if true;
       allow write: if isAuthenticated();
     }
 
-    // 收藏集合（如果是獨立的集合）
+    // 收藏集合
     match /favorites/{favoriteId} {
-      allow read: if true;
-      allow write: if isAuthenticated();
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    // 交易集合
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.buyerId || 
+        request.auth.uid == resource.data.sellerId
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.buyerId || 
+        request.auth.uid == resource.data.sellerId
+      );
+      allow delete: if false;
+    }
+
+    // 通知集合
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow delete: if false;
     }
   }
 } 
