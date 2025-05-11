@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp, collection, query, orderBy, limit, getDocs, addDoc, runTransaction } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp, collection, query, orderBy, limit, getDocs, addDoc, runTransaction, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useFavorites } from '../../context/FavoritesContext';
 import app, { 
@@ -206,13 +206,24 @@ const ProductDetail = () => {
         try {
           const bidsRef = collection(db, 'products', productId, 'bids');
           const q = query(bidsRef, orderBy('timestamp', 'desc'));
-          const querySnapshot = await getDocs(q);
           
-          const history = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setBidHistory(history);
+          // 設置實時監聽
+          const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const history = querySnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+              timestamp: doc.data().timestamp?.toDate() || new Date()
+            }));
+            setBidHistory(history);
+            
+            // 更新當前最高出價
+            if (history.length > 0) {
+              setCurrentBid(history[0]);
+            }
+          });
+          
+          // 清理函數
+          return () => unsubscribe();
         } catch (error) {
           console.error('Error fetching bid history:', error);
         }
@@ -483,40 +494,31 @@ const ProductDetail = () => {
     }
 
     try {
+      const timestamp = serverTimestamp();
       const newBid = {
         amount: bidAmountNum,
         userId: auth.currentUser.uid,
         userName: auth.currentUser.displayName || '匿名用戶',
         userEmail: auth.currentUser.email || '未提供',
-        timestamp: serverTimestamp(),
+        timestamp: timestamp,
         productId: productId
       };
 
       const bidsRef = collection(db, 'products', productId, 'bids');
-      const docRef = await addDoc(bidsRef, newBid);
+      await addDoc(bidsRef, newBid);
       
-      // 更新商品狀態為已售出
-      const productRef = doc(db, 'products', productId);
-      await updateDoc(productRef, {
-        status: '已售出',
-        soldTo: auth.currentUser.uid,
-        soldAt: serverTimestamp(),
-        buyerName: auth.currentUser.displayName || '匿名用戶',
-        buyerEmail: auth.currentUser.email || '未提供'
-      });
+      // 更新當前最高出價和競價歷史（使用本地時間戳立即顯示）
+      const localBid = {
+        ...newBid,
+        timestamp: new Date(),
+        id: Date.now().toString() // 臨時ID
+      };
       
-      setCurrentBid(newBid);
-      setBidHistory(prev => [newBid, ...prev]);
+      setCurrentBid(localBid);
+      setBidHistory(prevHistory => [localBid, ...prevHistory]);
       setBidAmount('');
       setBidError('');
       setShowSuccessMessage(true);
-      setProduct(prev => ({ 
-        ...prev, 
-        status: '已售出',
-        soldTo: auth.currentUser.uid,
-        buyerName: auth.currentUser.displayName || '匿名用戶',
-        buyerEmail: auth.currentUser.email || '未提供'
-      }));
       
       setTimeout(() => {
         setShowSuccessMessage(false);
@@ -854,22 +856,20 @@ const ProductDetail = () => {
             <ul>
               {bidHistory.map((bid, idx) => {
                 let formattedTime = '未知時間';
-                try {
-                  if (bid.timestamp) {
-                    if (typeof bid.timestamp.toDate === 'function') {
-                      formattedTime = bid.timestamp.toDate().toLocaleString('zh-TW');
-                    } else if (bid.timestamp.seconds) {
-                      formattedTime = new Date(bid.timestamp.seconds * 1000).toLocaleString('zh-TW');
-                    }
+                if (bid.timestamp) {
+                  if (bid.timestamp instanceof Date) {
+                    formattedTime = bid.timestamp.toLocaleString('zh-TW');
+                  } else if (typeof bid.timestamp.toDate === 'function') {
+                    formattedTime = bid.timestamp.toDate().toLocaleString('zh-TW');
+                  } else if (bid.timestamp.seconds) {
+                    formattedTime = new Date(bid.timestamp.seconds * 1000).toLocaleString('zh-TW');
                   }
-                } catch (error) {
-                  console.error('Error formatting timestamp:', error);
                 }
                 
                 const isWinner = isAuctionEnded() && idx === 0;
                 
                 return (
-                  <li key={bid.id} className={isWinner ? 'winning-bid' : ''}>
+                  <li key={bid.id || idx} className={isWinner ? 'winning-bid' : ''}>
                     <div className="bid-info">
                       <span className="bid-user">{bid.userName}</span>
                       <span className="bid-time">{formattedTime}</span>
@@ -883,9 +883,17 @@ const ProductDetail = () => {
         </div>
       )}
 
-      <Link to="/" className="back-home-link">
-        返回首頁
-      </Link>
+      {/* 修改底部按鈕區域 */}
+      <div className="bottom-links">
+        <Link to="/" className="back-home-link">
+          返回首頁
+        </Link>
+        {auth.currentUser && product.sellerId === auth.currentUser.uid && (
+          <Link to="/profile" className="back-home-link">
+            個人資料
+          </Link>
+        )}
+      </div>
     </div>
   );
 };

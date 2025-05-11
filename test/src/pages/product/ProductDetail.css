@@ -152,11 +152,15 @@
 .product-details li {
   margin-bottom: 0.5rem;
   color: #666;
+  display: flex;
+  align-items: baseline;
 }
 
 .product-details li strong {
   color: #333;
   margin-right: 0.5rem;
+  min-width: 80px;
+  text-align: left;
 }
 
 .product-actions {
@@ -1156,4 +1160,40 @@
   height: auto;
   object-fit: contain;
   display: block;
+}
+
+.bottom-links {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+.back-home-link {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background-color: #e2af4a;
+  color: white;
+}
+
+.back-home-link:hover {
+  opacity: 0.8;
+  transform: translateY(-2px);
+  background-color: #d19c35;
+}
+
+.my-products-link {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.back-home-link:hover,
+.my-products-link:hover {
+  opacity: 0.8;
+  transform: translateY(-2px);
 } 
