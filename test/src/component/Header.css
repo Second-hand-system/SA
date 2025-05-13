@@ -48,7 +48,8 @@
   color: #333;
 }
 
-.favorites-link {
+.favorites-link,
+.transactions-link {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -59,15 +60,17 @@
   transition: all 0.3s ease;
 }
 
-.favorites-link:hover {
+.favorites-link:hover,
+.transactions-link:hover {
   background-color: #e2af4a;
   color: white;
   transform: translateY(-2px);
   box-shadow: 0 2px 8px rgba(226, 175, 74, 0.3);
 }
 
-/* 愛心圖標樣式 */
-.heart-icon {
+/* 圖標樣式 */
+.heart-icon,
+.transaction-icon {
   position: relative;
   width: 24px;
   height: 24px;
@@ -78,7 +81,8 @@
   transition: all 0.3s ease;
 }
 
-.heart-icon svg {
+.heart-icon svg,
+.transaction-icon svg {
   width: 24px;
   height: 24px;
   fill: currentColor;

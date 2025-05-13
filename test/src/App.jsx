@@ -12,10 +12,12 @@ import Profile from './pages/profile/Profile'
 import ProductDetail from './pages/product/ProductDetail'
 import EditProduct from './pages/product/edit/EditProduct'
 import Favorites from './pages/favorites/Favorites'
+import Transactions from './pages/transactions/Transactions'
 import AuthProvider from './context/AuthContext'
 import { FavoritesProvider } from './context/FavoritesContext'
 import { useAuth } from './context/AuthContext'
 import { checkFirestoreConnection, auth } from './firebase'
+import TransactionSchedule from './pages/transactions/TransactionSchedule'
 
 // 保護需要登入的路由
 const ProtectedRoute = ({ children }) => {
@@ -120,6 +122,16 @@ function App() {
               <Route path="/favorites" element={
                 <ProtectedRoute>
                   <Favorites />
+                </ProtectedRoute>
+              } />
+              <Route path="/transactions" element={
+                <ProtectedRoute>
+                  <Transactions />
+                </ProtectedRoute>
+              } />
+              <Route path="/transactions/schedule/:transactionId" element={
+                <ProtectedRoute>
+                  <TransactionSchedule />
                 </ProtectedRoute>
               } />
               <Route path="/product/:productId" element={

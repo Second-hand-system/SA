@@ -22,12 +22,19 @@ service cloud.firestore {
     match /products/{productId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      allow update, delete: if isProductOwner(resource);
+      allow update: if isAuthenticated() && (
+        // 賣家可以更新自己的商品
+        request.auth.uid == resource.data.sellerId ||
+        // 買家可以更新商品狀態（購買時）
+        (request.auth.uid != resource.data.sellerId && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'soldTo', 'soldAt', 'buyerName', 'buyerEmail']))
+      );
+      allow delete: if isProductOwner(resource);
 
       // 商品的競價子集合
       match /bids/{bidId} {
         allow read: if true;
-        allow create: if isAuthenticated() && request.auth.uid != resource.data.sellerId;
+        allow create: if isAuthenticated() && request.auth.uid != get(/databases/$(database)/documents/products/$(productId)).data.sellerId;
         allow update, delete: if false;
       }
 
@@ -58,7 +65,7 @@ service cloud.firestore {
 
     // 收藏集合
     match /favorites/{favoriteId} {
-      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
       allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
     }
@@ -66,22 +73,25 @@ service cloud.firestore {
     // 交易集合
     match /transactions/{transactionId} {
       allow read: if isAuthenticated() && (
+        // 允許讀取單個交易記錄
         request.auth.uid == resource.data.buyerId || 
-        request.auth.uid == resource.data.sellerId
+        request.auth.uid == resource.data.sellerId ||
+        // 允許查詢買家或賣家的交易
+        (request.query.filters.size() > 0 && (
+          request.auth.uid == request.query.filters[0].value ||
+          request.auth.uid == request.query.filters[1].value
+        ))
       );
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated() && (
+        // 買家可以創建交易記錄
+        request.auth.uid == request.resource.data.buyerId ||
+        // 賣家可以創建交易記錄
+        request.auth.uid == request.resource.data.sellerId
+      );
       allow update: if isAuthenticated() && (
         request.auth.uid == resource.data.buyerId || 
         request.auth.uid == resource.data.sellerId
       );
-      allow delete: if false;
-    }
-
-    // 通知集合
-    match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
       allow delete: if false;
     }
   }

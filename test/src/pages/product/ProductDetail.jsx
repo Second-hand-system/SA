@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp, collection, query, orderBy, limit, getDocs, addDoc, runTransaction, onSnapshot } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp, collection, query, orderBy, limit, getDocs, addDoc, runTransaction, onSnapshot, where } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useFavorites } from '../../context/FavoritesContext';
 import app, { 
@@ -168,7 +168,6 @@ const ProductDetail = () => {
   // 獲取當前最高出價
   useEffect(() => {
     const fetchCurrentBid = async () => {
-      console.log('檢查競標模式:', product?.tradeMode);
       if (product?.tradeMode === '競標模式') {
         try {
           const bidsRef = collection(db, 'products', productId, 'bids');
@@ -181,6 +180,35 @@ const ProductDetail = () => {
             
             // 檢查競標是否已結束且有得標者
             if (product.auctionEndTime && new Date() > new Date(product.auctionEndTime)) {
+              // 檢查是否已經有交易記錄
+              const transactionsRef = collection(db, 'transactions');
+              const transactionQuery = query(
+                transactionsRef,
+                where('productId', '==', productId),
+                where('type', '==', 'auction')
+              );
+              const transactionSnapshot = await getDocs(transactionQuery);
+
+              if (transactionSnapshot.empty) {
+                // 如果沒有交易記錄，創建一個
+                const transactionRef = doc(collection(db, 'transactions'));
+                await setDoc(transactionRef, {
+                  productId: productId,
+                  productTitle: product.title,
+                  amount: highestBid.amount,
+                  buyerId: highestBid.userId,
+                  buyerName: highestBid.userName,
+                  buyerEmail: highestBid.userEmail,
+                  sellerId: product.sellerId,
+                  sellerName: product.sellerName || '匿名用戶',
+                  status: 'pending',
+                  createdAt: serverTimestamp(),
+                  type: 'auction',
+                  bidId: highestBid.id
+                });
+              }
+
+              // 更新商品狀態
               const productRef = doc(db, 'products', productId);
               await updateDoc(productRef, {
                 status: '已售出',
@@ -461,6 +489,84 @@ const ProductDetail = () => {
     return now > endTime;
   };
 
+  // 處理購買
+  const handlePurchase = async () => {
+    if (!auth.currentUser) {
+      alert('請先登入');
+      return;
+    }
+
+    if (product.sellerId === auth.currentUser.uid) {
+      alert('不能購買自己的商品');
+      return;
+    }
+
+    if (product.status === '已售出') {
+      alert('商品已售出');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const productRef = doc(db, 'products', productId);
+      
+      // 使用事务来确保原子性操作
+      await runTransaction(db, async (transaction) => {
+        const productDoc = await transaction.get(productRef);
+        
+        if (!productDoc.exists()) {
+          throw new Error('商品不存在');
+        }
+        
+        const productData = productDoc.data();
+        
+        if (productData.status === '已售出') {
+          throw new Error('商品已售出');
+        }
+        
+        // 更新商品狀態
+        transaction.update(productRef, {
+          status: '已售出',
+          soldTo: auth.currentUser.uid,
+          soldAt: serverTimestamp(),
+          buyerName: auth.currentUser.displayName || '匿名用戶',
+          buyerEmail: auth.currentUser.email || '未提供'
+        });
+
+        // 創建交易記錄
+        const transactionRef = doc(collection(db, 'transactions'));
+        transaction.set(transactionRef, {
+          productId: productId,
+          productTitle: productData.title,
+          amount: productData.price,
+          buyerId: auth.currentUser.uid,
+          buyerName: auth.currentUser.displayName || '匿名用戶',
+          buyerEmail: auth.currentUser.email || '未提供',
+          sellerId: productData.sellerId,
+          sellerName: productData.sellerName || '匿名用戶',
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          type: 'direct_purchase'
+        });
+      });
+
+      setPurchaseSuccess(true);
+      setProduct(prev => ({ 
+        ...prev, 
+        status: '已售出',
+        soldTo: auth.currentUser.uid,
+        buyerName: auth.currentUser.displayName || '匿名用戶',
+        buyerEmail: auth.currentUser.email || '未提供'
+      }));
+      alert('購買成功！');
+    } catch (error) {
+      console.error('購買失敗:', error);
+      alert(error.message || '購買失敗，請稍後再試');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // 處理競價提交
   const handleBidSubmit = async (e) => {
     e.preventDefault();
@@ -504,8 +610,55 @@ const ProductDetail = () => {
         productId: productId
       };
 
-      const bidsRef = collection(db, 'products', productId, 'bids');
-      await addDoc(bidsRef, newBid);
+      // 使用事务来确保原子性操作
+      await runTransaction(db, async (transaction) => {
+        // 添加競價記錄
+        const bidsRef = collection(db, 'products', productId, 'bids');
+        const newBidRef = doc(bidsRef);
+        transaction.set(newBidRef, newBid);
+
+        // 檢查是否是最後一個出價（競標結束時）
+        const now = new Date();
+        const endTime = new Date(product.auctionEndTime);
+        
+        if (now > endTime) {
+          // 獲取所有出價記錄
+          const bidsQuery = query(bidsRef, orderBy('amount', 'desc'), limit(1));
+          const bidsSnapshot = await getDocs(bidsQuery);
+          
+          if (!bidsSnapshot.empty) {
+            const highestBid = bidsSnapshot.docs[0].data();
+            
+            // 只有最高出價者才會創建交易記錄
+            if (highestBid.userId === auth.currentUser.uid) {
+              // 創建交易記錄
+              const transactionRef = doc(collection(db, 'transactions'));
+              transaction.set(transactionRef, {
+                productId: productId,
+                productTitle: product.title,
+                amount: bidAmountNum,
+                buyerId: auth.currentUser.uid,
+                buyerName: auth.currentUser.displayName || '匿名用戶',
+                buyerEmail: auth.currentUser.email || '未提供',
+                sellerId: product.sellerId,
+                sellerName: product.sellerName || '匿名用戶',
+                status: 'pending',
+                createdAt: timestamp,
+                type: 'auction',
+                bidId: newBidRef.id
+              });
+
+              // 更新商品狀態
+              const productRef = doc(db, 'products', productId);
+              transaction.update(productRef, {
+                status: '已售出',
+                soldTo: auth.currentUser.uid,
+                soldAt: timestamp
+              });
+            }
+          }
+        }
+      });
       
       // 更新當前最高出價和競價歷史（使用本地時間戳立即顯示）
       const localBid = {
@@ -527,68 +680,6 @@ const ProductDetail = () => {
     } catch (error) {
       console.error('出價失敗:', error);
       setBidError(error.message || '出價失敗，請稍後再試');
-    }
-  };
-
-  // 處理購買
-  const handlePurchase = async () => {
-    if (!auth.currentUser) {
-      alert('請先登入');
-      return;
-    }
-
-    if (product.sellerId === auth.currentUser.uid) {
-      alert('不能購買自己的商品');
-      return;
-    }
-
-    if (product.status === '已售出') {
-      alert('商品已售出');
-      return;
-    }
-
-    try {
-      setIsProcessing(true);
-      const productRef = doc(db, 'products', productId);
-      
-      // 使用事务来确保原子性操作
-      await runTransaction(db, async (transaction) => {
-        const productDoc = await transaction.get(productRef);
-        
-        if (!productDoc.exists()) {
-          throw new Error('商品不存在');
-        }
-        
-        const productData = productDoc.data();
-        
-        if (productData.status === '已售出') {
-          throw new Error('商品已售出');
-        }
-        
-        // 更新商品狀態，同時保存購買者資訊
-        transaction.update(productRef, {
-          status: '已售出',
-          soldTo: auth.currentUser.uid,
-          soldAt: serverTimestamp(),
-          buyerName: auth.currentUser.displayName || '匿名用戶',
-          buyerEmail: auth.currentUser.email || '未提供'
-        });
-      });
-
-      setPurchaseSuccess(true);
-      setProduct(prev => ({ 
-        ...prev, 
-        status: '已售出',
-        soldTo: auth.currentUser.uid,
-        buyerName: auth.currentUser.displayName || '匿名用戶',
-        buyerEmail: auth.currentUser.email || '未提供'
-      }));
-      alert('購買成功！');
-    } catch (error) {
-      console.error('購買失敗:', error);
-      alert(error.message || '購買失敗，請稍後再試');
-    } finally {
-      setIsProcessing(false);
     }
   };
 
