@@ -683,6 +683,92 @@ const ProductDetail = () => {
     }
   };
 
+  const handleContactSeller = async () => {
+    console.log('Starting handleContactSeller...');
+    console.log('Current user:', auth.currentUser);
+    console.log('Product:', product);
+
+    if (!auth.currentUser) {
+      console.log('No authenticated user found');
+      alert('請先登入');
+      navigate('/login');
+      return;
+    }
+
+    if (auth.currentUser.uid === product.sellerId) {
+      console.log('User is trying to chat with themselves');
+      alert('不能與自己聊天');
+      return;
+    }
+
+    try {
+      console.log('Checking for existing chat room...');
+      // 檢查是否已存在聊天室
+      const chatsRef = collection(db, 'chats');
+      const q = query(
+        chatsRef,
+        where('productId', '==', productId),
+        where('participants', 'array-contains', auth.currentUser.uid)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      console.log('Existing chats found:', !querySnapshot.empty);
+      let chatId;
+
+      if (querySnapshot.empty) {
+        console.log('Creating new chat room...');
+        // 創建新的聊天室
+        const chatData = {
+          productId: productId,
+          productName: product.title,
+          productImage: product.images?.[0] || product.image || '/placeholder.jpg',
+          participants: [product.sellerId, auth.currentUser.uid],
+          createdAt: serverTimestamp(),
+          lastMessageTime: serverTimestamp(),
+          lastMessage: '開始聊天',
+          sellerId: product.sellerId,
+          buyerId: auth.currentUser.uid,
+          status: 'active',
+          sellerName: product.sellerName || '匿名用戶',
+          buyerName: auth.currentUser.displayName || '匿名用戶'
+        };
+
+        console.log('Chat data to be created:', chatData);
+        const chatRef = await addDoc(chatsRef, chatData);
+        chatId = chatRef.id;
+        console.log('New chat room created with ID:', chatId);
+
+        console.log('Creating first message...');
+        // 創建第一條消息
+        const messagesRef = collection(db, 'chats', chatId, 'messages');
+        const firstMessage = {
+          text: '開始聊天',
+          senderId: auth.currentUser.uid,
+          senderName: auth.currentUser.displayName || '匿名用戶',
+          timestamp: serverTimestamp()
+        };
+        console.log('First message data:', firstMessage);
+        await addDoc(messagesRef, firstMessage);
+        console.log('First message created successfully');
+      } else {
+        console.log('Using existing chat room...');
+        chatId = querySnapshot.docs[0].id;
+        console.log('Existing chat room ID:', chatId);
+      }
+
+      console.log('Navigating to chat room...');
+      navigate(`/chat/${chatId}`);
+    } catch (error) {
+      console.error('Detailed error in handleContactSeller:', {
+        error: error,
+        code: error.code,
+        message: error.message,
+        stack: error.stack
+      });
+      alert('創建聊天室失敗，請稍後再試');
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading">
@@ -758,7 +844,7 @@ const ProductDetail = () => {
                 {isProcessing ? '處理中...' : product.status === '已售出' ? '已售出' : '立即購買'}
               </button>
             )}
-            <button className="contact-seller-btn">
+            <button className="contact-seller-btn" onClick={handleContactSeller}>
               聯絡賣家
             </button>
             {auth.currentUser && product.sellerId === auth.currentUser.uid ? (

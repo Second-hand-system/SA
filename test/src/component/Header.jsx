@@ -39,6 +39,10 @@ const Header = () => {
                 </div>
                 <span>收藏</span>
               </Link>
+              <Link to="/chats" className="nav-link">
+                <i className="fas fa-comments"></i>
+                <span>聊天</span>
+              </Link>
               <Link to="/transactions" className="transactions-link">
                 <div className="transaction-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

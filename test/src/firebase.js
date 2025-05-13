@@ -219,5 +219,4 @@ export {
   updateFavoriteCount,
   getFavoriteRef,
   getFavoritesCollection
-};
-export default app;
+};export default app;

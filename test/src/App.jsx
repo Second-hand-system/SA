@@ -18,6 +18,8 @@ import { FavoritesProvider } from './context/FavoritesContext'
 import { useAuth } from './context/AuthContext'
 import { checkFirestoreConnection, auth } from './firebase'
 import TransactionSchedule from './pages/transactions/TransactionSchedule'
+import ChatList from './pages/chat/ChatList'
+import ChatRoom from './pages/chat/ChatRoom'
 
 // 保護需要登入的路由
 const ProtectedRoute = ({ children }) => {
@@ -142,6 +144,16 @@ function App() {
               <Route path="/product/edit/:productId" element={
                 <ProtectedRoute>
                   <EditProduct />
+                </ProtectedRoute>
+              } />
+              <Route path="/chats" element={
+                <ProtectedRoute>
+                  <ChatList />
+                </ProtectedRoute>
+              } />
+              <Route path="/chat/:chatId" element={
+                <ProtectedRoute>
+                  <ChatRoom />
                 </ProtectedRoute>
               } />
             </Routes>
