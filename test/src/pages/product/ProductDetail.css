@@ -82,29 +82,36 @@
 }
 
 .favorite-button {
-  background: none;
-  border: none;
-  padding: 8px;
+  padding: 8px 12px;
+  border: 2px solid #e2af4a;
+  background-color: white;
+  color: #e2af4a;
   cursor: pointer;
+  font-size: 16px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 1rem;
-  color: #666;
+  gap: 8px;
   transition: all 0.3s ease;
 }
 
-.favorite-button:hover {
-  transform: scale(1.1);
+.favorite-button.favorited {
+  background-color: #e2af4a;
+  color: white;
 }
 
-.favorite-button span {
-  font-size: 1.2rem;
+.favorite-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.favorite-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .favorite-count {
-  font-size: 0.9rem;
-  color: #666;
+  font-size: 14px;
 }
 
 .product-price {

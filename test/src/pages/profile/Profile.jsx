@@ -291,36 +291,30 @@ const Profile = () => {
                   className="product-card"
                   onClick={() => handleProductClick(product.id)}
                 >
-                  {product.images && product.images.length > 0 && (
-                    <div className="product-image-container">
-                      <img 
-                        src={product.images[0]} 
-                        alt={product.title} 
-                        className="product-image"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = '/placeholder-image.png';
-                        }}
-                      />
-                    </div>
-                  )}
-                  <h3 className="product-title">{product.title}</h3>
-                  <p className="product-price">NT$ {product.price}</p>
-                  <div className="product-info">
-                    {product.auctionType === 'first-come-first-serve' ? (
+                  <div className="product-image-container">
+                    <img 
+                      src={product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png'} 
+                      alt={product.title} 
+                      className="product-image"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/placeholder-image.png';
+                      }}
+                    />
+                  </div>
+                  <div className="product-content">
+                    <h3 className="product-title">{product.title}</h3>
+                    <p className="product-price">NT$ {product.price}</p>
+                    <div className="product-info">
                       <span className={`product-status ${product.status === 'active' ? 'status-active' : 'status-ended'}`}>
                         {product.status === 'active' ? '可購買' : '已售出'}
                       </span>
-                    ) : (
-                      <span className={`product-status ${product.status === 'active' ? 'status-active' : 'status-ended'}`}>
-                        {product.status === 'active' ? '競標中' : '已結標'}
-                      </span>
-                    )}
-                    {product.status === 'ended' && product.winner && (
-                      <p className="winner-info">
-                        {product.auctionType === 'first-come-first-serve' ? '購買者' : '得標者'}: {product.winner}
-                      </p>
-                    )}
+                      {product.status === 'ended' && product.winner && (
+                        <p className="winner-info">
+                          購買者: {product.winner}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

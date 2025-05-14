@@ -69,7 +69,7 @@
   overflow: hidden;
   border-radius: 8px;
   background: #fff;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .product-image {
@@ -77,6 +77,14 @@
   max-height: 100%;
   object-fit: contain;
   display: block;
+}
+
+.product-content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
 }
 
 .product-title {
