@@ -131,7 +131,7 @@ const Transactions = () => {
 
   return (
     <div className="transactions-container">
-      <h1>交易管理</h1>
+      <h1>交易紀錄</h1>
       
       <div className="transaction-tabs">
         <button 
