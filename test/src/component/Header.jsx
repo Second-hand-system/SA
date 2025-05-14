@@ -39,8 +39,12 @@ const Header = () => {
                 </div>
                 <span>收藏</span>
               </Link>
-              <Link to="/chats" className="nav-link">
-                <i className="fas fa-comments"></i>
+              <Link to="/chats" className="chat-link">
+                <div className="chat-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                  </svg>
+                </div>
                 <span>聊天</span>
               </Link>
               <Link to="/transactions" className="transactions-link">
@@ -51,7 +55,12 @@ const Header = () => {
                 </div>
                 <span>交易紀錄</span>
               </Link>
-              <Link to="/profile" className="nav-link">
+              <Link to="/profile" className="profile-link">
+                <div className="profile-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                  </svg>
+                </div>
                 <span>個人資料</span>
               </Link>
               <button onClick={handleLogout}>登出</button>
