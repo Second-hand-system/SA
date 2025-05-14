@@ -524,7 +524,7 @@ const ProductDetail = () => {
       return;
     }
 
-    if (product.status === '已售出') {
+    if (product.status === '已售出' || product.status === '已結標') {
       alert('商品已售出');
       return;
     }
@@ -543,7 +543,7 @@ const ProductDetail = () => {
         
         const productData = productDoc.data();
         
-        if (productData.status === '已售出') {
+        if (productData.status === '已售出' || productData.status === '已結標') {
           throw new Error('商品已售出');
         }
         
@@ -846,11 +846,26 @@ const ProductDetail = () => {
       return;
     }
 
+    if (product.status === '已售出' || product.status === '已結標') {
+      alert('商品已售出');
+      return;
+    }
+
     try {
       const negotiationRef = doc(db, 'products', productId, 'negotiations', negotiation.id);
       const productRef = doc(db, 'products', productId);
 
       await runTransaction(db, async (transaction) => {
+        const productDoc = await transaction.get(productRef);
+        if (!productDoc.exists()) {
+          throw new Error('商品不存在');
+        }
+
+        const productData = productDoc.data();
+        if (productData.status === '已售出' || productData.status === '已結標') {
+          throw new Error('商品已售出');
+        }
+
         // 更新議價狀態
         transaction.update(negotiationRef, {
           status: 'accepted',
@@ -883,6 +898,20 @@ const ProductDetail = () => {
           createdAt: serverTimestamp(),
           type: 'negotiation'
         });
+
+        // 更新其他所有未處理的議價為 rejected
+        const negotiationsRef = collection(db, 'products', productId, 'negotiations');
+        const pendingNegotiationsQuery = query(negotiationsRef, where('status', '==', 'pending'));
+        const pendingNegotiationsSnapshot = await transaction.get(pendingNegotiationsQuery);
+        
+        pendingNegotiationsSnapshot.docs.forEach(doc => {
+          if (doc.id !== negotiation.id) {
+            transaction.update(doc.ref, {
+              status: 'rejected',
+              rejectedAt: serverTimestamp()
+            });
+          }
+        });
       });
 
       setProduct(prev => ({
@@ -895,7 +924,7 @@ const ProductDetail = () => {
       alert('議價已接受，商品已售出！');
     } catch (error) {
       console.error('接受議價失敗:', error);
-      alert('接受議價失敗，請稍後再試');
+      alert(error.message || '接受議價失敗，請稍後再試');
     }
   };
 

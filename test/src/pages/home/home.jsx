@@ -70,11 +70,15 @@ function Home() {
         baseQuery = query(
           productsRef,
           where('category', '==', category),
+          where('status', '!=', '已售出'),
+          orderBy('status'),
           orderBy('createdAt', 'desc')
         );
       } else {
         baseQuery = query(
           productsRef,
+          where('status', '!=', '已售出'),
+          orderBy('status'),
           orderBy('createdAt', 'desc')
         );
       }
@@ -113,24 +117,28 @@ function Home() {
           
           querySnapshot.forEach(doc => {
             const data = doc.data();
-            const isFavorite = favorites.some(fav => fav.productId === doc.id);
-            fetchedProducts.push({
-              id: doc.id,
-              ...data,
-              isFavorite
-            });
+            if (data.status !== '已結標') {
+              const isFavorite = favorites.some(fav => fav.productId === doc.id);
+              fetchedProducts.push({
+                id: doc.id,
+                ...data,
+                isFavorite
+              });
+            }
           });
         }
       } else {
         const querySnapshot = await getDocs(paginatedQuery);
         querySnapshot.forEach(doc => {
           const data = doc.data();
-          const isFavorite = favorites.some(fav => fav.productId === doc.id);
-          fetchedProducts.push({
-            id: doc.id,
-            ...data,
-            isFavorite
-          });
+          if (data.status !== '已結標') {
+            const isFavorite = favorites.some(fav => fav.productId === doc.id);
+            fetchedProducts.push({
+              id: doc.id,
+              ...data,
+              isFavorite
+            });
+          }
         });
       }
       
@@ -170,6 +178,8 @@ function Home() {
       const productsRef = collection(db, 'products');
       const searchQuery = query(
         productsRef,
+        where('status', '!=', '已售出'),
+        orderBy('status'),
         orderBy('title'),
         limit(20)
       );
@@ -180,9 +190,10 @@ function Home() {
       // 過濾搜索結果
       querySnapshot.forEach((doc) => {
         const product = doc.data();
-        if (product.title.toLowerCase().includes(searchTerm.toLowerCase())) {
+        if (product.status !== '已結標' && 
+            product.title.toLowerCase().includes(searchTerm.toLowerCase())) {
           results.push({
-          id: doc.id,
+            id: doc.id,
             ...product
           });
         }
