@@ -38,6 +38,21 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
+<<<<<<< HEAD
+=======
+      // 商品的議價子集合
+      match /negotiations/{negotiationId} {
+        allow read: if true;
+        // 允許買家創建議價（不能是賣家自己）
+        allow create: if isAuthenticated() && 
+          request.auth.uid != get(/databases/$(database)/documents/products/$(productId)).data.sellerId;
+        // 允許賣家更新議價狀態
+        allow update: if isAuthenticated() && 
+          request.auth.uid == get(/databases/$(database)/documents/products/$(productId)).data.sellerId;
+        allow delete: if false;
+      }
+
+>>>>>>> 18b718393c32545306d88dcf28c41482f1dc4ed3
       // 商品的元數據（如收藏數）
       match /metadata/{metaId} {
         allow read: if true;
@@ -95,7 +110,11 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+<<<<<<< HEAD
     // 聊天室集合（移到最外層）
+=======
+    // 聊天室集合
+>>>>>>> 18b718393c32545306d88dcf28c41482f1dc4ed3
     match /chats/{chatId} {
       allow read, write: if request.auth != null && request.auth.uid in resource.data.participants;
       match /messages/{messageId} {
