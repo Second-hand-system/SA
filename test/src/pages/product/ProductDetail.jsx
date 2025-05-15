@@ -703,19 +703,24 @@ const ProductDetail = () => {
 
     try {
       console.log('Checking for existing chat room...');
-      // 檢查是否已存在聊天室
+      // 修改查詢方式
       const chatsRef = collection(db, 'chats');
       const q = query(
         chatsRef,
-        where('productId', '==', productId),
-        where('participants', 'array-contains', auth.currentUser.uid)
+        where('productId', '==', productId)
       );
       
       const querySnapshot = await getDocs(q);
-      console.log('Existing chats found:', !querySnapshot.empty);
+      // 在記憶體中過濾參與者
+      const existingChat = querySnapshot.docs.find(doc => {
+        const data = doc.data();
+        return data.participants.includes(auth.currentUser.uid);
+      });
+      
+      console.log('Existing chats found:', !!existingChat);
       let chatId;
 
-      if (querySnapshot.empty) {
+      if (!existingChat) {
         console.log('Creating new chat room...');
         // 創建新的聊天室
         const chatData = {
@@ -752,7 +757,7 @@ const ProductDetail = () => {
         console.log('First message created successfully');
       } else {
         console.log('Using existing chat room...');
-        chatId = querySnapshot.docs[0].id;
+        chatId = existingChat.id;
         console.log('Existing chat room ID:', chatId);
       }
 

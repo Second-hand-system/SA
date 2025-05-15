@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc,
+  updateDoc
+} from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import app from '../../firebase';
@@ -17,6 +27,7 @@ const ChatRoom = () => {
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // 驗證用戶 & 取得聊天室資料
   useEffect(() => {
     if (!auth.currentUser) {
       navigate('/login');
@@ -47,6 +58,7 @@ const ChatRoom = () => {
     fetchChatInfo();
   }, [chatId, auth.currentUser, navigate, db]);
 
+  // 監聽訊息更新
   useEffect(() => {
     if (!chatId) return;
 
@@ -65,6 +77,7 @@ const ChatRoom = () => {
     return () => unsubscribe();
   }, [chatId, db]);
 
+  // 每次訊息更新自動滾到底
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -73,23 +86,30 @@ const ChatRoom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // 發送訊息
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
     try {
-      const messagesRef = collection(db, 'chats', chatId, 'messages');
-      await addDoc(messagesRef, {
-        text: newMessage,
-        senderId: auth.currentUser.uid,
-        senderName: auth.currentUser.displayName || '匿名用戶',
-        timestamp: serverTimestamp()
-      });
+      const user = auth.currentUser;
 
-      // 更新聊天室的最後一條消息
+      const messageData = {
+        text: newMessage.trim(),
+        senderId: user.uid,
+        senderName: user.displayName || '匿名',
+        timestamp: serverTimestamp()
+      };
+
+      const messagesRef = collection(db, 'chats', chatId, 'messages');
+
+      // 寫入新訊息
+      await addDoc(messagesRef, messageData);
+
+      // 更新聊天摘要資訊
       const chatRef = doc(db, 'chats', chatId);
       await updateDoc(chatRef, {
-        lastMessage: newMessage,
+        lastMessage: messageData.text,
         lastMessageTime: serverTimestamp()
       });
 
@@ -114,7 +134,13 @@ const ChatRoom = () => {
       <div className="chat-header">
         <div className="chat-header-info">
           <h2>{chatInfo?.productName}</h2>
-          <p>與 {chatInfo?.participants.find(id => id !== auth.currentUser.uid) === chatInfo?.participants[0] ? '賣家' : '買家'} 的對話</p>
+          <p>
+            與{' '}
+            {chatInfo?.participants.find(id => id !== auth.currentUser.uid) === chatInfo?.participants[0]
+              ? '賣家'
+              : '買家'}{' '}
+            的對話
+          </p>
         </div>
         <button className="back-button" onClick={() => navigate('/chats')}>
           返回列表
@@ -125,12 +151,10 @@ const ChatRoom = () => {
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`message ${
-              message.senderId === auth.currentUser.uid ? 'sent' : 'received'
-            }`}
+            className={`message ${message.senderId === auth.currentUser.uid ? 'sent' : 'received'}`}
           >
+            <div className="message-sender">{message.senderName}</div>
             <div className="message-content">
-              <div className="message-sender">{message.senderName}</div>
               <div className="message-text">{message.text}</div>
               <div className="message-time">
                 {message.timestamp?.toDate().toLocaleString('zh-TW')}
@@ -144,17 +168,17 @@ const ChatRoom = () => {
       <form className="message-input-form" onSubmit={handleSendMessage}>
         <input
           type="text"
+          className="message-input"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="輸入訊息..."
-          className="message-input"
         />
         <button type="submit" className="send-button">
-          發送
+          傳送
         </button>
       </form>
     </div>
   );
 };
 
-export default ChatRoom; 
+export default ChatRoom;

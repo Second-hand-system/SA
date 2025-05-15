@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where, orderBy, onSnapshot, getDoc, doc } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  getDoc,
+  doc
+} from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import app from '../../firebase';
@@ -29,10 +37,10 @@ const ChatList = () => {
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       const chatList = await Promise.all(
-        snapshot.docs.map(async (doc) => {
-          const chatData = doc.data();
+        snapshot.docs.map(async (chatDoc) => {
+          const chatData = chatDoc.data();
           const otherUserId = chatData.participants.find(id => id !== userId);
-          
+
           // 獲取其他用戶的資料
           let otherUserName = '未知用戶';
           try {
@@ -45,7 +53,7 @@ const ChatList = () => {
           }
 
           return {
-            id: doc.id,
+            id: chatDoc.id,
             ...chatData,
             otherUserName
           };
@@ -110,4 +118,4 @@ const ChatList = () => {
   );
 };
 
-export default ChatList; 
+export default ChatList;
