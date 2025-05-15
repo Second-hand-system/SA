@@ -39,23 +39,12 @@ const ChatList = () => {
       const chatList = await Promise.all(
         snapshot.docs.map(async (chatDoc) => {
           const chatData = chatDoc.data();
-          const otherUserId = chatData.participants.find(id => id !== userId);
-
-          // 獲取其他用戶的資料
-          let otherUserName = '未知用戶';
-          try {
-            const userDoc = await getDoc(doc(db, 'users', otherUserId));
-            if (userDoc.exists()) {
-              otherUserName = userDoc.data().displayName || '匿名用戶';
-            }
-          } catch (error) {
-            console.error('Error fetching user data:', error);
-          }
-
+          // 直接用 chatData.sellerName
+          const sellerName = chatData.sellerName || '賣家';
           return {
             id: chatDoc.id,
             ...chatData,
-            otherUserName
+            sellerName
           };
         })
       );
@@ -107,7 +96,7 @@ const ChatList = () => {
                   <p>{chat.lastMessage}</p>
                 </div>
                 <div className="chat-item-participants">
-                  <span>與 {chat.otherUserName} 的對話</span>
+                  <span>與 {chat.sellerName} 的對話</span>
                 </div>
               </div>
             </div>
