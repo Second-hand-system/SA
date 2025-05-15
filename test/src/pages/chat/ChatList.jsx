@@ -7,12 +7,19 @@ import {
   orderBy,
   onSnapshot,
   getDoc,
-  doc
+  doc,
+  deleteDoc
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import app from '../../firebase';
 import './ChatList.css';
+
+// 加入 Font Awesome CDN
+const fontAwesomeLink = document.createElement('link');
+fontAwesomeLink.rel = 'stylesheet';
+fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css';
+document.head.appendChild(fontAwesomeLink);
 
 const ChatList = () => {
   const [chats, setChats] = useState([]);
@@ -54,6 +61,14 @@ const ChatList = () => {
 
     return () => unsubscribe();
   }, [auth.currentUser, navigate, db]);
+
+  const deleteChat = async (chatId) => {
+    try {
+      await deleteDoc(doc(db, 'chats', chatId));
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -99,6 +114,15 @@ const ChatList = () => {
                   <span>與 {chat.sellerName} 的對話</span>
                 </div>
               </div>
+              <button
+                className="delete-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteChat(chat.id);
+                }}
+              >
+                <i className="fas fa-trash"></i>
+              </button>
             </div>
           ))}
         </div>

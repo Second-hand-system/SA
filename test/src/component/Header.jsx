@@ -39,8 +39,12 @@ const Header = () => {
                 </div>
                 <span>收藏</span>
               </Link>
-              <Link to="/chats" className="nav-link">
-                <i className="fas fa-comments"></i>
+              <Link to="/chats" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div className="chat-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M21 6.5a2.5 2.5 0 0 0-2.5-2.5h-13A2.5 2.5 0 0 0 3 6.5v7A2.5 2.5 0 0 0 5.5 16H6v3l4.5-3h8A2.5 2.5 0 0 0 21 13.5v-7z"/>
+                  </svg>
+                </div>
                 <span>聊天</span>
               </Link>
               <Link to="/transactions" className="transactions-link">

@@ -26,6 +26,7 @@
 
 .chat-item {
   display: flex;
+  align-items: center;
   padding: 15px;
   background: white;
   border-radius: 8px;
@@ -56,6 +57,9 @@
 .chat-item-content {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .chat-item-header {
@@ -78,6 +82,9 @@
   font-size: 0.8em;
   color: #666;
   white-space: nowrap;
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
 }
 
 .chat-item-preview {
@@ -119,4 +126,20 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.delete-button {
+  background: none;
+  border: none;
+  color: #ff4d4d;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: color 0.3s;
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.delete-button:hover {
+  color: #ff0000;
 } 

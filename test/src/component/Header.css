@@ -108,4 +108,26 @@
 /* 為固定定位的 header 騰出空間 */
 body {
   padding-top: 80px; /* 根據 header 的高度調整 */
+}
+
+.nav-icon-yellow {
+  color: #FFD600 !important;
+}
+
+.chat-icon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e2af4a;
+  transition: all 0.3s ease;
+  margin-right: 4px;
+}
+
+.chat-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
 } 
