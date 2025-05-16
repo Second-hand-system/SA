@@ -43,13 +43,10 @@
   background-color: #d19f3a;
 }
 
-.profile-link {
-  text-decoration: none;
-  color: #333;
-}
-
 .favorites-link,
-.transactions-link {
+.transactions-link,
+.chat-link,
+.profile-link {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -61,7 +58,9 @@
 }
 
 .favorites-link:hover,
-.transactions-link:hover {
+.transactions-link:hover,
+.chat-link:hover,
+.profile-link:hover {
   background-color: #e2af4a;
   color: white;
   transform: translateY(-2px);
@@ -70,7 +69,9 @@
 
 /* 圖標樣式 */
 .heart-icon,
-.transaction-icon {
+.transaction-icon,
+.chat-icon,
+.profile-icon {
   position: relative;
   width: 24px;
   height: 24px;
@@ -79,10 +80,13 @@
   justify-content: center;
   color: #e2af4a;
   transition: all 0.3s ease;
+  margin-right: 4px;
 }
 
 .heart-icon svg,
-.transaction-icon svg {
+.transaction-icon svg,
+.chat-icon svg,
+.profile-icon svg {
   width: 24px;
   height: 24px;
   fill: currentColor;
@@ -112,22 +116,4 @@ body {
 
 .nav-icon-yellow {
   color: #FFD600 !important;
-}
-
-.chat-icon {
-  position: relative;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #e2af4a;
-  transition: all 0.3s ease;
-  margin-right: 4px;
-}
-
-.chat-icon svg {
-  width: 24px;
-  height: 24px;
-  fill: currentColor;
 } 
