@@ -523,6 +523,8 @@ const ProductDetail = () => {
         if (productData.status === '已售出') {
           throw new Error('商品已售出');
         }
+
+        console.log('Creating transaction with meeting locations:', productData.meetingLocations); // 添加調試信息
         
         // 更新商品狀態
         transaction.update(productRef, {
@@ -535,7 +537,7 @@ const ProductDetail = () => {
 
         // 創建交易記錄
         const transactionRef = doc(collection(db, 'transactions'));
-        transaction.set(transactionRef, {
+        const transactionData = {
           productId: productId,
           productTitle: productData.title,
           amount: productData.price,
@@ -546,8 +548,13 @@ const ProductDetail = () => {
           sellerName: productData.sellerName || '匿名用戶',
           status: 'pending',
           createdAt: serverTimestamp(),
-          type: 'direct_purchase'
-        });
+          type: 'direct_purchase',
+          meetingLocations: productData.meetingLocations || [],
+          productImage: productData.images?.[0] || productData.image || '/placeholder.jpg'
+        };
+
+        console.log('Transaction data:', transactionData); // 添加調試信息
+        transaction.set(transactionRef, transactionData);
       });
 
       setPurchaseSuccess(true);
@@ -631,9 +638,11 @@ const ProductDetail = () => {
             
             // 只有最高出價者才會創建交易記錄
             if (highestBid.userId === auth.currentUser.uid) {
+              console.log('Creating auction transaction with meeting locations:', product.meetingLocations); // 添加調試信息
+
               // 創建交易記錄
               const transactionRef = doc(collection(db, 'transactions'));
-              transaction.set(transactionRef, {
+              const transactionData = {
                 productId: productId,
                 productTitle: product.title,
                 amount: bidAmountNum,
@@ -645,8 +654,13 @@ const ProductDetail = () => {
                 status: 'pending',
                 createdAt: timestamp,
                 type: 'auction',
-                bidId: newBidRef.id
-              });
+                bidId: newBidRef.id,
+                meetingLocations: product.meetingLocations || [],
+                productImage: product.images?.[0] || product.image || '/placeholder.jpg'
+              };
+
+              console.log('Auction transaction data:', transactionData); // 添加調試信息
+              transaction.set(transactionRef, transactionData);
 
               // 更新商品狀態
               const productRef = doc(db, 'products', productId);

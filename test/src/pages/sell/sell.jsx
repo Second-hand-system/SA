@@ -202,7 +202,7 @@ function Sell() {
         category: formData.category,
         condition: formData.condition,
         location: formData.location.trim(),
-        images: [downloadURL],  // 改為數組格式，與 EditProduct 一致
+        images: [downloadURL],
         sellerName: currentUser.displayName || '未知賣家',
         sellerEmail: currentUser.email,
         sellerId: currentUser.uid,

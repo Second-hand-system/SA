@@ -163,4 +163,57 @@
 @keyframes spin {
   0% { transform: translateY(-50%) rotate(0deg); } /* 起始位置 */
   100% { transform: translateY(-50%) rotate(360deg); } /* 結束位置 */
+}
+
+/* 面交地點與時間設定區域樣式 */
+.meeting-locations-section {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.meeting-locations-section h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.meeting-location-group {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.meeting-location-group:last-child {
+  margin-bottom: 0;
+}
+
+.meeting-location-group .form-group {
+  margin-bottom: 10px;
+}
+
+.meeting-location-group .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.meeting-location-group label {
+  color: #555;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.meeting-location-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.meeting-location-group input:focus {
+  border-color: #8c001a;
+  outline: none;
 } 
