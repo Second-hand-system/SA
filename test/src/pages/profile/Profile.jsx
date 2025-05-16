@@ -307,18 +307,27 @@ const Profile = () => {
                   <h3 className="product-title">{product.title}</h3>
                   <p className="product-price">NT$ {product.price}</p>
                   <div className="product-info">
-                    {product.auctionType === 'first-come-first-serve' ? (
-                      <span className={`product-status ${product.status === 'active' ? 'status-active' : 'status-ended'}`}>
-                        {product.status === 'active' ? '可購買' : '已售出'}
+                    {product.tradeMode === '先搶先贏' ? (
+                      <span className={`product-status ${product.status === '已售出' ? 'status-ended' : 'status-active'}`}>
+                        {product.status === '已售出' ? '已售出' : '販售中'}
+                      </span>
+                    ) : product.tradeMode === '競標模式' ? (
+                      <span className={`product-status ${product.status === '已結標' || (product.auctionEndTime && new Date() > new Date(product.auctionEndTime)) ? 'status-ended' : 'status-active'}`}>
+                        {product.status === '已結標' || (product.auctionEndTime && new Date() > new Date(product.auctionEndTime)) ? '已結標' : '競標中'}
                       </span>
                     ) : (
-                      <span className={`product-status ${product.status === 'active' ? 'status-active' : 'status-ended'}`}>
-                        {product.status === 'active' ? '競標中' : '已結標'}
+                      <span className={`product-status ${product.status === '已售出' ? 'status-ended' : 'status-active'}`}>
+                        {product.status}
                       </span>
                     )}
-                    {product.status === 'ended' && product.winner && (
+                    {product.status === '已售出' && product.buyerName && (
                       <p className="winner-info">
-                        {product.auctionType === 'first-come-first-serve' ? '購買者' : '得標者'}: {product.winner}
+                        購買者: {product.buyerName}
+                      </p>
+                    )}
+                    {product.status === '已結標' && product.soldTo && (
+                      <p className="winner-info">
+                        得標者: {product.buyerName || '匿名用戶'}
                       </p>
                     )}
                   </div>
