@@ -65,23 +65,31 @@ function Home() {
       let productsRef = collection(db, 'products');
       let baseQuery;
       
+      // 修改查詢方式以符合 Firestore 索引要求
       if (category !== 'all') {
         console.log('應用類別過濾:', category);
         baseQuery = query(
           productsRef,
           where('category', '==', category),
+          orderBy('status'),
           orderBy('createdAt', 'desc')
         );
       } else {
         baseQuery = query(
           productsRef,
+          orderBy('status'),
           orderBy('createdAt', 'desc')
         );
       }
 
       // 獲取總商品數
       const allProductsSnapshot = await getDocs(baseQuery);
-      const totalProducts = allProductsSnapshot.docs.length;
+      const totalProducts = allProductsSnapshot.docs
+        .filter(doc => {
+          const status = doc.data().status;
+          return status !== '已售出' && status !== '已結標';
+        })
+        .length;
       console.log('總商品數:', totalProducts);
       setTotalPages(Math.ceil(totalProducts / productsPerPage));
 
@@ -92,47 +100,58 @@ function Home() {
       // 獲取當前頁的商品
       const paginatedQuery = query(
         baseQuery,
-        limit(productsPerPage)
+        limit(productsPerPage * 2) // 增加限制以補償過濾後的數量
       );
 
       if (page > 1) {
         const previousPageQuery = query(
           baseQuery,
-          limit(startIndex)
+          limit(startIndex * 2) // 增加限制以補償過濾後的數量
         );
         const previousPageSnapshot = await getDocs(previousPageQuery);
-        const lastVisible = previousPageSnapshot.docs[previousPageSnapshot.docs.length - 1];
+        const filteredDocs = previousPageSnapshot.docs.filter(doc => {
+          const status = doc.data().status;
+          return status !== '已售出' && status !== '已結標';
+        });
         
-        if (lastVisible) {
+        if (filteredDocs.length > 0) {
+          const lastVisible = filteredDocs[filteredDocs.length - 1];
           const currentPageQuery = query(
             baseQuery,
             startAfter(lastVisible),
-            limit(productsPerPage)
+            limit(productsPerPage * 2) // 增加限制以補償過濾後的數量
           );
           const querySnapshot = await getDocs(currentPageQuery);
           
           querySnapshot.forEach(doc => {
             const data = doc.data();
-            const isFavorite = favorites.some(fav => fav.productId === doc.id);
-            fetchedProducts.push({
-              id: doc.id,
-              ...data,
-              isFavorite
-            });
+            if (data.status !== '已售出' && data.status !== '已結標') {
+              const isFavorite = favorites.some(fav => fav.productId === doc.id);
+              fetchedProducts.push({
+                id: doc.id,
+                ...data,
+                isFavorite
+              });
+            }
           });
         }
       } else {
         const querySnapshot = await getDocs(paginatedQuery);
         querySnapshot.forEach(doc => {
           const data = doc.data();
-          const isFavorite = favorites.some(fav => fav.productId === doc.id);
-          fetchedProducts.push({
-            id: doc.id,
-            ...data,
-            isFavorite
-          });
+          if (data.status !== '已售出' && data.status !== '已結標') {
+            const isFavorite = favorites.some(fav => fav.productId === doc.id);
+            fetchedProducts.push({
+              id: doc.id,
+              ...data,
+              isFavorite
+            });
+          }
         });
       }
+      
+      // 只取需要的數量
+      fetchedProducts = fetchedProducts.slice(0, productsPerPage);
       
       console.log('獲取到的商品:', fetchedProducts);
       setProducts(fetchedProducts);
@@ -171,7 +190,7 @@ function Home() {
       const searchQuery = query(
         productsRef,
         orderBy('title'),
-        limit(20)
+        limit(40) // 增加限制以補償過濾後的數量
       );
       
       const querySnapshot = await getDocs(searchQuery);
@@ -180,15 +199,18 @@ function Home() {
       // 過濾搜索結果
       querySnapshot.forEach((doc) => {
         const product = doc.data();
-        if (product.title.toLowerCase().includes(searchTerm.toLowerCase())) {
+        if (product.status !== '已售出' && 
+            product.status !== '已結標' && 
+            product.title.toLowerCase().includes(searchTerm.toLowerCase())) {
           results.push({
-          id: doc.id,
+            id: doc.id,
             ...product
           });
         }
       });
       
-      setSearchResults(results);
+      // 只取前20個結果
+      setSearchResults(results.slice(0, 20));
     } catch (err) {
       console.error('搜尋錯誤:', err);
       setError('搜尋時發生錯誤');

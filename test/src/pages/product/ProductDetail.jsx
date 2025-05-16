@@ -501,8 +501,8 @@ const ProductDetail = () => {
       return;
     }
 
-    if (product.status === '已售出') {
-      alert('商品已售出');
+    if (product.status !== '販售中') {
+      alert('商品已售出或已結標');
       return;
     }
 
@@ -520,11 +520,11 @@ const ProductDetail = () => {
         
         const productData = productDoc.data();
         
-        if (productData.status === '已售出') {
-          throw new Error('商品已售出');
+        if (productData.status !== '販售中') {
+          throw new Error('商品已售出或已結標');
         }
 
-        console.log('Creating transaction with meeting locations:', productData.meetingLocations); // 添加調試信息
+        console.log('Creating transaction with meeting locations:', productData.meetingLocations);
         
         // 更新商品狀態
         transaction.update(productRef, {
@@ -553,7 +553,7 @@ const ProductDetail = () => {
           productImage: productData.images?.[0] || productData.image || '/placeholder.jpg'
         };
 
-        console.log('Transaction data:', transactionData); // 添加調試信息
+        console.log('Transaction data:', transactionData);
         transaction.set(transactionRef, transactionData);
       });
 
@@ -588,6 +588,11 @@ const ProductDetail = () => {
       return;
     }
 
+    if (product.status !== '販售中') {
+      alert('商品已售出或已結標');
+      return;
+    }
+
     const bidAmountNum = parseFloat(bidAmount);
     
     // 驗證出價金額
@@ -619,6 +624,19 @@ const ProductDetail = () => {
 
       // 使用事务来确保原子性操作
       await runTransaction(db, async (transaction) => {
+        const productRef = doc(db, 'products', productId);
+        const productDoc = await transaction.get(productRef);
+        
+        if (!productDoc.exists()) {
+          throw new Error('商品不存在');
+        }
+        
+        const productData = productDoc.data();
+        
+        if (productData.status !== '販售中') {
+          throw new Error('商品已售出或已結標');
+        }
+
         // 添加競價記錄
         const bidsRef = collection(db, 'products', productId, 'bids');
         const newBidRef = doc(bidsRef);
@@ -638,7 +656,12 @@ const ProductDetail = () => {
             
             // 只有最高出價者才會創建交易記錄
             if (highestBid.userId === auth.currentUser.uid) {
-              console.log('Creating auction transaction with meeting locations:', product.meetingLocations); // 添加調試信息
+              // 更新商品狀態
+              transaction.update(productRef, {
+                status: '已售出',
+                soldTo: auth.currentUser.uid,
+                soldAt: timestamp
+              });
 
               // 創建交易記錄
               const transactionRef = doc(collection(db, 'transactions'));
@@ -659,26 +682,18 @@ const ProductDetail = () => {
                 productImage: product.images?.[0] || product.image || '/placeholder.jpg'
               };
 
-              console.log('Auction transaction data:', transactionData); // 添加調試信息
+              console.log('Auction transaction data:', transactionData);
               transaction.set(transactionRef, transactionData);
-
-              // 更新商品狀態
-              const productRef = doc(db, 'products', productId);
-              transaction.update(productRef, {
-                status: '已售出',
-                soldTo: auth.currentUser.uid,
-                soldAt: timestamp
-              });
             }
           }
         }
       });
       
-      // 更新當前最高出價和競價歷史（使用本地時間戳立即顯示）
+      // 更新當前最高出價和競價歷史
       const localBid = {
         ...newBid,
         timestamp: new Date(),
-        id: Date.now().toString() // 臨時ID
+        id: Date.now().toString()
       };
       
       setCurrentBid(localBid);
