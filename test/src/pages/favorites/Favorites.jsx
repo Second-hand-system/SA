@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getAuth } from 'firebase/auth';
+import { getFirestore, collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { getUserFavorites, removeFromFavorites } from '../../firebase';
 import { useDispatch, useSelector } from 'react-redux';
 import { removeFavorite, setFavorites } from '../../store/slices/favoriteSlice';
@@ -47,8 +47,37 @@ const Favorites = () => {
         setLoading(true);
         console.log('Fetching favorites for user:', currentUser.uid);
         const favoritesData = await getUserFavorites(currentUser.uid);
-        console.log('Fetched favorites:', favoritesData);
-        dispatch(setFavorites(favoritesData));
+        
+        // 檢查每個收藏商品是否還存在
+        const db = getFirestore();
+        const validFavoritesPromises = favoritesData.map(async (favorite) => {
+          const productRef = doc(db, 'products', favorite.productId);
+          const productSnap = await getDoc(productRef);
+          
+          // 如果商品不存在或已被刪除，自動從收藏中移除
+          if (!productSnap.exists()) {
+            await removeFromFavorites(currentUser.uid, favorite.productId);
+            return null;
+          }
+          
+          const productData = productSnap.data();
+          // 如果商品已下架或被刪除，也從收藏中移除
+          if (productData.isDeleted || productData.status === 'delisted') {
+            await removeFromFavorites(currentUser.uid, favorite.productId);
+            return null;
+          }
+          
+          return {
+            ...favorite,
+            ...productData
+          };
+        });
+
+        const validFavorites = (await Promise.all(validFavoritesPromises))
+          .filter(favorite => favorite !== null);
+
+        console.log('Fetched valid favorites:', validFavorites);
+        dispatch(setFavorites(validFavorites));
       } catch (error) {
         console.error('Error fetching favorites:', error);
         setError('載入收藏商品時發生錯誤');
@@ -97,6 +126,18 @@ const Favorites = () => {
     navigate(`/product/${id}`);
   };
 
+  // 檢查商品狀態的輔助函數
+  const getProductStatus = (item) => {
+    if (item.status === '已售出') {
+      return { text: '已售出', class: 'sold' };
+    }
+    if (item.status === '已結標' || 
+        (item.auctionEndTime && new Date() > new Date(item.auctionEndTime))) {
+      return { text: '已結標', class: 'ended' };
+    }
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="favorites-container">
@@ -130,47 +171,62 @@ const Favorites = () => {
       ) : (
         <>
           <div className="favorites-grid">
-            {getCurrentPageItems().map((item) => (
-              <div key={item.id} className="product-card">
-                <button
-                  className="favorite-button active"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUnfavorite(item.productId);
-                  }}
-                >
-                  <FaHeart />
-                </button>
-                <div
-                  className="card-content"
-                  onClick={() => handleCardClick(item.productId)}
-                >
-                  <div className="item-image">
-                    <img 
-                      src={
-                        item.images && item.images.length > 0
-                          ? item.images[0]
-                          : item.image || '/placeholder.jpg'
-                      } 
-                      alt={item.title} 
-                    />
-                    {(item.status === '已結標' || 
-                      (item.auctionEndTime && new Date() > new Date(item.auctionEndTime))) && (
-                      <div className="sold-badge">已結標</div>
-                    )}
-                  </div>
-                  <div className="info">
-                    <h3>{item.title}</h3>
-                    <p>{getCategoryName(item.category)}</p>
-                    <p className="price">NT$ {item.price}</p>
-                    <div className="item-meta">
-                      <span className="item-condition">{item.condition}</span>
-                      <span>賣家：{item.sellerName}</span>
+            {getCurrentPageItems().map((item) => {
+              const status = getProductStatus(item);
+              return (
+                <div key={item.id} className="product-card">
+                  <button
+                    className="favorite-button active"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnfavorite(item.productId);
+                    }}
+                  >
+                    <FaHeart />
+                  </button>
+                  <div
+                    className="card-content"
+                    onClick={() => handleCardClick(item.productId)}
+                  >
+                    <div className="item-image">
+                      <img 
+                        src={
+                          item.images && item.images.length > 0
+                            ? item.images[0]
+                            : item.image || '/placeholder.jpg'
+                        } 
+                        alt={item.title} 
+                      />
+                      {status && (
+                        <div className={`status-badge ${status.class}`}>
+                          {status.text}
+                        </div>
+                      )}
+                    </div>
+                    <div className="info">
+                      <h3>{item.title}</h3>
+                      <p>{getCategoryName(item.category)}</p>
+                      <p className="price">NT$ {item.price}</p>
+                      <div className="item-meta">
+                        <span className="item-condition">{item.condition}</span>
+                        <span>賣家：{item.sellerName}</span>
+                      </div>
+                      {status && (
+                        <div className={`status-info ${status.class}`}>
+                          {status.text}
+                          {item.buyerName && (
+                            <span className="buyer-info">
+                              {status.text === '已售出' ? '購買者' : '得標者'}：
+                              {item.buyerName}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           
           {totalPages > 1 && (
