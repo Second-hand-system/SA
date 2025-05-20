@@ -1,0 +1,198 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo h1 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.auth-buttons button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #e2af4a;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.auth-buttons button:hover {
+  background-color: #d19f3a;
+}
+
+.favorites-link,
+.transactions-link,
+.chat-link,
+.profile-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: #333;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.favorites-link:hover,
+.transactions-link:hover,
+.chat-link:hover,
+.profile-link:hover {
+  background-color: #e2af4a;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(226, 175, 74, 0.3);
+}
+
+/* 圖標樣式 */
+.heart-icon,
+.transaction-icon,
+.chat-icon,
+.profile-icon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e2af4a;
+  transition: all 0.3s ease;
+  margin-right: 4px;
+}
+
+.heart-icon svg,
+.transaction-icon svg,
+.chat-icon svg,
+.profile-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.favorites-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #e2af4a;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* 為固定定位的 header 騰出空間 */
+body {
+  padding-top: 80px; /* 根據 header 的高度調整 */
+}
+
+.nav-icon-yellow {
+  color: #FFD600 !important;
+}
+
+/* 通知組件樣式 */
+.notification-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: #333;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  margin-right: 0;
+}
+
+.notification-wrapper:hover {
+  background-color: #e2af4a;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(226, 175, 74, 0.3);
+}
+
+.notification-wrapper .anticon {
+  color: #e2af4a;
+  transition: all 0.3s ease;
+  margin-right: 4px;
+}
+
+.notification-wrapper:hover .anticon {
+  color: white;
+}
+
+.notification-wrapper span {
+  color: inherit;
+}
+
+/* 未讀通知樣式 */
+.ant-badge-count {
+  background-color: #e2af4a;
+  box-shadow: 0 0 0 1px #fff;
+}
+
+/* 通知圖標樣式 */
+.anticon-bell {
+  font-size: 20px;
+  color: #333;
+  transition: color 0.3s ease;
+}
+
+.notification-wrapper:hover .anticon-bell {
+  color: white;
+}
+
+/* 通知彈出框樣式 */
+.ant-popover {
+  max-width: 300px;
+}
+
+.ant-popover-inner-content {
+  padding: 12px;
+}
+
+.ant-list-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ant-list-item:last-child {
+  border-bottom: none;
+}
+
+.ant-space {
+  width: 100%;
+}
+
+.ant-typography {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+} 

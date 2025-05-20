@@ -1,0 +1,112 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 基本函數
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isProductOwner(resource) {
+      return isAuthenticated() && request.auth.uid == resource.data.sellerId;
+    }
+
+    function isBuyerOrSeller(resource) {
+      return isAuthenticated() && (
+        request.auth.uid == resource.data.buyerId || 
+        request.auth.uid == resource.data.sellerId
+      );
+    }
+    
+    // 商品集合
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        // 賣家可以更新自己的商品
+        request.auth.uid == resource.data.sellerId ||
+        // 買家可以更新商品狀態（購買時）
+        (request.auth.uid != resource.data.sellerId && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'soldTo', 'soldAt', 'buyerName', 'buyerEmail']))
+      );
+      allow delete: if isProductOwner(resource);
+
+      // 商品的競價子集合
+      match /bids/{bidId} {
+        allow read: if true;
+        allow create: if isAuthenticated() && request.auth.uid != get(/databases/$(database)/documents/products/$(productId)).data.sellerId;
+        allow update, delete: if false;
+      }
+
+      // 商品的元數據（如收藏數）
+      match /metadata/{metaId} {
+        allow read: if true;
+        allow write: if isAuthenticated();
+      }
+    }
+    
+    // 用戶集合
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+      
+      // 用戶的收藏子集合
+      match /favorites/{productId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        allow write: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+
+    // 收藏計數集合
+    match /favorites_count/{productId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // 收藏集合
+    match /favorites/{favoriteId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    // 交易集合
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && (
+        // 允許讀取單個交易記錄
+        request.auth.uid == resource.data.buyerId || 
+        request.auth.uid == resource.data.sellerId ||
+        // 允許查詢買家或賣家的交易
+        (request.query.filters.size() > 0 && (
+          request.auth.uid == request.query.filters[0].value ||
+          request.auth.uid == request.query.filters[1].value
+        ))
+      );
+      allow create: if isAuthenticated() && (
+        // 買家可以創建交易記錄
+        request.auth.uid == request.resource.data.buyerId ||
+        // 賣家可以創建交易記錄
+        request.auth.uid == request.resource.data.sellerId
+      );
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.buyerId || 
+        request.auth.uid == resource.data.sellerId
+      );
+      allow delete: if false;
+    }
+
+    // 通知集合規則
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || 
+         request.auth.token.admin == true);
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || 
+         request.auth.token.admin == true);
+      allow delete: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || 
+         request.auth.token.admin == true);
+    }
+  }
+} 

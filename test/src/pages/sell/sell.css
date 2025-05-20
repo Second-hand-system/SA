@@ -1,0 +1,219 @@
+/* 商品上架頁面容器樣式 */
+.sell-container {
+  max-width: 600px;    /* 最大寬度 */
+  margin: 15px auto;   /* 上下邊距 15px，左右自動居中 */
+  padding: 10px;       /* 內邊距 */
+  padding-top: 80px;   /* 頂部額外內邊距 */
+}
+
+/* 標題樣式 */
+.sell-container h1 {
+  text-align: center;  /* 文字居中 */
+  color: #333;         /* 文字顏色 */
+  margin-bottom: 15px; /* 底部邊距 */
+  font-size: 1.5rem;   /* 字體大小 */
+}
+
+/* 表單樣式 */
+.sell-form {
+  background: white;   /* 背景顏色 */
+  padding: 15px;       /* 內邊距 */
+  border-radius: 8px;  /* 圓角 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* 陰影效果 */
+}
+
+/* 表單組樣式 */
+.form-group {
+  margin-bottom: 12px; /* 底部邊距 */
+}
+
+/* 標籤樣式 */
+.form-group label {
+  display: block;      /* 區塊顯示 */
+  margin-bottom: 4px;  /* 底部邊距 */
+  color: #333;         /* 文字顏色 */
+  font-weight: 500;    /* 字體粗細 */
+  font-size: 0.9rem;   /* 字體大小 */
+}
+
+/* 輸入框、選擇框和文本域的共同樣式 */
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+  width: 100%;        /* 寬度 100% */
+  padding: 8px 12px;  /* 內邊距 */
+  border: 1px solid #e0e0e0; /* 邊框 */
+  border-radius: 6px; /* 圓角 */
+  font-size: 0.9rem;  /* 字體大小 */
+  transition: all 0.3s ease; /* 過渡效果 */
+  background-color: #ffffff; /* 背景顏色 */
+}
+
+/* 輸入框佔位符文字樣式 */
+.form-group input[type="text"]::placeholder,
+.form-group input[type="number"]::placeholder,
+.form-group textarea::placeholder {
+  color: #999;        /* 文字顏色 */
+  font-size: 0.85rem; /* 字體大小 */
+}
+
+/* 文件上傳輸入框樣式 */
+.form-group input[type="file"] {
+  width: 100%;        /* 寬度 100% */
+  padding: 8px;       /* 內邊距 */
+  border: 1px dashed #e0e0e0; /* 虛線邊框 */
+  border-radius: 6px; /* 圓角 */
+  cursor: pointer;    /* 游標 */
+  font-size: 0.9rem;  /* 字體大小 */
+}
+
+/* 點擊輸入框、選擇框和文字的樣式 */
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;      /* 移除輪廓 */
+  border-color: #8c001a; /* 邊框顏色 */
+}
+
+/* 圖片預覽區域樣式 */
+.image-preview {
+  margin-top: 10px;   /* 頂部邊距 */
+  text-align: center; /* 文字居中 */
+}
+
+/* 預覽圖片樣式 */
+.image-preview img {
+  max-width: 200px;   /* 最大寬度 */
+  max-height: 200px;  /* 最大高度 */
+  border-radius: 6px; /* 圓角 */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 陰影效果 */
+}
+
+/* 提交按鈕樣式 */
+.submit-button {
+  width: 100%;        /* 寬度 100% */
+  padding: 10px;      /* 內邊距 */
+  background-color: #8c001a; /* 背景顏色 */
+  color: white;       /* 文字顏色 */
+  border: none;       /* 無邊框 */
+  border-radius: 6px; /* 圓角 */
+  font-size: 1rem;    /* 字體大小 */
+  font-weight: 500;   /* 字體粗細 */
+  cursor: pointer;    /* 游標 */
+  transition: background-color 0.3s; /* 過渡效果 */
+  margin-top: 10px;   /* 頂部邊距 */
+}
+
+/* 提交按鈕懸停效果 */
+.submit-button:hover {
+  background-color: #690014; /* 懸停時的背景顏色 */
+}
+
+/* 禁用狀態的提交按鈕樣式 */
+.submit-button:disabled {
+  background-color: #cccccc; /* 背景顏色 */
+  cursor: not-allowed;       /* 禁用鼠標指針 */
+}
+
+/* 錯誤信息樣式 */
+.error-message {
+  background-color: #ffebee; /* 背景顏色 */
+  color: #c62828;           /* 文字顏色 */
+  padding: 10px;            /* 內邊距 */
+  border-radius: 6px;       /* 圓角 */
+  margin-bottom: 12px;      /* 底部邊距 */
+  text-align: center;       /* 文字居中 */
+  border-left: 3px solid #c62828; /* 左側邊框 */
+  font-size: 0.9rem;        /* 字體大小 */
+}
+
+/* 響應式設計：平板和手機 */
+@media (max-width: 768px) {
+  .sell-container {
+    margin: 20px;    /* 邊距調整 */
+  }
+  
+  .sell-form {
+    padding: 20px;   /* 內邊距調整 */
+  }
+}
+
+/* 加載狀態樣式 */
+.submit-button:disabled {
+  position: relative; /* 相對定位 */
+}
+
+/* 加載動畫樣式 */
+.submit-button:disabled:after {
+  content: '';       /* 偽元素內容 */
+  position: absolute; /* 絕對定位 */
+  width: 20px;       /* 寬度 */
+  height: 20px;      /* 高度 */
+  top: 50%;          /* 頂部位置 */
+  right: 20px;       /* 右側位置 */
+  transform: translateY(-50%); /* 垂直居中 */
+  border: 3px solid #ffffff; /* 邊框 */
+  border-top: 3px solid transparent; /* 透明頂部邊框 */
+  border-radius: 50%; /* 圓形 */
+  animation: spin 1s linear infinite; /* 旋轉動畫 */
+}
+
+/* 旋轉動畫關鍵幀 */
+@keyframes spin {
+  0% { transform: translateY(-50%) rotate(0deg); } /* 起始位置 */
+  100% { transform: translateY(-50%) rotate(360deg); } /* 結束位置 */
+}
+
+/* 面交地點與時間設定區域樣式 */
+.meeting-locations-section {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.meeting-locations-section h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.meeting-location-group {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.meeting-location-group:last-child {
+  margin-bottom: 0;
+}
+
+.meeting-location-group .form-group {
+  margin-bottom: 10px;
+}
+
+.meeting-location-group .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.meeting-location-group label {
+  color: #555;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.meeting-location-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.meeting-location-group input:focus {
+  border-color: #8c001a;
+  outline: none;
+} 
