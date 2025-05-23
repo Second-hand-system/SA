@@ -40,6 +40,9 @@ const ProductDetail = () => {
   const [bidError, setBidError] = useState('');
   const [bidHistory, setBidHistory] = useState([]);
   const [error, setError] = useState(null);
+  const [negotiationComments, setNegotiationComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const { addFavorite, removeFavorite, favoriteCount } = useFavorites();
 
@@ -299,6 +302,25 @@ const ProductDetail = () => {
       fetchPurchaserInfo();
     }
   }, [product, auth.currentUser, db]);
+
+  // 獲取議價留言
+  useEffect(() => {
+    if (product?.tradeMode === '先搶先贏') {
+      const commentsRef = collection(db, 'products', productId, 'negotiations');
+      const q = query(commentsRef, orderBy('timestamp', 'desc'));
+      
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const comments = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          timestamp: doc.data().timestamp?.toDate() || new Date()
+        }));
+        setNegotiationComments(comments);
+      });
+      
+      return () => unsubscribe();
+    }
+  }, [productId, product?.tradeMode]);
 
   const handleUpdateStatus = async (newStatus) => {
     if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
@@ -871,6 +893,137 @@ const ProductDetail = () => {
     }
   };
 
+  // 提交議價留言
+  const handleSubmitComment = async (e) => {
+    e.preventDefault();
+    
+    if (!auth.currentUser) {
+      alert('請先登入');
+      return;
+    }
+
+    if (!newComment.trim()) {
+      alert('請輸入議價內容');
+      return;
+    }
+
+    try {
+      setIsSubmittingComment(true);
+      const commentsRef = collection(db, 'products', productId, 'negotiations');
+      const commentData = {
+        userId: auth.currentUser.uid,
+        userName: auth.currentUser.displayName || '匿名用戶',
+        userEmail: auth.currentUser.email || '未提供',
+        content: newComment.trim(),
+        timestamp: serverTimestamp(),
+        status: 'pending' // pending, accepted, rejected
+      };
+
+      await addDoc(commentsRef, commentData);
+      setNewComment('');
+      
+      // 創建通知給賣家
+      await createNotification({
+        userId: product.sellerId,
+        type: notificationTypes.NEGOTIATION_RECEIVED,
+        itemName: product.title,
+        itemId: productId,
+        message: `收到新的議價留言：${product.title}`
+      });
+    } catch (error) {
+      console.error('提交議價留言失敗:', error);
+      alert('提交失敗，請稍後再試');
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  // 處理議價確認
+  const handleConfirmNegotiation = async (commentId, commentUserId) => {
+    if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
+      alert('只有賣家可以確認議價');
+      return;
+    }
+
+    try {
+      console.log('開始確認議價...');
+      console.log('議價ID:', commentId);
+      console.log('買家ID:', commentUserId);
+
+      // 獲取買家資訊
+      const userRef = doc(db, 'users', commentUserId);
+      const userDoc = await getDoc(userRef);
+      const buyerInfo = userDoc.exists() ? userDoc.data() : null;
+      console.log('買家資訊:', buyerInfo);
+
+      // 更新商品狀態
+      const productRef = doc(db, 'products', productId);
+      const updateData = {
+        status: '已售出',
+        soldTo: commentUserId,
+        soldAt: serverTimestamp(),
+        buyerName: buyerInfo?.displayName || negotiationComments.find(c => c.id === commentId)?.userName || '匿名用戶',
+        buyerEmail: buyerInfo?.email || negotiationComments.find(c => c.id === commentId)?.userEmail || '未提供'
+      };
+      console.log('更新商品資料:', updateData);
+      await updateDoc(productRef, updateData);
+
+      // 更新議價留言狀態
+      const commentRef = doc(db, 'products', productId, 'negotiations', commentId);
+      await updateDoc(commentRef, {
+        status: 'accepted'
+      });
+
+      // 創建交易記錄
+      const transactionRef = doc(collection(db, 'transactions'));
+      const transactionData = {
+        productId: productId,
+        productTitle: product.title,
+        amount: product.price,
+        buyerId: commentUserId,
+        buyerName: buyerInfo?.displayName || negotiationComments.find(c => c.id === commentId)?.userName || '匿名用戶',
+        buyerEmail: buyerInfo?.email || negotiationComments.find(c => c.id === commentId)?.userEmail || '未提供',
+        sellerId: product.sellerId,
+        sellerName: product.sellerName || '匿名用戶',
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        type: 'negotiation',
+        negotiationId: commentId,
+        meetingLocations: product.meetingLocations || [],
+        productImage: product.images?.[0] || product.image || '/placeholder.jpg'
+      };
+
+      await setDoc(transactionRef, transactionData);
+
+      // 創建通知給買家
+      await createNotification({
+        userId: commentUserId,
+        type: notificationTypes.NEGOTIATION_ACCEPTED,
+        itemName: product.title,
+        itemId: productId,
+        message: `您的議價已被接受：${product.title}`
+      });
+
+      // 更新本地狀態
+      const updatedProduct = {
+        ...product,
+        status: '已售出',
+        soldTo: commentUserId,
+        buyerName: buyerInfo?.displayName || negotiationComments.find(c => c.id === commentId)?.userName || '匿名用戶',
+        buyerEmail: buyerInfo?.email || negotiationComments.find(c => c.id === commentId)?.userEmail || '未提供',
+        soldAt: new Date()
+      };
+      console.log('更新後的商品資料:', updatedProduct);
+      setProduct(updatedProduct);
+      setPurchaserInfo(buyerInfo);
+
+      alert('已確認議價並更新商品狀態');
+    } catch (error) {
+      console.error('確認議價失敗:', error);
+      alert('操作失敗，請稍後再試');
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading">
@@ -1154,6 +1307,80 @@ const ProductDetail = () => {
                       <span className="bid-time">{formattedTime}</span>
                     </div>
                     <span className="bid-amount">NT$ {bid.amount}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* 議價區 */}
+      {product?.tradeMode === '先搶先贏' && (
+        <div className="bid-section">
+          <h3>議價資訊</h3>
+          <div className="current-bid">
+            <p>商品原價：NT$ {product.price}</p>
+          </div>
+          
+          {auth.currentUser && product.sellerId !== auth.currentUser.uid && product.status !== '已售出' && (
+            <form onSubmit={handleSubmitComment} className="bid-form">
+              <div className="bid-input-group">
+                <input
+                  type="number"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="請輸入您的議價金額"
+                  min="1"
+                  step="1"
+                />
+                <button 
+                  type="submit" 
+                  className="bid-submit-btn"
+                  disabled={isSubmittingComment}
+                >
+                  {isSubmittingComment ? '提交中...' : '提交議價'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="bid-history">
+            <h4>議價歷史</h4>
+            <ul>
+              {negotiationComments.map((comment, idx) => {
+                let formattedTime = '未知時間';
+                if (comment.timestamp) {
+                  if (comment.timestamp instanceof Date) {
+                    formattedTime = comment.timestamp.toLocaleString('zh-TW');
+                  } else if (typeof comment.timestamp.toDate === 'function') {
+                    formattedTime = comment.timestamp.toDate().toLocaleString('zh-TW');
+                  } else if (comment.timestamp.seconds) {
+                    formattedTime = new Date(comment.timestamp.seconds * 1000).toLocaleString('zh-TW');
+                  }
+                }
+                
+                return (
+                  <li key={comment.id || idx} className={comment.status === 'accepted' ? 'winning-bid' : ''}>
+                    <div className="bid-info">
+                      <span className="bid-user">{comment.userName}</span>
+                      <span className="bid-time">{formattedTime}</span>
+                    </div>
+                    <span className="bid-amount">NT$ {comment.content}</span>
+                    {comment.status === 'accepted' && (
+                      <span className="bid-status">已接受</span>
+                    )}
+                    {auth.currentUser && 
+                     product.sellerId === auth.currentUser.uid && 
+                     comment.status === 'pending' && 
+                     product.status !== '已售出' && (
+                      <button 
+                        className="confirm-negotiation-btn"
+                        onClick={() => handleConfirmNegotiation(comment.id, comment.userId)}
+                      >
+                        確認議價
+                      </button>
+                    )}
                   </li>
                 );
               })}

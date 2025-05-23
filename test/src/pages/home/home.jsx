@@ -66,96 +66,90 @@ function Home() {
       let productsRef = collection(db, 'products');
       let baseQuery;
       
-      // 修改查詢方式以符合 Firestore 索引要求
+      // 簡化查詢，先獲取所有商品
       if (category !== 'all') {
-        console.log('應用類別過濾:', category);
         baseQuery = query(
           productsRef,
           where('category', '==', category),
-          orderBy('status'),
           orderBy('createdAt', 'desc')
         );
       } else {
         baseQuery = query(
           productsRef,
-          orderBy('status'),
           orderBy('createdAt', 'desc')
         );
       }
 
-      // 獲取總商品數
+      // 獲取所有商品並進行調試
       const allProductsSnapshot = await getDocs(baseQuery);
-      const totalProducts = allProductsSnapshot.docs
-        .filter(doc => {
-          const status = doc.data().status;
-          return status !== '已售出' && status !== '已結標';
-        })
-        .length;
-      console.log('總商品數:', totalProducts);
+      console.log('獲取到的原始商品數量:', allProductsSnapshot.docs.length);
+      
+      // 調試每個商品的狀態
+      allProductsSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        console.log('商品ID:', doc.id);
+        console.log('商品狀態:', data.status);
+        console.log('商品標題:', data.title);
+        console.log('交易模式:', data.tradeMode);
+        if (data.auctionEndTime) {
+          console.log('競標結束時間:', data.auctionEndTime);
+        }
+      });
+
+      // 過濾商品
+      const filteredProducts = allProductsSnapshot.docs.filter(doc => {
+        const data = doc.data();
+        const now = new Date();
+        
+        // 調試過濾條件
+        console.log('檢查商品:', doc.id);
+        console.log('狀態:', data.status);
+        console.log('交易模式:', data.tradeMode);
+        
+        // 如果是競標商品
+        if (data.tradeMode === '競標模式') {
+          if (data.auctionEndTime) {
+            const endTime = new Date(data.auctionEndTime);
+            const isActive = endTime > now;
+            console.log('競標商品，結束時間:', endTime);
+            console.log('是否過期:', !isActive);
+            return isActive;
+          }
+          return true; // 如果沒有設置結束時間，顯示所有競標商品
+        }
+        
+        // 如果是普通商品（先搶先贏模式）
+        // 只要不是已售出狀態就顯示
+        if (data.status !== '已售出') {
+          console.log('商品未被售出，將顯示');
+          return true;
+        }
+        
+        console.log('商品不符合顯示條件');
+        return false;
+      });
+
+      console.log('過濾後的商品數量:', filteredProducts.length);
+      const totalProducts = filteredProducts.length;
       setTotalPages(Math.ceil(totalProducts / productsPerPage));
 
-      // 計算分頁
+      // 計算當前頁的商品
       const startIndex = (page - 1) * productsPerPage;
-      let fetchedProducts = [];
+      const endIndex = startIndex + productsPerPage;
+      const currentPageProducts = filteredProducts.slice(startIndex, endIndex);
 
-      // 獲取當前頁的商品
-      const paginatedQuery = query(
-        baseQuery,
-        limit(productsPerPage * 2) // 增加限制以補償過濾後的數量
-      );
+      // 轉換為需要的格式
+      const fetchedProducts = currentPageProducts.map(doc => {
+        const data = doc.data();
+        const isFavorite = favorites.some(fav => fav.productId === doc.id);
+        return {
+          id: doc.id,
+          ...data,
+          isFavorite
+        };
+      });
 
-      if (page > 1) {
-        // 獲取前一頁的最後一個文檔
-        const previousPageQuery = query(
-          baseQuery,
-          limit(startIndex)
-        );
-        const previousPageSnapshot = await getDocs(previousPageQuery);
-        const filteredDocs = previousPageSnapshot.docs.filter(doc => {
-          const status = doc.data().status;
-          return status !== '已售出' && status !== '已結標';
-        });
-        
-        if (filteredDocs.length > 0) {
-          const lastVisible = filteredDocs[filteredDocs.length - 1];
-          const currentPageQuery = query(
-            baseQuery,
-            startAfter(lastVisible),
-            limit(productsPerPage * 2)
-          );
-          const querySnapshot = await getDocs(currentPageQuery);
-          
-          querySnapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.status !== '已售出' && data.status !== '已結標') {
-              const isFavorite = favorites.some(fav => fav.productId === doc.id);
-              fetchedProducts.push({
-                id: doc.id,
-                ...data,
-                isFavorite
-              });
-            }
-          });
-        }
-      } else {
-        const querySnapshot = await getDocs(paginatedQuery);
-        querySnapshot.forEach(doc => {
-          const data = doc.data();
-          if (data.status !== '已售出' && data.status !== '已結標') {
-            const isFavorite = favorites.some(fav => fav.productId === doc.id);
-            fetchedProducts.push({
-              id: doc.id,
-              ...data,
-              isFavorite
-            });
-          }
-        });
-      }
-      
-      // 只取需要的數量
-      fetchedProducts = fetchedProducts.slice(0, productsPerPage);
-      
-      console.log('獲取到的商品:', fetchedProducts);
+      console.log('當前頁商品數量:', fetchedProducts.length);
       setProducts(fetchedProducts);
       setError(null);
     } catch (err) {

@@ -50,9 +50,8 @@ const ProductEditForm = () => {
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-4">
       <div className="mb-4">
-        <label htmlFor="name" className="block text-gray-700 mb-2">商品名稱</label>
+        <label className="block text-gray-700 mb-2">商品名稱</label>
         <input
-          id="name"
           type="text"
           name="name"
           value={formData.name}
@@ -63,9 +62,8 @@ const ProductEditForm = () => {
       </div>
 
       <div className="mb-4">
-        <label htmlFor="price" className="block text-gray-700 mb-2">價格</label>
+        <label className="block text-gray-700 mb-2">價格</label>
         <input
-          id="price"
           type="number"
           name="price"
           value={formData.price}
@@ -76,9 +74,8 @@ const ProductEditForm = () => {
       </div>
 
       <div className="mb-4">
-        <label htmlFor="description" className="block text-gray-700 mb-2">商品描述</label>
+        <label className="block text-gray-700 mb-2">商品描述</label>
         <textarea
-          id="description"
           name="description"
           value={formData.description}
           onChange={handleChange}
@@ -89,9 +86,8 @@ const ProductEditForm = () => {
       </div>
 
       <div className="mb-4">
-        <label htmlFor="imageUrl" className="block text-gray-700 mb-2">圖片網址</label>
+        <label className="block text-gray-700 mb-2">圖片網址</label>
         <input
-          id="imageUrl"
           type="url"
           name="imageUrl"
           value={formData.imageUrl}

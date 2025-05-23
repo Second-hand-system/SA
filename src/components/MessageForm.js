@@ -25,7 +25,7 @@ const MessageForm = ({ productId, sellerId }) => {
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="輸入訊息"
+          placeholder="輸入您的訊息..."
           className="w-full p-2 border rounded"
           rows="3"
           required
@@ -35,7 +35,7 @@ const MessageForm = ({ productId, sellerId }) => {
         type="submit"
         className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
       >
-        發送
+        發送訊息
       </button>
     </form>
   );
