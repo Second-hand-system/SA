@@ -16,52 +16,99 @@ const Transactions = () => {
 
   useEffect(() => {
     const fetchTransactions = async () => {
-      if (!currentUser) return;
-
-      try {
-        const transactionsRef = collection(db, 'transactions');
-        const buyerQuery = query(
-          transactionsRef,
-          where('buyerId', '==', currentUser.uid)
-        );
-        const sellerQuery = query(
-          transactionsRef,
-          where('sellerId', '==', currentUser.uid)
-        );
-
-        const [buyerSnapshot, sellerSnapshot] = await Promise.all([
-          getDocs(buyerQuery),
-          getDocs(sellerQuery)
-        ]);
-
-        const buyerTransactions = buyerSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        const sellerTransactions = sellerSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        const allTransactions = [...buyerTransactions, ...sellerTransactions]
-          .sort((a, b) => {
-            const dateA = a.createdAt?.toDate?.() || new Date(0);
-            const dateB = b.createdAt?.toDate?.() || new Date(0);
-            return dateB - dateA;
-          });
-
-        setTransactions(allTransactions);
+      if (!currentUser) {
         setLoading(false);
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
-        setError('載入交易記錄時發生錯誤');
-        setLoading(false);
+        return;
       }
+
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      const tryFetch = async () => {
+        try {
+          // 檢查用戶權限
+          if (!currentUser.uid) {
+            console.error('No user ID available');
+            setError('用戶未登入或權限不足');
+            setLoading(false);
+            return;
+          }
+
+          const transactionsRef = collection(db, 'transactions');
+          const buyerQuery = query(
+            transactionsRef,
+            where('buyerId', '==', currentUser.uid)
+          );
+          const sellerQuery = query(
+            transactionsRef,
+            where('sellerId', '==', currentUser.uid)
+          );
+
+          const [buyerSnapshot, sellerSnapshot] = await Promise.all([
+            getDocs(buyerQuery).catch(error => {
+              console.error('Error fetching buyer transactions:', error);
+              return { docs: [] };
+            }),
+            getDocs(sellerQuery).catch(error => {
+              console.error('Error fetching seller transactions:', error);
+              return { docs: [] };
+            })
+          ]);
+
+          const buyerTransactions = buyerSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+
+          const sellerTransactions = sellerSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+
+          const allTransactions = [...buyerTransactions, ...sellerTransactions]
+            .sort((a, b) => {
+              const dateA = a.createdAt?.toDate?.() || new Date(0);
+              const dateB = b.createdAt?.toDate?.() || new Date(0);
+              return dateB - dateA;
+            });
+
+          setTransactions(allTransactions);
+          setLoading(false);
+          setError(null);
+        } catch (error) {
+          console.error('Error fetching transactions:', error);
+          
+          if (error.code === 'permission-denied') {
+            setError('權限不足，請重新登入');
+            setLoading(false);
+            return;
+          }
+          
+          if (retryCount < maxRetries) {
+            retryCount++;
+            console.log(`Retrying fetch (${retryCount}/${maxRetries})...`);
+            setTimeout(tryFetch, 1000 * retryCount);
+          } else {
+            setError('載入交易記錄時發生錯誤，請稍後再試');
+            setLoading(false);
+          }
+        }
+      };
+
+      tryFetch();
     };
 
     fetchTransactions();
   }, [currentUser, db]);
+
+  // 添加清理函數
+  useEffect(() => {
+    return () => {
+      setTransactions([]);
+      setLoading(true);
+      setError(null);
+    };
+  }, []);
 
   const filteredTransactions = transactions.filter(transaction => {
     switch (activeTab) {
@@ -193,8 +240,8 @@ const Transactions = () => {
         {filteredTransactions.length === 0 ? (
           <p className="no-transactions">尚無交易記錄</p>
         ) : (
-          filteredTransactions.map(transaction => (
-            <div key={transaction.id} className="transaction-card">
+          filteredTransactions.map((transaction, index) => (
+            <div key={`${transaction.id}-${index}`} className="transaction-card">
               <div className="transaction-header">
                 <h3>{transaction.productTitle}</h3>
                 <span className={`status ${transaction.status}`}>
