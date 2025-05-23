@@ -143,17 +143,64 @@ const ProductDetail = () => {
           setAuctionStatus('已結束');
           clearInterval(timer);
 
-          // 如果競標結束且無人出價，設置為未售出
-          if (!currentBid) {
-            try {
+          try {
+            // 獲取最高出價
+            const bidsRef = collection(db, 'products', productId, 'bids');
+            const bidsQuery = query(bidsRef, orderBy('amount', 'desc'), limit(1));
+            const bidsSnapshot = await getDocs(bidsQuery);
+            
+            if (!bidsSnapshot.empty) {
+              const highestBidDoc = bidsSnapshot.docs[0];
+              const highestBid = highestBidDoc.data();
+              
+              // 檢查是否已經有交易記錄
+              const transactionsRef = collection(db, 'transactions');
+              const transactionQuery = query(
+                transactionsRef,
+                where('productId', '==', productId),
+                where('type', '==', 'auction')
+              );
+              const transactionSnapshot = await getDocs(transactionQuery);
+
+              if (transactionSnapshot.empty) {
+                // 創建交易記錄
+                const transactionRef = doc(collection(db, 'transactions'));
+                await setDoc(transactionRef, {
+                  productId: productId,
+                  productTitle: product.title,
+                  amount: highestBid.amount,
+                  buyerId: highestBid.userId,
+                  buyerName: highestBid.userName,
+                  buyerEmail: highestBid.userEmail,
+                  sellerId: product.sellerId,
+                  sellerName: product.sellerName || '匿名用戶',
+                  status: 'pending',
+                  createdAt: serverTimestamp(),
+                  type: 'auction',
+                  bidId: highestBidDoc.id,
+                  meetingLocations: product.meetingLocations || [],
+                  productImage: product.images?.[0] || product.image || '/placeholder.jpg'
+                });
+
+                // 更新商品狀態
+                const productRef = doc(db, 'products', productId);
+                await updateDoc(productRef, {
+                  status: '已售出',
+                  soldTo: highestBid.userId,
+                  soldAt: serverTimestamp()
+                });
+                setProduct(prev => ({ ...prev, status: '已售出', soldTo: highestBid.userId }));
+              }
+            } else {
+              // 如果無人出價，設置為未售出
               const productRef = doc(db, 'products', productId);
               await updateDoc(productRef, {
                 status: '未售出'
               });
               setProduct(prev => ({ ...prev, status: '未售出' }));
-            } catch (error) {
-              console.error('更新商品狀態時發生錯誤:', error);
             }
+          } catch (error) {
+            console.error('處理競標結束時發生錯誤:', error);
           }
         } else {
           const days = Math.floor(difference / (1000 * 60 * 60 * 24));
