@@ -7,6 +7,8 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { auth } from '../firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
 
 // Create context
 const AuthContext = createContext();
@@ -56,12 +58,43 @@ export const AuthProvider = ({ children }) => {
   // Logout function
   const logout = async () => {
     try {
-      setError('');
-      await signOut(auth);
+      // 先清理所有監聽器
+      if (auth.currentUser) {
+        // 清理通知監聽器
+        const notificationsRef = collection(db, 'notifications');
+        const q = query(notificationsRef, where('userId', '==', auth.currentUser.uid));
+        const unsubscribe = onSnapshot(q, () => {}, (error) => {
+          console.error('Error in notification listener:', error);
+        });
+        unsubscribe();
+      }
+
+      // 清理其他可能的監聽器
+      if (typeof window !== 'undefined') {
+        // 清理本地存儲
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('user');
+      }
+
+      // 執行登出
+      await auth.signOut();
+      
+      // 重置狀態
+      setCurrentUser(null);
+      setLoading(false);
+      
+      // 導航到登入頁面
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     } catch (error) {
-      console.error('Logout error:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error during logout:', error);
+      // 即使發生錯誤，也強制清理狀態
+      setCurrentUser(null);
+      setLoading(false);
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
   };
 

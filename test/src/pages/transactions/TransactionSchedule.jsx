@@ -111,25 +111,36 @@ const TransactionSchedule = () => {
   };
 
   const handleDateChange = (dates) => {
-    console.log('Selected dates:', dates);
+    console.log('Raw selected dates:', dates);
     // 確保 dates 是陣列
     const selectedDatesArray = Array.isArray(dates) ? dates : [dates];
     
-    // 過濾掉過去的日期
+    // 過濾掉過去的日期並標準化日期格式
     const validDates = selectedDatesArray.filter(date => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       return date >= today;
+    }).map(date => {
+      // 標準化日期，使用本地時區
+      const standardizedDate = new Date(date);
+      standardizedDate.setHours(0, 0, 0, 0);
+      return standardizedDate;
     });
     
-    console.log('Valid dates:', validDates);
+    console.log('Valid dates after standardization:', validDates);
     
     // 保留所有現有的時間段
     const newDateTimeSlots = { ...dateTimeSlots };
     
     // 為新選擇的日期初始化空數組（如果還沒有）
     validDates.forEach(date => {
-      const dateStr = date.toISOString().split('T')[0];
+      // 使用本地時區的日期字符串
+      const dateStr = date.toLocaleDateString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).replace(/\//g, '-');
+      
       if (!newDateTimeSlots[dateStr]) {
         newDateTimeSlots[dateStr] = [];
       }
@@ -145,12 +156,23 @@ const TransactionSchedule = () => {
       return;
     }
 
-    const dateStr = date.toISOString().split('T')[0];
+    // 使用本地時區的日期字符串
+    const dateStr = date.toLocaleDateString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replace(/\//g, '-');
+    
+    console.log('Clicking time slot for date:', dateStr, 'time:', time);
+    console.log('Current selected dates:', selectedDates);
+    
     setDateTimeSlots(prev => {
       const currentSlots = prev[dateStr] || [];
       const newSlots = currentSlots.includes(time)
         ? currentSlots.filter(t => t !== time)
         : [...currentSlots, time].sort();
+      
+      console.log('Updated time slots for date:', dateStr, 'new slots:', newSlots);
       
       return {
         ...prev,
@@ -176,25 +198,39 @@ const TransactionSchedule = () => {
         return;
       }
 
-      const hasEmptyTimeSlots = selectedDates.some(date => {
-        const dateStr = date.toISOString().split('T')[0];
-        return !dateTimeSlots[dateStr] || dateTimeSlots[dateStr].length === 0;
-      });
+      console.log('Current selected dates:', selectedDates);
+      console.log('Current dateTimeSlots:', dateTimeSlots);
 
-      if (hasEmptyTimeSlots) {
-        alert('請為每個選擇的日期選擇至少一個時間段');
+      // 處理所有選擇的日期和時間
+      const scheduleOptions = Object.entries(dateTimeSlots).map(([dateStr, timeSlots]) => {
+        console.log(`Processing date ${dateStr} with time slots:`, timeSlots);
+        
+        if (timeSlots.length === 0) {
+          console.warn(`日期 ${dateStr} 沒有選擇時間段`);
+          return null;
+        }
+
+        return {
+          date: dateStr,
+          timeSlots: timeSlots
+        };
+      }).filter(option => option !== null);
+
+      console.log('Final schedule options to submit:', scheduleOptions);
+
+      if (scheduleOptions.length === 0) {
+        alert('請至少選擇一個有效的日期和時間段');
         return;
       }
 
       try {
         const transactionRef = doc(db, 'transactions', transactionId);
         
-        const scheduleOptions = selectedDates.map(date => {
-          const dateStr = date.toISOString().split('T')[0];
-          return {
-            date: dateStr,
-            timeSlots: dateTimeSlots[dateStr]
-          };
+        // 提交前再次確認數據
+        console.log('Submitting schedule options:', {
+          status: 'waiting_for_buyer',
+          scheduleOptions: scheduleOptions,
+          meetingLocations: meetingLocations
         });
 
         await updateDoc(transactionRef, {
@@ -204,7 +240,13 @@ const TransactionSchedule = () => {
           scheduledAt: serverTimestamp()
         });
 
-        alert('面交選項已提交，等待買家選擇！');
+        // 提交成功後顯示詳細信息
+        const successMessage = `成功提交 ${scheduleOptions.length} 個日期的面交選項：\n` +
+          scheduleOptions.map(option => 
+            `${option.date}: ${option.timeSlots.join(', ')}`
+          ).join('\n');
+        
+        alert(successMessage);
         navigate('/transactions');
       } catch (error) {
         console.error('Error submitting schedule options:', error);
@@ -314,28 +356,44 @@ const TransactionSchedule = () => {
               <div className="time-slots-section">
                 <h3>選擇時段（可多選）</h3>
                 {selectedDates.map(date => {
-                  const dateStr = date.toISOString().split('T')[0];
-                  const formattedDate = date.toLocaleDateString('zh-TW', {
+                  // 格式化日期字符串
+                  const dateStr = date.toLocaleDateString('zh-TW', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                  }).replace(/\//g, '-');
+
+                  // 格式化顯示日期
+                  const displayDate = date.toLocaleDateString('zh-TW', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                   });
-                  
+
                   return (
                     <div key={dateStr} className="date-time-group">
-                      <h4>{formattedDate}</h4>
+                      <h4>{displayDate}</h4>
                       <div className="time-slots">
-                        {timeSlots.map(time => {
-                          const isAvailable = isTimeSlotAvailable(date, time);
-                          const isSelected = (dateTimeSlots[dateStr] || []).includes(time);
+                        {timeSlots.map(timeSlot => {
+                          const isAvailable = isTimeSlotAvailable(date, timeSlot);
+                          const isSelected = (dateTimeSlots[dateStr] || []).includes(timeSlot);
+
                           return (
                             <button
-                              key={`${dateStr}-${time}`}
+                              key={`${dateStr}-${timeSlot}`}
                               className={`time-slot ${isSelected ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}`}
-                              onClick={() => handleTimeSlotClick(date, time)}
+                              onClick={() => handleTimeSlotClick(date, timeSlot)}
                               disabled={!isAvailable}
+                              style={{
+                                backgroundColor: isSelected ? '#FFD700' : 'white',
+                                color: isSelected ? '#000' : '#333',
+                                border: isSelected ? '2px solid #FFD700' : '1px solid #ccc',
+                                cursor: isAvailable ? 'pointer' : 'not-allowed',
+                                opacity: isAvailable ? 1 : 0.5,
+                                transition: 'all 0.3s ease'
+                              }}
                             >
-                              {time}
+                              {timeSlot}
                             </button>
                           );
                         })}
