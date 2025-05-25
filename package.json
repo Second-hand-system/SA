@@ -1,13 +1,4 @@
 {
-<<<<<<< HEAD
-  "dependencies": {
-    "@reduxjs/toolkit": "^2.7.0",
-    "firebase": "^11.6.0",
-    "firestore": "^1.1.6",
-    "react-calendar": "^5.1.0",
-    "react-icons": "^5.5.0",
-    "react-redux": "^9.2.0"
-=======
   "name": "test",
   "version": "0.0.0",
   "private": true,
@@ -52,6 +43,5 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.4.1",
     "vite": "^6.3.5"
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
   }
 }

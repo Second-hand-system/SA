@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { getFirestore, collection, query, where, getDocs, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { useAuth } from '../../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
-import './Transactions.css';
-=======
 import { getFirestore, collection, query, where, getDocs, orderBy, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import './Transactions.css';
 import { db, auth } from '../../firebase';
 import { createNotification, notificationTypes } from '../../utils/notificationUtils';
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -20,54 +13,6 @@ const Transactions = () => {
   const [activeTab, setActiveTab] = useState('all');
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-<<<<<<< HEAD
-  const db = getFirestore();
-
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      if (!currentUser) return;
-
-      try {
-        const transactionsRef = collection(db, 'transactions');
-        const buyerQuery = query(
-          transactionsRef,
-          where('buyerId', '==', currentUser.uid)
-        );
-        const sellerQuery = query(
-          transactionsRef,
-          where('sellerId', '==', currentUser.uid)
-        );
-
-        const [buyerSnapshot, sellerSnapshot] = await Promise.all([
-          getDocs(buyerQuery),
-          getDocs(sellerQuery)
-        ]);
-
-        const buyerTransactions = buyerSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        const sellerTransactions = sellerSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        const allTransactions = [...buyerTransactions, ...sellerTransactions]
-          .sort((a, b) => {
-            const dateA = a.createdAt?.toDate?.() || new Date(0);
-            const dateB = b.createdAt?.toDate?.() || new Date(0);
-            return dateB - dateA;
-          });
-
-        setTransactions(allTransactions);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
-        setError('載入交易記錄時發生錯誤');
-        setLoading(false);
-      }
-=======
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -151,14 +96,11 @@ const Transactions = () => {
       };
 
       tryFetch();
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
     };
 
     fetchTransactions();
   }, [currentUser, db]);
 
-<<<<<<< HEAD
-=======
   // 添加清理函數
   useEffect(() => {
     return () => {
@@ -168,7 +110,6 @@ const Transactions = () => {
     };
   }, []);
 
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
   const filteredTransactions = transactions.filter(transaction => {
     switch (activeTab) {
       case 'waitingForSchedule':
@@ -180,8 +121,6 @@ const Transactions = () => {
     }
   });
 
-<<<<<<< HEAD
-=======
   const handleStatusChange = async (transactionId, newStatus) => {
     try {
       const transactionRef = doc(db, 'transactions', transactionId);
@@ -263,7 +202,6 @@ const Transactions = () => {
     }
   };
 
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
   if (loading) {
     return (
       <div className="loading">
@@ -302,13 +240,8 @@ const Transactions = () => {
         {filteredTransactions.length === 0 ? (
           <p className="no-transactions">尚無交易記錄</p>
         ) : (
-<<<<<<< HEAD
-          filteredTransactions.map(transaction => (
-            <div key={transaction.id} className="transaction-card">
-=======
           filteredTransactions.map((transaction, index) => (
             <div key={`${transaction.id}-${index}`} className="transaction-card">
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
               <div className="transaction-header">
                 <h3>{transaction.productTitle}</h3>
                 <span className={`status ${transaction.status}`}>

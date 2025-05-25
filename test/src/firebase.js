@@ -209,7 +209,7 @@ const getUserFavorites = async (userId) => {
   }
 };
 
-export { db, auth, storage, ensureAuth, checkFirestoreConnection };
+export { app, db, auth, storage, ensureAuth, checkFirestoreConnection };
 export { 
   addToFavorites,
   removeFromFavorites,
@@ -219,4 +219,4 @@ export {
   updateFavoriteCount,
   getFavoriteRef,
   getFavoritesCollection
-};export default app;
+};

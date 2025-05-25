@@ -13,16 +13,13 @@ import ProductDetail from './pages/product/ProductDetail'
 import EditProduct from './pages/product/edit/EditProduct'
 import Favorites from './pages/favorites/Favorites'
 import Transactions from './pages/transactions/Transactions'
-import AuthProvider from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import { FavoritesProvider } from './context/FavoritesContext'
-import { useAuth } from './context/AuthContext'
 import { checkFirestoreConnection, auth } from './firebase'
 import TransactionSchedule from './pages/transactions/TransactionSchedule'
 import ChatList from './pages/chat/ChatList'
 import ChatRoom from './pages/chat/ChatRoom'
 
-<<<<<<< HEAD
-=======
 // 配置 React Router 的未来标志
 const router = {
   future: {
@@ -31,7 +28,6 @@ const router = {
   }
 };
 
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
 // 保護需要登入的路由
 const ProtectedRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
@@ -113,11 +109,7 @@ function App() {
     <Provider store={store}>
       <AuthProvider>
         <FavoritesProvider>
-<<<<<<< HEAD
-          <Router>
-=======
           <Router future={router.future}>
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />

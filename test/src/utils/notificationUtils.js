@@ -1,5 +1,5 @@
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import app from '../firebase';
+import { app } from '../firebase';
 
 export const notificationTypes = {
   NEGOTIATION_REQUEST: 'negotiation_request',

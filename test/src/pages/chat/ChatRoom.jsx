@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import app from '../../firebase';
+import { app } from '../../firebase';
 import './ChatRoom.css';
 
 const ChatRoom = () => {

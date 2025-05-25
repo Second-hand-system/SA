@@ -4,7 +4,7 @@ import { BellOutlined } from '@ant-design/icons';
 import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import app from '../firebase';
+import { app } from '../firebase';
 import './Notification.css';
 
 const MAX_RETRY_COUNT = 5;
@@ -24,6 +24,8 @@ const Notification = () => {
   const fetchNotifications = useCallback(async () => {
     if (!auth.currentUser || isRetrying) return;
 
+    let unsubscribe = null;
+
     try {
       setLoading(true);
       setError(null);
@@ -38,7 +40,7 @@ const Notification = () => {
       );
 
       // 使用 onSnapshot 实时监听通知变化
-      const unsubscribe = onSnapshot(q, 
+      unsubscribe = onSnapshot(q, 
         (snapshot) => {
           console.log('收到通知快照，数量:', snapshot.size);
           const notificationList = snapshot.docs.map(doc => ({
@@ -67,18 +69,37 @@ const Notification = () => {
         }
       );
 
-      return () => unsubscribe();
+      return unsubscribe;
     } catch (error) {
       console.error('获取通知时发生错误:', error);
       setError(error.message);
       setLoading(false);
       setIsRetrying(false);
+      return unsubscribe;
     }
   }, [auth.currentUser, db, retryCount, isRetrying]);
 
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+    let unsubscribe = null;
+
+    const setupNotifications = async () => {
+      if (auth.currentUser) {
+        unsubscribe = await fetchNotifications();
+      } else {
+        setNotifications([]);
+        setLoading(false);
+      }
+    };
+
+    setupNotifications();
+
+    // 清理函數
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [fetchNotifications, auth.currentUser]);
 
   const handleRetry = () => {
     if (retryCount < MAX_RETRY_COUNT) {

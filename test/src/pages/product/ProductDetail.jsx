@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { useParams, Link, useNavigate } from 'react-router-dom';
-=======
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
 import { getFirestore, doc, getDoc, deleteDoc, updateDoc, setDoc, serverTimestamp, collection, query, orderBy, limit, getDocs, addDoc, runTransaction, onSnapshot, where } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useFavorites } from '../../context/FavoritesContext';
-import app, { 
+import { 
+  app,
   getFavoriteRef, 
   checkIsFavorite, 
   removeFromFavorites, 
@@ -15,19 +12,13 @@ import app, {
   getFavoriteCount,
   updateFavoriteCount 
 } from '../../firebase';
-<<<<<<< HEAD
-=======
 import { createNotification, notificationTypes } from '../../utils/notificationUtils';
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
 import './ProductDetail.css';
 
 const ProductDetail = () => {
   const { productId } = useParams();
-<<<<<<< HEAD
-=======
   const [searchParams] = useSearchParams();
   const returnPage = searchParams.get('returnPage') || '1';
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -50,12 +41,6 @@ const ProductDetail = () => {
   const [bidError, setBidError] = useState('');
   const [bidHistory, setBidHistory] = useState([]);
   const [error, setError] = useState(null);
-<<<<<<< HEAD
-=======
-  const [negotiationComments, setNegotiationComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
 
   const { addFavorite, removeFavorite, favoriteCount } = useFavorites();
 
@@ -88,12 +73,8 @@ const ProductDetail = () => {
           // 處理時間戳
           let processedData = {
             ...data,
-<<<<<<< HEAD
-            id: docSnap.id
-=======
             id: docSnap.id,
             status: data.status || '販售中' // 设置默认状态
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
           };
 
           if (data.createdAt) {
@@ -106,11 +87,7 @@ const ProductDetail = () => {
             const endTime = new Date(data.auctionEndTime);
             const now = new Date();
             if (now > endTime) {
-<<<<<<< HEAD
-              processedData.status = data.status || '已結束';
-=======
               processedData.status = '已結標';
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
             }
           }
 
@@ -167,11 +144,6 @@ const ProductDetail = () => {
           setAuctionStatus('已結束');
           clearInterval(timer);
 
-<<<<<<< HEAD
-          // 如果競標結束且無人出價，設置為未售出
-          if (!currentBid) {
-            try {
-=======
           try {
             // 獲取最高出價
             const bidsRef = collection(db, 'products', productId, 'bids');
@@ -179,8 +151,7 @@ const ProductDetail = () => {
             const bidsSnapshot = await getDocs(bidsQuery);
             
             if (!bidsSnapshot.empty) {
-              const highestBidDoc = bidsSnapshot.docs[0];
-              const highestBid = highestBidDoc.data();
+              const highestBid = bidsSnapshot.docs[0].data();
               
               // 檢查是否已經有交易記錄
               const transactionsRef = collection(db, 'transactions');
@@ -206,7 +177,7 @@ const ProductDetail = () => {
                   status: 'pending',
                   createdAt: serverTimestamp(),
                   type: 'auction',
-                  bidId: highestBidDoc.id,
+                  bidId: highestBid.id,
                   meetingLocations: product.meetingLocations || [],
                   productImage: product.images?.[0] || product.image || '/placeholder.jpg'
                 });
@@ -222,29 +193,15 @@ const ProductDetail = () => {
               }
             } else {
               // 如果無人出價，設置為未售出
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
               const productRef = doc(db, 'products', productId);
               await updateDoc(productRef, {
                 status: '未售出'
               });
               setProduct(prev => ({ ...prev, status: '未售出' }));
-<<<<<<< HEAD
-            } catch (error) {
-              console.error('更新商品狀態時發生錯誤:', error);
-            }
-=======
             }
           } catch (error) {
             console.error('處理競標結束時發生錯誤:', error);
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
           }
-        } else {
-          const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-          const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-          const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-          const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-          
-          setTimeLeft(`${days}天 ${hours}時 ${minutes}分 ${seconds}秒`);
         }
       }, 1000);
 
@@ -383,28 +340,6 @@ const ProductDetail = () => {
     }
   }, [product, auth.currentUser, db]);
 
-<<<<<<< HEAD
-=======
-  // 獲取議價留言
-  useEffect(() => {
-    if (product?.tradeMode === '先搶先贏') {
-      const commentsRef = collection(db, 'products', productId, 'negotiations');
-      const q = query(commentsRef, orderBy('timestamp', 'desc'));
-      
-      const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const comments = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          timestamp: doc.data().timestamp?.toDate() || new Date()
-        }));
-        setNegotiationComments(comments);
-      });
-      
-      return () => unsubscribe();
-    }
-  }, [productId, product?.tradeMode]);
-
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
   const handleUpdateStatus = async (newStatus) => {
     if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
       alert('只有賣家可以更新商品狀態');
@@ -520,8 +455,6 @@ const ProductDetail = () => {
         // 更新收藏數
         try {
           await updateFavoriteCount(productId, true);
-<<<<<<< HEAD
-=======
           // 創建收藏通知
           await createNotification({
             userId: product.sellerId,
@@ -530,7 +463,6 @@ const ProductDetail = () => {
             itemId: productId,
             message: `有人收藏了您的商品：${product.title}`
           });
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
         } catch (error) {
           console.error('更新收藏數時發生錯誤:', error);
         }
@@ -621,12 +553,8 @@ const ProductDetail = () => {
       return;
     }
 
-<<<<<<< HEAD
-    if (product.status !== '販售中') {
-=======
     if (product.status === '已售出' || product.status === '已結標' || 
         (product.auctionEndTime && new Date() > new Date(product.auctionEndTime))) {
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
       alert('商品已售出或已結標');
       return;
     }
@@ -645,20 +573,11 @@ const ProductDetail = () => {
         
         const productData = productDoc.data();
         
-<<<<<<< HEAD
-        if (productData.status !== '販售中') {
-          throw new Error('商品已售出或已結標');
-        }
-
-        console.log('Creating transaction with meeting locations:', productData.meetingLocations);
-        
-=======
         if (productData.status === '已售出' || productData.status === '已結標' || 
             (productData.auctionEndTime && new Date() > new Date(productData.auctionEndTime))) {
           throw new Error('商品已售出或已結標');
         }
 
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
         // 更新商品狀態
         transaction.update(productRef, {
           status: '已售出',
@@ -686,10 +605,6 @@ const ProductDetail = () => {
           productImage: productData.images?.[0] || productData.image || '/placeholder.jpg'
         };
 
-<<<<<<< HEAD
-        console.log('Transaction data:', transactionData);
-        transaction.set(transactionRef, transactionData);
-=======
         transaction.set(transactionRef, transactionData);
 
         // 創建通知給賣家
@@ -709,7 +624,6 @@ const ProductDetail = () => {
           itemId: productId,
           message: `您已成功購買 ${productData.title}`
         });
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
       });
 
       setPurchaseSuccess(true);
@@ -743,12 +657,8 @@ const ProductDetail = () => {
       return;
     }
 
-<<<<<<< HEAD
-    if (product.status !== '販售中') {
-=======
     if (product.status === '已售出' || product.status === '已結標' || 
         (product.auctionEndTime && new Date() > new Date(product.auctionEndTime))) {
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
       alert('商品已售出或已結標');
       return;
     }
@@ -793,12 +703,8 @@ const ProductDetail = () => {
         
         const productData = productDoc.data();
         
-<<<<<<< HEAD
-        if (productData.status !== '販售中') {
-=======
         if (productData.status === '已售出' || productData.status === '已結標' || 
             (productData.auctionEndTime && new Date() > new Date(productData.auctionEndTime))) {
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
           throw new Error('商品已售出或已結標');
         }
 
@@ -807,8 +713,6 @@ const ProductDetail = () => {
         const newBidRef = doc(bidsRef);
         transaction.set(newBidRef, newBid);
 
-<<<<<<< HEAD
-=======
         // 創建通知給賣家
         await createNotification({
           userId: productData.sellerId,
@@ -829,7 +733,6 @@ const ProductDetail = () => {
           });
         }
 
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
         // 檢查是否是最後一個出價（競標結束時）
         const now = new Date();
         const endTime = new Date(product.auctionEndTime);
@@ -870,10 +773,6 @@ const ProductDetail = () => {
                 productImage: product.images?.[0] || product.image || '/placeholder.jpg'
               };
 
-<<<<<<< HEAD
-              console.log('Auction transaction data:', transactionData);
-              transaction.set(transactionRef, transactionData);
-=======
               transaction.set(transactionRef, transactionData);
 
               // 創建得標通知給買家
@@ -893,7 +792,6 @@ const ProductDetail = () => {
                 itemId: productId,
                 message: `您的商品已售出：${product.title}`
               });
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
             }
           }
         }
@@ -1013,140 +911,6 @@ const ProductDetail = () => {
     }
   };
 
-<<<<<<< HEAD
-=======
-  // 提交議價留言
-  const handleSubmitComment = async (e) => {
-    e.preventDefault();
-    
-    if (!auth.currentUser) {
-      alert('請先登入');
-      return;
-    }
-
-    if (!newComment.trim()) {
-      alert('請輸入議價內容');
-      return;
-    }
-
-    try {
-      setIsSubmittingComment(true);
-      const commentsRef = collection(db, 'products', productId, 'negotiations');
-      const commentData = {
-        userId: auth.currentUser.uid,
-        userName: auth.currentUser.displayName || '匿名用戶',
-        userEmail: auth.currentUser.email || '未提供',
-        content: newComment.trim(),
-        timestamp: serverTimestamp(),
-        status: 'pending' // pending, accepted, rejected
-      };
-
-      await addDoc(commentsRef, commentData);
-      setNewComment('');
-      
-      // 創建通知給賣家
-      await createNotification({
-        userId: product.sellerId,
-        type: notificationTypes.NEGOTIATION_RECEIVED,
-        itemName: product.title,
-        itemId: productId,
-        message: `收到新的議價留言：${product.title}`
-      });
-    } catch (error) {
-      console.error('提交議價留言失敗:', error);
-      alert('提交失敗，請稍後再試');
-    } finally {
-      setIsSubmittingComment(false);
-    }
-  };
-
-  // 處理議價確認
-  const handleConfirmNegotiation = async (commentId, commentUserId) => {
-    if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
-      alert('只有賣家可以確認議價');
-      return;
-    }
-
-    try {
-      console.log('開始確認議價...');
-      console.log('議價ID:', commentId);
-      console.log('買家ID:', commentUserId);
-
-      // 獲取買家資訊
-      const userRef = doc(db, 'users', commentUserId);
-      const userDoc = await getDoc(userRef);
-      const buyerInfo = userDoc.exists() ? userDoc.data() : null;
-      console.log('買家資訊:', buyerInfo);
-
-      // 更新商品狀態
-      const productRef = doc(db, 'products', productId);
-      const updateData = {
-        status: '已售出',
-        soldTo: commentUserId,
-        soldAt: serverTimestamp(),
-        buyerName: buyerInfo?.displayName || negotiationComments.find(c => c.id === commentId)?.userName || '匿名用戶',
-        buyerEmail: buyerInfo?.email || negotiationComments.find(c => c.id === commentId)?.userEmail || '未提供'
-      };
-      console.log('更新商品資料:', updateData);
-      await updateDoc(productRef, updateData);
-
-      // 更新議價留言狀態
-      const commentRef = doc(db, 'products', productId, 'negotiations', commentId);
-      await updateDoc(commentRef, {
-        status: 'accepted'
-      });
-
-      // 創建交易記錄
-      const transactionRef = doc(collection(db, 'transactions'));
-      const transactionData = {
-        productId: productId,
-        productTitle: product.title,
-        amount: product.price,
-        buyerId: commentUserId,
-        buyerName: buyerInfo?.displayName || negotiationComments.find(c => c.id === commentId)?.userName || '匿名用戶',
-        buyerEmail: buyerInfo?.email || negotiationComments.find(c => c.id === commentId)?.userEmail || '未提供',
-        sellerId: product.sellerId,
-        sellerName: product.sellerName || '匿名用戶',
-        status: 'pending',
-        createdAt: serverTimestamp(),
-        type: 'negotiation',
-        negotiationId: commentId,
-        meetingLocations: product.meetingLocations || [],
-        productImage: product.images?.[0] || product.image || '/placeholder.jpg'
-      };
-
-      await setDoc(transactionRef, transactionData);
-
-      // 創建通知給買家
-      await createNotification({
-        userId: commentUserId,
-        type: notificationTypes.NEGOTIATION_ACCEPTED,
-        itemName: product.title,
-        itemId: productId,
-        message: `您的議價已被接受：${product.title}`
-      });
-
-      // 更新本地狀態
-      const updatedProduct = {
-        ...product,
-        status: '已售出',
-        soldTo: commentUserId,
-        buyerName: buyerInfo?.displayName || negotiationComments.find(c => c.id === commentId)?.userName || '匿名用戶',
-        buyerEmail: buyerInfo?.email || negotiationComments.find(c => c.id === commentId)?.userEmail || '未提供',
-        soldAt: new Date()
-      };
-      console.log('更新後的商品資料:', updatedProduct);
-      setProduct(updatedProduct);
-      setPurchaserInfo(buyerInfo);
-
-      alert('已確認議價並更新商品狀態');
-    } catch (error) {
-      console.error('確認議價失敗:', error);
-      alert('操作失敗，請稍後再試');
-    }
-  };
-
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
   if (loading) {
     return (
       <div className="loading">
@@ -1438,89 +1202,9 @@ const ProductDetail = () => {
         </div>
       )}
 
-<<<<<<< HEAD
-      {/* 修改底部按鈕區域 */}
-      <div className="bottom-links">
-        <Link to="/" className="back-home-link">
-=======
-      {/* 議價區 */}
-      {product?.tradeMode === '先搶先贏' && (
-        <div className="bid-section">
-          <h3>議價資訊</h3>
-          <div className="current-bid">
-            <p>商品原價：NT$ {product.price}</p>
-          </div>
-          
-          {auth.currentUser && product.sellerId !== auth.currentUser.uid && product.status !== '已售出' && (
-            <form onSubmit={handleSubmitComment} className="bid-form">
-              <div className="bid-input-group">
-                <input
-                  type="number"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="請輸入您的議價金額"
-                  min="1"
-                  step="1"
-                />
-                <button 
-                  type="submit" 
-                  className="bid-submit-btn"
-                  disabled={isSubmittingComment}
-                >
-                  {isSubmittingComment ? '提交中...' : '提交議價'}
-                </button>
-              </div>
-            </form>
-          )}
-
-          <div className="bid-history">
-            <h4>議價歷史</h4>
-            <ul>
-              {negotiationComments.map((comment, idx) => {
-                let formattedTime = '未知時間';
-                if (comment.timestamp) {
-                  if (comment.timestamp instanceof Date) {
-                    formattedTime = comment.timestamp.toLocaleString('zh-TW');
-                  } else if (typeof comment.timestamp.toDate === 'function') {
-                    formattedTime = comment.timestamp.toDate().toLocaleString('zh-TW');
-                  } else if (comment.timestamp.seconds) {
-                    formattedTime = new Date(comment.timestamp.seconds * 1000).toLocaleString('zh-TW');
-                  }
-                }
-                
-                return (
-                  <li key={comment.id || idx} className={comment.status === 'accepted' ? 'winning-bid' : ''}>
-                    <div className="bid-info">
-                      <span className="bid-user">{comment.userName}</span>
-                      <span className="bid-time">{formattedTime}</span>
-                    </div>
-                    <span className="bid-amount">NT$ {comment.content}</span>
-                    {comment.status === 'accepted' && (
-                      <span className="bid-status">已接受</span>
-                    )}
-                    {auth.currentUser && 
-                     product.sellerId === auth.currentUser.uid && 
-                     comment.status === 'pending' && 
-                     product.status !== '已售出' && (
-                      <button 
-                        className="confirm-negotiation-btn"
-                        onClick={() => handleConfirmNegotiation(comment.id, comment.userId)}
-                      >
-                        確認議價
-                      </button>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </div>
-      )}
-
       {/* 修改底部按鈕區域 */}
       <div className="bottom-links">
         <Link to={`/?page=${returnPage}`} className="back-home-link">
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
           返回首頁
         </Link>
         {auth.currentUser && product.sellerId === auth.currentUser.uid && (
