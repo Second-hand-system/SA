@@ -49,6 +49,7 @@ export const createNotification = async ({ userId, type, itemName, itemId, messa
     console.log('Creating notification:', notificationData);
     const docRef = await addDoc(notificationsRef, notificationData);
     console.log('Notification created with ID:', docRef.id);
+    return docRef.id;
   } catch (error) {
     console.error('Error creating notification:', error);
     throw error;
