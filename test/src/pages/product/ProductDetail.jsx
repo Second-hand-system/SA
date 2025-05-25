@@ -803,14 +803,15 @@ const ProductDetail = () => {
 
     const bidAmountNum = parseFloat(bidAmount);
     
-    // 驗證議價金額
+    // 驗證競價金額
     if (isNaN(bidAmountNum) || bidAmountNum <= 0) {
-      setBidError('請輸入有效的金額');
+      setBidError('請輸入有效的競價價格');
       return;
     }
 
-    if (bidAmountNum >= product.price) {
-      setBidError(`議價金額必須低於商品價格 (NT$ ${product.price})`);
+    // 檢查是否高於上一個競價
+    if (currentBid && bidAmountNum <= currentBid.amount) {
+      setBidError(`競價價格必須高於上一個競價價格 (NT$ ${currentBid.amount})`);
       return;
     }
 
@@ -1375,7 +1376,7 @@ const ProductDetail = () => {
                   type="number"
                   value={bidAmount}
                   onChange={(e) => setBidAmount(e.target.value)}
-                  placeholder="輸入出價金額"
+                  placeholder={currentBid ? `請輸入高於 NT$ ${currentBid.amount} 的競價價格` : "請輸入競價價格"}
                   min={currentBid ? currentBid.amount + 1 : product.price + 1}
                   step="1"
                 />
