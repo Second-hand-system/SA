@@ -182,61 +182,97 @@ const TransactionSchedule = () => {
   };
 
   const handleOptionSelect = (date, time, location) => {
-    setSelectedOption({ date, time, location });
+    console.log('Selecting option:', { date, time, location });
+    setSelectedOption({
+      date: date,
+      time: time,
+      location: location
+    });
   };
 
-  const handleSubmit = async () => {
+  const handleScheduleConfirm = async () => {
     if (isSeller) {
-      // 賣家提交可選時間和地點
+      // 賣家提交選項
       if (selectedDates.length === 0 || meetingLocations.length === 0) {
-        alert('請至少選擇一個日期和一個面交地點');
+        alert('請選擇至少一個日期和至少一個面交地點');
         return;
       }
 
-      const scheduleOptions = selectedDates.map(date => {
-        const dateStr = date.toLocaleDateString('zh-TW', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        }).replace(/\//g, '-');
+      console.log('Current selected dates:', selectedDates);
+      console.log('Current dateTimeSlots:', dateTimeSlots);
+
+      // 處理所有選擇的日期和時間
+      const scheduleOptions = Object.entries(dateTimeSlots).map(([dateStr, timeSlots]) => {
+        console.log(`Processing date ${dateStr} with time slots:`, timeSlots);
         
+        if (timeSlots.length === 0) {
+          console.warn(`日期 ${dateStr} 沒有選擇時間段`);
+          return null;
+        }
+
         return {
           date: dateStr,
-          timeSlots: dateTimeSlots[dateStr] || []
+          timeSlots: timeSlots
         };
-      });
+      }).filter(option => option !== null);
+
+      console.log('Final schedule options to submit:', scheduleOptions);
+
+      if (scheduleOptions.length === 0) {
+        alert('請至少選擇一個有效的日期和時間段');
+        return;
+      }
 
       try {
-        await updateDoc(doc(db, 'transactions', transactionId), {
-          scheduleOptions,
-          meetingLocations,
+        const transactionRef = doc(db, 'transactions', transactionId);
+        
+        // 提交前再次確認數據
+        console.log('Submitting schedule options:', {
           status: 'waiting_for_buyer',
-          updatedAt: serverTimestamp()
+          scheduleOptions: scheduleOptions,
+          meetingLocations: meetingLocations
         });
 
+        await updateDoc(transactionRef, {
+          status: 'waiting_for_buyer',
+          scheduleOptions: scheduleOptions,
+          meetingLocations: meetingLocations,
+          scheduledAt: serverTimestamp()
+        });
+
+        // 提交成功後顯示詳細信息
+        const successMessage = `成功提交 ${scheduleOptions.length} 個日期的面交選項：\n` +
+          scheduleOptions.map(option => 
+            `${option.date}: ${option.timeSlots.join(', ')}`
+          ).join('\n');
+        
+        alert(successMessage);
         navigate('/transactions');
       } catch (error) {
-        console.error('Error updating transaction:', error);
-        setError('更新交易記錄時發生錯誤');
+        console.error('Error submitting schedule options:', error);
+        alert('提交面交選項失敗，請稍後再試');
       }
     } else {
-      // 買家選擇最終時間和地點
+      // 買家確認選擇
       if (!selectedOption) {
         alert('請選擇一個面交時間和地點');
         return;
       }
 
       try {
-        await updateDoc(doc(db, 'transactions', transactionId), {
-          selectedSchedule: selectedOption,
+        const transactionRef = doc(db, 'transactions', transactionId);
+        
+        await updateDoc(transactionRef, {
           status: 'confirmed',
-          updatedAt: serverTimestamp()
+          selectedSchedule: selectedOption,
+          confirmedAt: serverTimestamp()
         });
 
+        alert('面交時間和地點已確認！');
         navigate('/transactions');
       } catch (error) {
-        console.error('Error updating transaction:', error);
-        setError('更新交易記錄時發生錯誤');
+        console.error('Error confirming schedule:', error);
+        alert('確認面交時間失敗，請稍後再試');
       }
     }
   };
@@ -252,7 +288,7 @@ const TransactionSchedule = () => {
 
   if (error) {
     return (
-      <div className="error">
+      <div className="error-container">
         <p>{error}</p>
         <button onClick={() => navigate('/transactions')}>返回交易列表</button>
       </div>
@@ -260,139 +296,275 @@ const TransactionSchedule = () => {
   }
 
   return (
-    <div className="transaction-schedule">
-      <h2>{isSeller ? '安排面交時間' : '選擇面交時間'}</h2>
-      
-      {isSeller ? (
-        <>
-          <div className="schedule-section">
-            <h3>選擇可用的日期和時間</h3>
-            <Calendar
-              onChange={handleDateChange}
-              value={selectedDates}
-              selectRange={true}
-              minDate={new Date()}
-            />
-            
-            {selectedDates.length > 0 && (
-              <div className="time-slots">
-                <h4>選擇時間段</h4>
-                {selectedDates.map(date => {
+    <div className="schedule-page">
+      <div className="schedule-header">
+        <h1>{isSeller ? '提供面交選項' : '選擇面交時間'}</h1>
+        <h2>{transaction?.productTitle}</h2>
+      </div>
+
+      <div className="schedule-content">
+        {isSeller ? (
+          // 賣家視角：提供選項
+          <>
+            <div className="calendar-section">
+              <h3>選擇日期（可多選）</h3>
+              <Calendar
+                onChange={handleDateChange}
+                value={selectedDates}
+                minDate={new Date()}
+                className="meeting-calendar"
+                selectRange={false}
+                multiple={true}
+                tileClassName={({ date }) => {
                   const dateStr = date.toLocaleDateString('zh-TW', {
                     year: 'numeric',
                     month: '2-digit',
                     day: '2-digit'
                   }).replace(/\//g, '-');
+                  return selectedDates.some(d => 
+                    d.toLocaleDateString('zh-TW', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit'
+                    }).replace(/\//g, '-') === dateStr
+                  ) ? 'selected-date' : null;
+                }}
+              />
+            </div>
+
+            {/* 顯示已選擇的日期和時間摘要 */}
+            <div className="selected-summary">
+              <h3>已選擇的面交時間</h3>
+              {Object.entries(dateTimeSlots).length > 0 ? (
+                Object.entries(dateTimeSlots).map(([dateStr, times]) => {
+                  if (times.length === 0) return null;
+                  
+                  const date = new Date(dateStr);
+                  const formattedDate = date.toLocaleDateString('zh-TW', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  });
                   
                   return (
-                    <div key={dateStr} className="date-time-slots">
-                      <h5>{dateStr}</h5>
-                      <div className="time-slots-grid">
-                        {timeSlots.map(time => (
-                          <button
-                            key={time}
-                            className={`time-slot ${
-                              dateTimeSlots[dateStr]?.includes(time) ? 'selected' : ''
-                            } ${!isTimeSlotAvailable(date, time) ? 'unavailable' : ''}`}
-                            onClick={() => handleTimeSlotClick(date, time)}
-                            disabled={!isTimeSlotAvailable(date, time)}
-                          >
-                            {time}
-                          </button>
+                    <div key={dateStr} className="summary-item">
+                      <h4>{formattedDate}</h4>
+                      <div className="selected-times">
+                        {times.map(time => (
+                          <span key={time} className="selected-time">{time}</span>
                         ))}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="no-times">尚未選擇任何時間</p>
+              )}
+            </div>
+
+            {selectedDates.length > 0 && (
+              <div className="time-slots-section">
+                <h3>選擇時段（可多選）</h3>
+                {selectedDates.map(date => {
+                  // 格式化日期字符串
+                  const dateStr = date.toLocaleDateString('zh-TW', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                  }).replace(/\//g, '-');
+
+                  // 格式化顯示日期
+                  const displayDate = date.toLocaleDateString('zh-TW', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  });
+
+                  return (
+                    <div key={dateStr} className="date-time-group">
+                      <h4>{displayDate}</h4>
+                      <div className="time-slots">
+                        {timeSlots.map(timeSlot => {
+                          const isAvailable = isTimeSlotAvailable(date, timeSlot);
+                          const isSelected = (dateTimeSlots[dateStr] || []).includes(timeSlot);
+
+                          return (
+                            <button
+                              key={`${dateStr}-${timeSlot}`}
+                              className={`time-slot ${isSelected ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}`}
+                              onClick={() => handleTimeSlotClick(date, timeSlot)}
+                              disabled={!isAvailable}
+                              style={{
+                                backgroundColor: isSelected ? '#FFD700' : 'white',
+                                color: isSelected ? '#000' : '#333',
+                                border: isSelected ? '2px solid #FFD700' : '1px solid #ccc',
+                                cursor: isAvailable ? 'pointer' : 'not-allowed',
+                                opacity: isAvailable ? 1 : 0.5,
+                                transition: 'all 0.3s ease'
+                              }}
+                            >
+                              {timeSlot}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   );
                 })}
               </div>
             )}
-          </div>
 
-          <div className="location-section">
-            <h3>面交地點</h3>
-            <div className="location-input">
-              <input
-                type="text"
-                value={newLocation}
-                onChange={(e) => setNewLocation(e.target.value)}
-                placeholder="輸入面交地點"
-                maxLength={50}
-              />
-              <button onClick={handleAddLocation}>添加</button>
-            </div>
-            
-            <div className="location-list">
-              {meetingLocations.map((location, index) => (
-                <div key={index} className="location-item">
-                  <span>{location}</span>
-                  <button onClick={() => handleRemoveLocation(index)}>刪除</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="buyer-schedule">
-          {transaction.scheduleOptions && (
-            <>
-              <h3>可選的面交時間</h3>
-              {transaction.scheduleOptions.map((option, index) => (
-                <div key={index} className="schedule-option">
-                  <h4>{option.date}</h4>
-                  <div className="time-slots-grid">
-                    {option.timeSlots.map(time => (
-                      <button
-                        key={time}
-                        className={`time-slot ${
-                          selectedOption?.date === option.date && 
-                          selectedOption?.time === time ? 'selected' : ''
-                        }`}
-                        onClick={() => handleOptionSelect(option.date, time)}
-                      >
-                        {time}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              
-              <div className="location-selection">
-                <h3>選擇面交地點</h3>
-                <div className="location-list">
-                  {transaction.meetingLocations.map((location, index) => (
-                    <button
-                      key={index}
-                      className={`location-option ${
-                        selectedOption?.location === location ? 'selected' : ''
-                      }`}
-                      onClick={() => {
-                        if (selectedOption) {
-                          handleOptionSelect(selectedOption.date, selectedOption.time, location);
-                        }
-                      }}
-                    >
-                      {location}
-                    </button>
-                  ))}
-                </div>
+            <div className="locations-section">
+              <h3>面交地點（最多3個）</h3>
+              <div className="location-input">
+                <input
+                  type="text"
+                  value={newLocation}
+                  onChange={(e) => setNewLocation(e.target.value)}
+                  placeholder="輸入面交地點"
+                  disabled={meetingLocations.length >= 3}
+                />
+                <button
+                  onClick={handleAddLocation}
+                  disabled={meetingLocations.length >= 3}
+                >
+                  添加
+                </button>
               </div>
-            </>
-          )}
-        </div>
-      )}
+              <div className="locations-list">
+                {meetingLocations.map((location, index) => (
+                  <div key={index} className="location-item">
+                    <span>{location}</span>
+                    <button onClick={() => handleRemoveLocation(index)}>
+                      刪除
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          // 買家視角：選擇選項
+          <div className="schedule-options">
+            <h3>可用的面交選項</h3>
+            {transaction?.scheduleOptions && transaction.scheduleOptions.length > 0 ? (
+              <>
+                <div className="selected-summary">
+                  <h3>賣家提供的面交時間</h3>
+                  {transaction.scheduleOptions.map((option, index) => {
+                    const formattedDate = new Date(option.date).toLocaleDateString('zh-TW', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    });
+                    
+                    return (
+                      <div key={index} className="summary-item">
+                        <h4>{formattedDate}</h4>
+                        <div className="selected-times">
+                          {option.timeSlots.map(time => (
+                            <span key={time} className="selected-time">{time}</span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-      <div className="schedule-actions">
-        <button onClick={() => navigate('/transactions')}>取消</button>
-        <button 
-          onClick={handleSubmit}
-          disabled={
-            isSeller 
-              ? (selectedDates.length === 0 || meetingLocations.length === 0)
-              : !selectedOption
-          }
-        >
-          確認
-        </button>
+                <div className="selection-area">
+                  <h3>請選擇面交時間</h3>
+                  {transaction.scheduleOptions.map((option, index) => {
+                    const formattedDate = new Date(option.date).toLocaleDateString('zh-TW', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    });
+                    
+                    return (
+                      <div key={index} className="schedule-option">
+                        <h4>{formattedDate}</h4>
+                        <div className="time-slots">
+                          {option.timeSlots.map(time => (
+                            <button
+                              key={time}
+                              className={`time-slot ${
+                                selectedOption?.time === time && 
+                                selectedOption?.date === option.date ? 'selected' : ''
+                              }`}
+                              onClick={() => {
+                                console.log('Time slot clicked:', { date: option.date, time });
+                                handleOptionSelect(option.date, time, selectedOption?.location || transaction.meetingLocations[0]);
+                              }}
+                            >
+                              {time}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="location-options">
+                          {transaction.meetingLocations.map((location, locIndex) => (
+                            <button
+                              key={locIndex}
+                              className={`location-option ${
+                                selectedOption?.location === location && 
+                                selectedOption?.date === option.date ? 'selected' : ''
+                              }`}
+                              onClick={() => {
+                                console.log('Location clicked:', { date: option.date, location });
+                                handleOptionSelect(
+                                  option.date,
+                                  selectedOption?.time || option.timeSlots[0],
+                                  location
+                                );
+                              }}
+                            >
+                              {location}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {selectedOption && (
+                  <div className="selected-option-summary">
+                    <h3>您選擇的面交時間</h3>
+                    <div className="summary-item">
+                      <h4>{new Date(selectedOption.date).toLocaleDateString('zh-TW', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}</h4>
+                      <div className="selected-times">
+                        <span className="selected-time">{selectedOption.time}</span>
+                      </div>
+                      <div className="selected-location">
+                        <span className="location-tag">地點：{selectedOption.location}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="no-options">賣家尚未提供面交選項</p>
+            )}
+          </div>
+        )}
+
+        <div className="schedule-actions">
+          <button
+            className="confirm-btn"
+            onClick={handleScheduleConfirm}
+          >
+            {isSeller ? '提交選項' : '確認選擇'}
+          </button>
+          <button
+            className="cancel-btn"
+            onClick={() => navigate('/transactions')}
+          >
+            取消
+          </button>
+        </div>
       </div>
     </div>
   );
