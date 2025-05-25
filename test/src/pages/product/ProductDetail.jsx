@@ -1028,16 +1028,67 @@ const ProductDetail = () => {
       const negotiationDoc = await getDoc(negotiationRef);
       const negotiationData = negotiationDoc.data();
 
+      // 如果接受議價，立即更新前端狀態
+      if (response === 'accepted') {
+        // 立即更新商品狀態顯示
+        setProduct(prev => ({
+          ...prev,
+          status: '已售出',
+          price: negotiationData.amount,
+          soldTo: negotiationData.userId,
+          soldAt: serverTimestamp(),
+          buyerName: negotiationData.userName || '匿名用戶',
+          buyerEmail: negotiationData.userEmail || '未提供'
+        }));
+
+        // 更新議價歷史的狀態
+        setNegotiationHistory(prev => 
+          prev.map(neg => 
+            neg.id === negotiationId 
+              ? { ...neg, status: 'accepted' }
+              : neg
+          )
+        );
+      }
+
+      // 更新議價狀態
       await updateDoc(negotiationRef, {
         status: response,
         respondedAt: serverTimestamp()
       });
 
-      // 如果接受議價，更新商品價格
+      // 如果接受議價，更新商品價格和狀態
       if (response === 'accepted') {
+        // 獲取買家資訊
+        const buyerRef = doc(db, 'users', negotiationData.userId);
+        const buyerDoc = await getDoc(buyerRef);
+        const buyerData = buyerDoc.data();
+
         await updateDoc(doc(db, 'products', productId), {
           price: negotiationData.amount,
-          status: '議價中'
+          status: '已售出',
+          soldTo: negotiationData.userId,
+          soldAt: serverTimestamp(),
+          buyerName: negotiationData.userName || '匿名用戶',
+          buyerEmail: buyerData?.email || '未提供'
+        });
+
+        // 創建交易記錄
+        const transactionRef = doc(collection(db, 'transactions'));
+        await setDoc(transactionRef, {
+          productId: productId,
+          productTitle: product.title,
+          amount: negotiationData.amount,
+          buyerId: negotiationData.userId,
+          buyerName: negotiationData.userName || '匿名用戶',
+          buyerEmail: buyerData?.email || '未提供',
+          sellerId: product.sellerId,
+          sellerName: product.sellerName || '匿名用戶',
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          type: 'negotiation',
+          meetingLocations: product.meetingLocations || [],
+          productImage: product.images?.[0] || product.image || '/placeholder.jpg'
         });
       }
 
@@ -1054,7 +1105,7 @@ const ProductDetail = () => {
         createdAt: serverTimestamp()
       });
 
-      // 更新議價歷史 - 使用簡單查詢
+      // 更新議價歷史
       const negotiationsQuery = query(
         collection(db, 'negotiations'),
         where('productId', '==', productId)
@@ -1066,7 +1117,6 @@ const ProductDetail = () => {
           ...doc.data()
         }))
         .sort((a, b) => {
-          // 在客戶端進行排序
           const timeA = a.createdAt?.toDate?.() || new Date(0);
           const timeB = b.createdAt?.toDate?.() || new Date(0);
           return timeB - timeA;
@@ -1357,12 +1407,12 @@ const ProductDetail = () => {
                 const isWinner = isAuctionEnded() && idx === 0;
                 
                 return (
-                  <li key={bid.id || idx} className={isWinner ? 'winning-bid' : ''}>
-                    <div className="bid-info">
-                      <span className="bid-user">{bid.userName}</span>
-                      <span className="bid-time">{formattedTime}</span>
+                  <li key={bid.id || idx} className={isWinner ? 'winning-bid' : ''} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #eee' }}>
+                    <div className="bid-info" style={{ flex: 1, textAlign: 'center' }}>
+                      <span className="bid-user" style={{ display: 'block', marginBottom: '4px' }}>{bid.userName}</span>
+                      <span className="bid-time" style={{ display: 'block', fontSize: '0.9em', color: '#666' }}>{formattedTime}</span>
                     </div>
-                    <span className="bid-amount">NT$ {bid.amount}</span>
+                    <span className="bid-amount" style={{ marginLeft: '16px' }}>NT$ {bid.amount}</span>
                   </li>
                 );
               })}
@@ -1378,7 +1428,7 @@ const ProductDetail = () => {
           <div className="bid-history">
             <ul>
               {negotiationHistory.length === 0 && (
-                <li className="no-pending-negotiations">目前沒有議價紀錄</li>
+                <li className="no-pending-negotiations" style={{ textAlign: 'center', padding: '20px 0' }}>目前沒有議價紀錄</li>
               )}
               {negotiationHistory.map((negotiation, idx) => {
                 let formattedTime = '未知時間';
@@ -1393,12 +1443,12 @@ const ProductDetail = () => {
                 }
                 return (
                   <li key={negotiation.id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #eee' }}>
-                    <div className="bid-info">
-                      <span className="bid-user">{negotiation.userName}</span>
-                      <span className="bid-time">{formattedTime}</span>
+                    <div className="bid-info" style={{ flex: 1, textAlign: 'center' }}>
+                      <span className="bid-user" style={{ display: 'block', marginBottom: '4px' }}>{negotiation.userName}</span>
+                      <span className="bid-time" style={{ display: 'block', fontSize: '0.9em', color: '#666' }}>{formattedTime}</span>
                     </div>
-                    <span className="bid-amount">NT$ {negotiation.amount}</span>
-                    {negotiation.status === 'pending' && auth.currentUser && product.sellerId === auth.currentUser.uid ? (
+                    <span className="bid-amount" style={{ marginLeft: '16px' }}>NT$ {negotiation.amount}</span>
+                    {negotiation.status === 'pending' && auth.currentUser && product.sellerId === auth.currentUser.uid && product.status !== '已售出' ? (
                       <button
                         onClick={() => handleNegotiationResponse(negotiation.id, 'accepted')}
                         className="confirm-btn"
@@ -1408,7 +1458,7 @@ const ProductDetail = () => {
                       </button>
                     ) : (
                       <span className={`negotiation-status ${negotiation.status}`} style={{ marginLeft: 16 }}>
-                        {negotiation.status === 'accepted' ? '已接受' : negotiation.status === 'rejected' ? '已拒絕' : '待確認'}
+                        {negotiation.status === 'accepted' ? '已售出' : '待確認'}
                       </span>
                     )}
                   </li>
