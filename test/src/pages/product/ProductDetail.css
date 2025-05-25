@@ -552,404 +552,53 @@
   justify-content: flex-end;
 }
 
-.confirm-btn,
-.cancel-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
 .confirm-btn {
   background-color: #e2af4a;
-  color: white;
-}
-
-.cancel-btn {
-  background-color: #f8f9fa;
-  color: #333;
-  border: 1px solid #ddd;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 6px rgba(226, 175, 74, 0.08);
 }
 
 .confirm-btn:hover {
-  background-color: #357abd;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #c9961a;
+  color: #fff;
 }
 
-.cancel-btn:hover {
-  background-color: #e9ecef;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-@media (max-width: 768px) {
-  .time-inputs {
-    grid-template-columns: 1fr;
-  }
-  
-  .time-picker-buttons {
-    flex-direction: column;
-  }
-  
-  .confirm-btn,
-  .cancel-btn {
-    width: 100%;
-  }
-}
-
-.favorite-btn {
-  background: none;
-  border: none;
-  padding: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: unset;
-  margin-left: auto;
-  position: relative;
-  transition: transform 0.3s ease;
-}
-
-.favorite-btn svg {
-  width: 24px;
-  height: 24px;
-  fill: #ccc;
-  transition: fill 0.3s ease, transform 0.3s ease;
-}
-
-.favorite-btn.active svg {
-  fill: #e2af4a;
-  animation: heartBeat 0.3s ease-in-out;
-}
-
-.favorite-btn:hover svg {
-  transform: scale(1.1);
-}
-
-@keyframes heartBeat {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-/* Header favorite icon styles */
-.header-favorite-icon {
-  position: relative;
-}
-
-.header-favorite-icon svg {
-  width: 24px;
-  height: 24px;
-  fill: #fff;
-}
-
-.favorite-count {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background-color: #e2af4a;
-  color: white;
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-}
-
-/* 銷售類型選擇器 */
-.sale-type-selector {
-  order: 3;
+.cancel-btn {
   background-color: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 8px;
-}
-
-.sale-type-selector h3 {
   color: #333;
-  margin-top: 0;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.sale-type-buttons {
-  display: flex;
-  gap: 1rem;
-}
-
-.sale-type-btn {
-  flex: 1;
-  padding: 0.75rem;
-  border: 2px solid #ddd;
-  border-radius: 6px;
-  background-color: white;
-  color: #666;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.sale-type-btn.active {
-  border-color: #e2af4a;
-  color: #e2af4a;
-  background-color: #fff8e8;
-}
-
-.sale-type-btn:hover {
-  border-color: #e2af4a;
-  color: #e2af4a;
-  transform: translateY(-2px);
-}
-
-.sale-type-btn.active:hover {
-  transform: translateY(-2px);
-}
-
-/* 先搶先贏狀態顯示 */
-.quick-sale-info {
-  background-color: #f8f9fa;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-.quick-sale-info h3 {
-  color: #333;
-  margin-top: 0;
-  margin-bottom: 0.75rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.sale-status {
-  background-color: #f8f9fa;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-@media (max-width: 768px) {
-  .sale-type-buttons {
-    flex-direction: column;
-  }
-
-  .sale-type-btn {
-    width: 100%;
-  }
-}
-
-/* 競標狀態消息 */
-.auction-status-message {
-  background-color: #f8f9fa;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-top: 1rem;
-  text-align: center;
   border: 1px solid #ddd;
 }
 
-.auction-status-message p {
-  color: #666;
-  margin: 0;
-  font-size: 0.95rem;
+.confirm-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
 
-/* 競價區域樣式 */
-.bid-section {
-  width: 100%;
-  padding: 2rem;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
-}
-
-.bid-section h3 {
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  color: #333;
-}
-
-.bid-form {
-  margin-bottom: 2rem;
-  width: 100%;
-}
-
-.bid-input-group {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  width: 100%;
-}
-
-.bid-input-group input {
-  flex: 1;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.bid-submit-btn {
-  padding: 0.75rem 1.5rem;
-  background-color: #e2af4a;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.3s;
-}
-
-.bid-submit-btn:hover {
-  background-color: #d19f3a;
-}
-
-.bid-history {
-  background-color: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  width: 100%;
-}
-
-.bid-history h4 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: #333;
-}
-
-.bid-history ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.bid-history li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #eee;
-  position: relative;
-  padding-right: 120px;
-}
-
-.bid-history li:last-child {
-  border-bottom: none;
-}
-
-.bid-history li.winning-bid {
-  background-color: rgba(226, 175, 74, 0.1);
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
-  margin: 0.5rem 0;
-  border: 1px solid #e2af4a;
-  padding-right: 80px;
-}
-
-.bid-history li.winning-bid::after {
-  content: "得標";
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: #e2af4a;
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  z-index: 1;
-}
-
-.bid-user {
-  font-weight: 500;
-  color: #333;
-}
-
-.bid-history li.winning-bid .bid-user {
-  color: #e2af4a;
-  font-weight: 600;
-}
-
-.bid-amount {
-  font-weight: 600;
-  color: #e2af4a;
-}
-
-.bid-history li.winning-bid .bid-amount {
-  font-size: 1.1rem;
-}
-
-.bid-time {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.bid-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-  margin-right: 1rem;
-}
-
-@media (max-width: 768px) {
-  .bid-history li {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .bid-history li.winning-bid {
-    padding-right: 1rem;
-  }
-
-  .bid-history li.winning-bid::after {
-    position: relative;
-    right: auto;
-    top: auto;
-    transform: none;
-    display: inline-block;
-    margin-top: 0.5rem;
-  }
-
-  .bid-info {
-    margin-right: 0;
-  }
+.bid-error {
+  color: #f44336;
+  margin-top: 5px;
+  font-size: 0.9em;
 }
 
 /* 成功提示樣式 */
 .success-message {
   position: fixed;
   top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(255, 140, 0, 0.95);
+  right: 20px;
+  background-color: #4caf50;
   color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 10px 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   z-index: 1000;
-  animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-in 2.7s;
-  font-weight: 500;
-  backdrop-filter: blur(4px);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s ease-out;
 }
 
 @keyframes slideIn {
@@ -963,12 +612,17 @@
   }
 }
 
-@keyframes fadeOut {
-  from {
-    opacity: 1;
+@media (max-width: 768px) {
+  .confirm-negotiation-btn {
+    position: relative;
+    right: auto;
+    top: auto;
+    transform: none;
+    margin-top: 10px;
   }
-  to {
-    opacity: 0;
+
+  .bid-history li {
+    padding-right: 1rem;
   }
 }
 
@@ -1216,12 +870,12 @@
 }
 
 .negotiation-actions .confirm-btn {
-  background-color: #4caf50;
+  background-color: #e2af4a;
   color: white;
 }
 
 .negotiation-actions .confirm-btn:hover {
-  background-color: #45a049;
+  background-color: #c9961a;
 }
 
 .negotiation-actions .reject-btn {
