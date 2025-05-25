@@ -40,10 +40,8 @@ const ProductDetail = () => {
   const [bidAmount, setBidAmount] = useState('');
   const [bidError, setBidError] = useState('');
   const [bidHistory, setBidHistory] = useState([]);
-  const [error, setError] = useState(null);
-  const [negotiationPrice, setNegotiationPrice] = useState('');
-  const [negotiationError, setNegotiationError] = useState('');
   const [negotiationHistory, setNegotiationHistory] = useState([]);
+  const [error, setError] = useState(null);
 
   const { addFavorite, removeFavorite, favoriteCount } = useFavorites();
 
@@ -72,12 +70,14 @@ const ProductDetail = () => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           console.log('商品資料:', data);
+          console.log('交易模式:', data.tradeMode);
           
           // 處理時間戳
           let processedData = {
             ...data,
             id: docSnap.id,
-            status: data.status || '販售中' // 设置默认状态
+            status: data.status || '販售中',
+            tradeMode: data.tradeMode || '先搶先贏'
           };
 
           if (data.createdAt) {
@@ -308,6 +308,35 @@ const ProductDetail = () => {
     fetchBidHistory();
   }, [productId, product?.tradeMode]);
 
+  // 獲取議價歷史
+  useEffect(() => {
+    const fetchNegotiationHistory = async () => {
+      if (product?.tradeMode === '議價模式') {
+        try {
+          const negotiationsRef = collection(db, 'products', productId, 'negotiations');
+          const q = query(negotiationsRef, orderBy('createdAt', 'desc'));
+          
+          // 設置實時監聽
+          const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const history = querySnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+              createdAt: doc.data().createdAt?.toDate() || new Date()
+            }));
+            setNegotiationHistory(history);
+          });
+          
+          // 清理函數
+          return () => unsubscribe();
+        } catch (error) {
+          console.error('Error fetching negotiation history:', error);
+        }
+      }
+    };
+
+    fetchNegotiationHistory();
+  }, [productId, product?.tradeMode]);
+
   // 獲取購買者資訊
   useEffect(() => {
     const fetchPurchaserInfo = async () => {
@@ -342,29 +371,6 @@ const ProductDetail = () => {
       fetchPurchaserInfo();
     }
   }, [product, auth.currentUser, db]);
-
-  useEffect(() => {
-    const fetchNegotiationHistory = async () => {
-      if (product?.tradeMode === '先搶先贏') {
-        try {
-          const negotiationsRef = collection(db, 'products', productId, 'negotiations');
-          const q = query(negotiationsRef, orderBy('timestamp', 'desc'));
-          const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const history = querySnapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-              timestamp: doc.data().timestamp?.toDate() || new Date()
-            }));
-            setNegotiationHistory(history);
-          });
-          return () => unsubscribe();
-        } catch (error) {
-          console.error('Error fetching negotiation history:', error);
-        }
-      }
-    };
-    fetchNegotiationHistory();
-  }, [productId, product?.tradeMode]);
 
   const handleUpdateStatus = async (newStatus) => {
     if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
@@ -803,31 +809,25 @@ const ProductDetail = () => {
     }
 
     if (product.sellerId === auth.currentUser.uid) {
-      alert('賣家不能參與競價');
+      alert('賣家不能提出議價');
       return;
     }
 
-    if (product.status === '已售出' || product.status === '已結標' || 
-        (product.auctionEndTime && new Date() > new Date(product.auctionEndTime))) {
-      alert('商品已售出或已結標');
+    if (product.status === '已售出') {
+      alert('商品已售出');
       return;
     }
 
     const bidAmountNum = parseFloat(bidAmount);
     
-    // 驗證出價金額
+    // 驗證議價金額
     if (isNaN(bidAmountNum) || bidAmountNum <= 0) {
       setBidError('請輸入有效的金額');
       return;
     }
 
-    if (currentBid && bidAmountNum <= currentBid.amount) {
-      setBidError(`出價必須高於當前最高出價 (NT$ ${currentBid.amount})`);
-      return;
-    }
-
-    if (bidAmountNum <= product.price) {
-      setBidError(`出價必須高於底價 (NT$ ${product.price})`);
+    if (bidAmountNum >= product.price) {
+      setBidError(`議價金額必須低於商品價格 (NT$ ${product.price})`);
       return;
     }
 
@@ -839,25 +839,15 @@ const ProductDetail = () => {
         userName: auth.currentUser.displayName || '匿名用戶',
         userEmail: auth.currentUser.email || '未提供',
         timestamp: timestamp,
-        productId: productId
+        productId: productId,
+        status: 'pending'
       };
 
-      // 使用事务来确保原子性操作
-      await runTransaction(db, async (transaction) => {
-        const productRef = doc(db, 'products', productId);
-        const productDoc = await transaction.get(productRef);
-        
-        if (!productDoc.exists()) {
-          throw new Error('商品不存在');
-        }
-        
-        const productData = productDoc.data();
-        
-        if (productData.status === '已售出' || productData.status === '已結標' || 
-            (productData.auctionEndTime && new Date() > new Date(productData.auctionEndTime))) {
-          throw new Error('商品已售出或已結標');
-        }
+      // 添加議價記錄
+      const bidsRef = collection(db, 'products', productId, 'negotiations');
+      const newBidRef = await addDoc(bidsRef, newBid);
 
+<<<<<<< Updated upstream
         // 添加競價記錄
         const bidsRef = collection(db, 'products', productId, 'bids');
         const newBidRef = doc(bidsRef);
@@ -991,6 +981,17 @@ const ProductDetail = () => {
       
       setCurrentBid(localBid);
       setBidHistory(prevHistory => [localBid, ...prevHistory]);
+=======
+      // 創建通知給賣家
+      await createNotification({
+        userId: product.sellerId,
+        type: notificationTypes.NEGOTIATION_PLACED,
+        itemName: product.title,
+        itemId: productId,
+        message: `收到新的議價：NT$ ${bidAmountNum}`
+      });
+
+>>>>>>> Stashed changes
       setBidAmount('');
       setBidError('');
       setShowSuccessMessage(true);
@@ -1000,8 +1001,8 @@ const ProductDetail = () => {
       }, 3000);
       
     } catch (error) {
-      console.error('出價失敗:', error);
-      setBidError(error.message || '出價失敗，請稍後再試');
+      console.error('議價失敗:', error);
+      setBidError(error.message || '議價失敗，請稍後再試');
     }
   };
 
@@ -1093,172 +1094,6 @@ const ProductDetail = () => {
         stack: error.stack
       });
       alert('創建聊天室失敗，請稍後再試');
-    }
-  };
-
-  const handleNegotiationSubmit = async (e) => {
-    e.preventDefault();
-    if (!auth.currentUser) {
-      alert('請先登入');
-      return;
-    }
-    if (product.sellerId === auth.currentUser.uid) {
-      alert('賣家不能議價自己的商品');
-      return;
-    }
-    if (product.status === '已售出') {
-      alert('商品已售出');
-      return;
-    }
-    const price = parseFloat(negotiationPrice);
-    if (isNaN(price) || price <= 0) {
-      setNegotiationError('請輸入有效的金額');
-      return;
-    }
-    try {
-      setIsProcessing(true);
-      const timestamp = serverTimestamp();
-      const newNegotiation = {
-        amount: price,
-        userId: auth.currentUser.uid,
-        userName: auth.currentUser.displayName || '匿名用戶',
-        userEmail: auth.currentUser.email || '未提供',
-        timestamp: timestamp,
-        status: 'pending'
-      };
-      await runTransaction(db, async (transaction) => {
-        const productRef = doc(db, 'products', productId);
-        const productDoc = await transaction.get(productRef);
-        if (!productDoc.exists()) throw new Error('商品不存在');
-        const productData = productDoc.data();
-        if (productData.status === '已售出') throw new Error('商品已售出');
-        transaction.update(productRef, {
-          negotiationPrice: price,
-          negotiationStatus: 'pending',
-          negotiationBy: auth.currentUser.uid,
-          negotiationByUserName: auth.currentUser.displayName || '匿名用戶'
-        });
-        const negotiationsRef = collection(db, 'products', productId, 'negotiations');
-        const newNegotiationRef = doc(negotiationsRef);
-        transaction.set(newNegotiationRef, newNegotiation);
-        await createNotification({
-          userId: productData.sellerId,
-          type: notificationTypes.NEGOTIATION_RECEIVED,
-          itemName: productData.title,
-          itemId: productId,
-          message: `收到新的議價：NT$ ${price}`
-        });
-      });
-      setNegotiationPrice('');
-      setNegotiationError('');
-    } catch (error) {
-      setNegotiationError(error.message || '議價失敗，請稍後再試');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleConfirmNegotiation = async () => {
-    if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
-      alert('只有賣家可以確認議價');
-      return;
-    }
-    try {
-      setIsProcessing(true);
-      const timestamp = serverTimestamp();
-      await runTransaction(db, async (transaction) => {
-        const productRef = doc(db, 'products', productId);
-        const productDoc = await transaction.get(productRef);
-        if (!productDoc.exists()) throw new Error('商品不存在');
-        const productData = productDoc.data();
-        if (productData.status === '已售出') throw new Error('商品已售出');
-        if (productData.negotiationStatus !== 'pending') throw new Error('沒有待確認的議價');
-        transaction.update(productRef, {
-          status: '已售出',
-          soldTo: productData.negotiationBy,
-          soldAt: timestamp,
-          soldPrice: productData.negotiationPrice,
-          buyerName: productData.negotiationByUserName,
-          negotiationStatus: 'accepted'
-        });
-        const negotiationsRef = collection(db, 'products', productId, 'negotiations');
-        const negotiationsQuery = query(negotiationsRef, where('status', '==', 'pending'));
-        const negotiationsSnapshot = await getDocs(negotiationsQuery);
-        negotiationsSnapshot.forEach(doc => {
-          transaction.update(doc.ref, { status: 'accepted' });
-        });
-        const transactionRef = doc(collection(db, 'transactions'));
-        const transactionData = {
-          productId: productId,
-          productTitle: productData.title,
-          amount: productData.negotiationPrice,
-          buyerId: productData.negotiationBy,
-          buyerName: productData.negotiationByUserName,
-          buyerEmail: productData.negotiationByEmail || '未提供',
-          sellerId: productData.sellerId,
-          sellerName: productData.sellerName || '匿名用戶',
-          status: 'pending',
-          createdAt: timestamp,
-          type: 'negotiation',
-          meetingLocations: productData.meetingLocations || [],
-          productImage: productData.images?.[0] || productData.image || '/placeholder.jpg'
-        };
-        transaction.set(transactionRef, transactionData);
-        await createNotification({
-          userId: productData.negotiationBy,
-          type: notificationTypes.NEGOTIATION_ACCEPTED,
-          itemName: productData.title,
-          itemId: productId,
-          message: `您的議價已被接受：${productData.title}`
-        });
-      });
-      alert('議價已確認，商品已售出');
-    } catch (error) {
-      alert(error.message || '確認議價失敗，請稍後再試');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleRejectNegotiation = async () => {
-    if (!auth.currentUser || product.sellerId !== auth.currentUser.uid) {
-      alert('只有賣家可以拒絕議價');
-      return;
-    }
-    try {
-      setIsProcessing(true);
-      await runTransaction(db, async (transaction) => {
-        const productRef = doc(db, 'products', productId);
-        const productDoc = await transaction.get(productRef);
-        if (!productDoc.exists()) throw new Error('商品不存在');
-        const productData = productDoc.data();
-        if (productData.status === '已售出') throw new Error('商品已售出');
-        if (productData.negotiationStatus !== 'pending') throw new Error('沒有待確認的議價');
-        transaction.update(productRef, {
-          negotiationPrice: null,
-          negotiationStatus: null,
-          negotiationBy: null,
-          negotiationByUserName: null
-        });
-        const negotiationsRef = collection(db, 'products', productId, 'negotiations');
-        const negotiationsQuery = query(negotiationsRef, where('status', '==', 'pending'));
-        const negotiationsSnapshot = await getDocs(negotiationsQuery);
-        negotiationsSnapshot.forEach(doc => {
-          transaction.update(doc.ref, { status: 'rejected' });
-        });
-        await createNotification({
-          userId: productData.negotiationBy,
-          type: notificationTypes.NEGOTIATION_REJECTED,
-          itemName: productData.title,
-          itemId: productId,
-          message: `您的議價已被拒絕：${productData.title}`
-        });
-      });
-      alert('議價已拒絕');
-    } catch (error) {
-      alert(error.message || '拒絕議價失敗，請稍後再試');
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -1553,85 +1388,24 @@ const ProductDetail = () => {
         </div>
       )}
 
-      {/* 議價板 - 強制顯示（測試用） */}
-      {true && (
+      {/* 議價歷史顯示 - 只在先搶先贏模式下顯示 */}
+      {product && product.tradeMode === '先搶先贏' && (
         <div className="bid-section">
-          <h3>議價留言板</h3>
-          <div className="current-bid" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ color: '#e2af4a', fontWeight: 600 }}>
-              當前議價金額：{product.negotiationPrice ? `NT$ ${product.negotiationPrice}` : '尚無議價'}
-              {product.negotiationStatus === 'pending' && (
-                <span style={{ color: '#e2af4a', fontWeight: 'bold', marginLeft: 12 }}>（待賣家確認）</span>
-              )}
-            </span>
-            {/* 只有賣家且有議價時顯示確認按鈕 */}
-            {auth.currentUser && product.sellerId === auth.currentUser.uid && product.negotiationStatus === 'pending' && (
-              <button
-                className="confirm-bid-btn"
-                style={{
-                  marginLeft: 12,
-                  background: '#e2af4a',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 4,
-                  padding: '6px 18px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
-                onClick={handleConfirmNegotiation}
-                disabled={isProcessing}
-              >
-                確認議價
-              </button>
-            )}
-          </div>
-          <p>
-            議價者：{product.negotiationByUserName || '-'}
-          </p>
-          {auth.currentUser && product.sellerId !== auth.currentUser.uid && product.status !== '已售出' && (
-            <form onSubmit={handleNegotiationSubmit} className="bid-form">
-              <div className="bid-input-group">
-                <input
-                  type="number"
-                  value={negotiationPrice}
-                  onChange={e => setNegotiationPrice(e.target.value)}
-                  placeholder="輸入議價金額"
-                  min={1}
-                  step="1"
-                  required
-                  style={{ border: '1.5px solid #e2af4a', color: '#e2af4a', fontWeight: 600 }}
-                />
-                <button type="submit" className="bid-submit-btn" disabled={isProcessing}
-                  style={{
-                    background: '#e2af4a',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 4,
-                    padding: '8px 18px',
-                    fontWeight: 500,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {isProcessing ? '處理中...' : '提交議價'}
-                </button>
-              </div>
-              {negotiationError && <p className="bid-error">{negotiationError}</p>}
-            </form>
-          )}
+          <h3>議價歷史</h3>
           <div className="bid-history">
-            <h4>議價歷史</h4>
             <ul>
               {negotiationHistory.map((negotiation, idx) => {
                 let formattedTime = '未知時間';
-                if (negotiation.timestamp) {
-                  if (negotiation.timestamp instanceof Date) {
-                    formattedTime = negotiation.timestamp.toLocaleString('zh-TW');
-                  } else if (typeof negotiation.timestamp.toDate === 'function') {
-                    formattedTime = negotiation.timestamp.toDate().toLocaleString('zh-TW');
-                  } else if (negotiation.timestamp.seconds) {
-                    formattedTime = new Date(negotiation.timestamp.seconds * 1000).toLocaleString('zh-TW');
+                if (negotiation.createdAt) {
+                  if (negotiation.createdAt instanceof Date) {
+                    formattedTime = negotiation.createdAt.toLocaleString('zh-TW');
+                  } else if (typeof negotiation.createdAt.toDate === 'function') {
+                    formattedTime = negotiation.createdAt.toDate().toLocaleString('zh-TW');
+                  } else if (negotiation.createdAt.seconds) {
+                    formattedTime = new Date(negotiation.createdAt.seconds * 1000).toLocaleString('zh-TW');
                   }
                 }
+                
                 return (
                   <li key={negotiation.id || idx}>
                     <div className="bid-info">
@@ -1639,8 +1413,8 @@ const ProductDetail = () => {
                       <span className="bid-time">{formattedTime}</span>
                     </div>
                     <span className="bid-amount">NT$ {negotiation.amount}</span>
-                    <span className="negotiation-status">
-                      {negotiation.status === 'pending' ? '待確認' :
+                    <span className={`negotiation-status ${negotiation.status}`}>
+                      {negotiation.status === 'pending' ? '待回應' :
                        negotiation.status === 'accepted' ? '已接受' :
                        negotiation.status === 'rejected' ? '已拒絕' : ''}
                     </span>
@@ -1649,6 +1423,28 @@ const ProductDetail = () => {
               })}
             </ul>
           </div>
+          {/* 添加議價輸入表單 */}
+          {auth.currentUser && product.sellerId !== auth.currentUser.uid && product.status !== '已售出' && (
+            <form onSubmit={handleBidSubmit} className="bid-form">
+              <div className="bid-input-group">
+                <input
+                  type="number"
+                  value={bidAmount}
+                  onChange={(e) => setBidAmount(e.target.value)}
+                  placeholder="輸入議價金額"
+                  max={product.price - 1}
+                  step="1"
+                />
+                <button 
+                  type="submit" 
+                  className="bid-submit-btn negotiation-btn"
+                >
+                  提出議價
+                </button>
+              </div>
+              {bidError && <p className="bid-error">{bidError}</p>}
+            </form>
+          )}
         </div>
       )}
 
