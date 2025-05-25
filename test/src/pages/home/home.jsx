@@ -99,7 +99,15 @@ function Home() {
       // 過濾商品
       const filteredProducts = allProductsSnapshot.docs.filter(doc => {
         const data = doc.data();
-        return data.status !== '已售出' && data.status !== '已結標';
+        // 檢查商品是否已售出或已結標
+        if (data.status === '已售出' || data.status === '已結標') {
+          return false;
+        }
+        // 檢查競標商品是否已過期
+        if (data.auctionEndTime && new Date() > new Date(data.auctionEndTime)) {
+          return false;
+        }
+        return true;
       });
 
       // 計算總頁數
