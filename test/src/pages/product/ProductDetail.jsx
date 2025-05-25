@@ -541,6 +541,130 @@ const ProductDetail = () => {
     return now > endTime;
   };
 
+  // 處理直接購買
+  const handleDirectPurchase = async () => {
+    if (!auth.currentUser) {
+      alert('請先登入');
+      return;
+    }
+
+    if (product.sellerId === auth.currentUser.uid) {
+      alert('不能購買自己的商品');
+      return;
+    }
+
+    if (product.status === '已售出') {
+      alert('商品已售出');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // 先执行事务
+      await runTransaction(db, async (transaction) => {
+        const productRef = doc(db, 'products', productId);
+        const productDoc = await transaction.get(productRef);
+        
+        if (!productDoc.exists()) {
+          throw new Error('商品不存在');
+        }
+        
+        const productData = productDoc.data();
+        
+        if (productData.status === '已售出') {
+          throw new Error('商品已售出');
+        }
+
+        // 更新商品狀態
+        transaction.update(productRef, {
+          status: '已售出',
+          soldTo: auth.currentUser.uid,
+          soldAt: serverTimestamp(),
+          buyerName: auth.currentUser.displayName || '匿名用戶',
+          buyerEmail: auth.currentUser.email || '未提供'
+        });
+
+        // 創建交易記錄
+        const transactionRef = doc(collection(db, 'transactions'));
+        const transactionData = {
+          productId: productId,
+          productTitle: productData.title,
+          amount: productData.price,
+          buyerId: auth.currentUser.uid,
+          buyerName: auth.currentUser.displayName || '匿名用戶',
+          buyerEmail: auth.currentUser.email || '未提供',
+          sellerId: productData.sellerId,
+          sellerName: productData.sellerName || '匿名用戶',
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          type: 'direct_purchase',
+          meetingLocations: productData.meetingLocations || [],
+          productImage: productData.images?.[0] || productData.image || '/placeholder.jpg'
+        };
+
+        transaction.set(transactionRef, transactionData);
+      });
+
+      // 在事务之外发送通知
+      try {
+        // 1. 創建購買成功通知給買家
+        await createNotification({
+          userId: auth.currentUser.uid,
+          type: notificationTypes.PURCHASE_SUCCESS,
+          itemName: product.title,
+          itemId: productId,
+          message: `您已成功購買 ${product.title}，金額：NT$ ${product.price}`
+        });
+
+        // 2. 創建提醒選擇面交時間地點的通知給買家
+        await createNotification({
+          userId: auth.currentUser.uid,
+          type: notificationTypes.SCHEDULE_CHANGED,
+          itemName: product.title,
+          itemId: productId,
+          message: `請前往交易管理區選擇面交時間地點：${product.title}`
+        });
+
+        // 3. 創建售出通知給賣家
+        await createNotification({
+          userId: product.sellerId,
+          type: notificationTypes.ITEM_SOLD,
+          itemName: product.title,
+          itemId: productId,
+          message: `您的商品 ${product.title} 已售出，金額：NT$ ${product.price}`
+        });
+
+        // 4. 創建提醒設定面交資訊的通知給賣家
+        await createNotification({
+          userId: product.sellerId,
+          type: notificationTypes.SCHEDULE_CHANGED,
+          itemName: product.title,
+          itemId: productId,
+          message: `請前往交易管理區設定面交時間地點：${product.title}`
+        });
+      } catch (notificationError) {
+        console.error('發送通知時發生錯誤:', notificationError);
+        // 通知发送失败不影响购买流程
+      }
+
+      setPurchaseSuccess(true);
+      setProduct(prev => ({ 
+        ...prev, 
+        status: '已售出',
+        soldTo: auth.currentUser.uid,
+        buyerName: auth.currentUser.displayName || '匿名用戶',
+        buyerEmail: auth.currentUser.email || '未提供'
+      }));
+      alert('購買成功！');
+    } catch (error) {
+      console.error('購買失敗:', error);
+      alert(error.message || '購買失敗，請稍後再試');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // 處理購買
   const handlePurchase = async () => {
     if (!auth.currentUser) {
@@ -713,26 +837,6 @@ const ProductDetail = () => {
         const newBidRef = doc(bidsRef);
         transaction.set(newBidRef, newBid);
 
-        // 創建通知給賣家
-        await createNotification({
-          userId: productData.sellerId,
-          type: notificationTypes.BID_PLACED,
-          itemName: productData.title,
-          itemId: productId,
-          message: `收到新的出價：NT$ ${bidAmountNum}`
-        });
-
-        // 創建通知給之前的最高出價者
-        if (currentBid && currentBid.userId !== auth.currentUser.uid) {
-          await createNotification({
-            userId: currentBid.userId,
-            type: notificationTypes.BID_OVERTAKEN,
-            itemName: productData.title,
-            itemId: productId,
-            message: `您的出價已被超越：${productData.title}`
-          });
-        }
-
         // 檢查是否是最後一個出價（競標結束時）
         const now = new Date();
         const endTime = new Date(product.auctionEndTime);
@@ -774,28 +878,83 @@ const ProductDetail = () => {
               };
 
               transaction.set(transactionRef, transactionData);
-
-              // 創建得標通知給買家
-              await createNotification({
-                userId: auth.currentUser.uid,
-                type: notificationTypes.BID_WON,
-                itemName: product.title,
-                itemId: productId,
-                message: `恭喜您得標：${product.title}`
-              });
-
-              // 創建售出通知給賣家
-              await createNotification({
-                userId: product.sellerId,
-                type: notificationTypes.ITEM_SOLD,
-                itemName: product.title,
-                itemId: productId,
-                message: `您的商品已售出：${product.title}`
-              });
             }
           }
         }
       });
+
+      // 在事务之外发送通知
+      // 1. 創建通知給賣家
+      await createNotification({
+        userId: product.sellerId,
+        type: notificationTypes.BID_PLACED,
+        itemName: product.title,
+        itemId: productId,
+        message: `收到新的出價：NT$ ${bidAmountNum}`
+      });
+
+      // 2. 創建通知給買家自己
+      await createNotification({
+        userId: auth.currentUser.uid,
+        type: notificationTypes.BID_PLACED,
+        itemName: product.title,
+        itemId: productId,
+        message: `您已成功出價 ${product.title}，金額：NT$ ${bidAmountNum}`
+      });
+
+      // 3. 創建通知給之前的最高出價者
+      if (currentBid && currentBid.userId !== auth.currentUser.uid) {
+        await createNotification({
+          userId: currentBid.userId,
+          type: notificationTypes.BID_OVERTAKEN,
+          itemName: product.title,
+          itemId: productId,
+          message: `您的出價已被超越：${product.title}，當前最高出價：NT$ ${bidAmountNum}`
+        });
+      }
+
+      // 4. 檢查是否競標結束
+      const now = new Date();
+      const endTime = new Date(product.auctionEndTime);
+      if (now > endTime) {
+        const bidsRef = collection(db, 'products', productId, 'bids');
+        const bidsQuery = query(bidsRef, orderBy('amount', 'desc'), limit(1));
+        const bidsSnapshot = await getDocs(bidsQuery);
+        
+        if (!bidsSnapshot.empty) {
+          const highestBid = bidsSnapshot.docs[0].data();
+          
+          // 4.1 如果是最高出價者，發送得標通知
+          if (highestBid.userId === auth.currentUser.uid) {
+            // 創建得標通知給買家
+            await createNotification({
+              userId: auth.currentUser.uid,
+              type: notificationTypes.BID_WON,
+              itemName: product.title,
+              itemId: productId,
+              message: `恭喜您得標 ${product.title}，得標金額：NT$ ${bidAmountNum}`
+            });
+
+            // 創建售出通知給賣家
+            await createNotification({
+              userId: product.sellerId,
+              type: notificationTypes.ITEM_SOLD,
+              itemName: product.title,
+              itemId: productId,
+              message: `您的商品 ${product.title} 已售出，售出金額：NT$ ${bidAmountNum}`
+            });
+          } else {
+            // 4.2 如果不是最高出價者，發送競標結束通知
+            await createNotification({
+              userId: auth.currentUser.uid,
+              type: notificationTypes.AUCTION_ENDED,
+              itemName: product.title,
+              itemId: productId,
+              message: `競標已結束，您未得標 ${product.title}`
+            });
+          }
+        }
+      }
       
       // 更新當前最高出價和競價歷史
       const localBid = {

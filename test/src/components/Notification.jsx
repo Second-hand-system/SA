@@ -6,6 +6,7 @@ import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { app } from '../firebase';
 import './Notification.css';
+import { notificationTypes } from '../utils/notificationUtils';
 
 const MAX_RETRY_COUNT = 5;
 const RETRY_DELAY = 5000; // 5秒
@@ -107,46 +108,6 @@ const Notification = () => {
     }
   };
 
-  const getNotificationIcon = (type) => {
-    switch (type) {
-      case 'bid_placed':
-        return '💰';
-      case 'bid_overtaken':
-        return '📈';
-      case 'bid_won':
-        return '🏆';
-      case 'item_sold':
-        return '✅';
-      case 'purchase_success':
-        return '🛍️';
-      case 'item_favorited':
-        return '❤️';
-      case 'negotiation_request':
-        return '💬';
-      case 'negotiation_accepted':
-        return '🤝';
-      case 'negotiation_rejected':
-        return '❌';
-      default:
-        return '📢';
-    }
-  };
-
-  const getNotificationText = (notification) => {
-    return notification.message || '新通知';
-  };
-
-  const formatDate = (date) => {
-    if (!date) return '';
-    return new Date(date).toLocaleString('zh-TW', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const handleNotificationClick = async (notification) => {
     try {
       // 標示通知為已讀
@@ -159,24 +120,34 @@ const Notification = () => {
 
       // 根据通知类型和目标ID进行跳转
       switch (notification.type) {
-        case 'bid_placed':
-        case 'bid_overtaken':
-        case 'bid_won':
-        case 'item_sold':
-        case 'item_favorited':
-          // 跳转到商品详情页
+        // 商品相关通知
+        case notificationTypes.BID_PLACED:
+        case notificationTypes.BID_OVERTAKEN:
+        case notificationTypes.BID_WON:
+        case notificationTypes.AUCTION_ENDED:
+        case notificationTypes.ITEM_SOLD:
+        case notificationTypes.ITEM_FAVORITED:
           navigate(`/product/${notification.itemId}`);
           break;
-        case 'purchase_success':
-          // 跳转到交易页面
+
+        // 订单相关通知
+        case notificationTypes.ORDER_CREATED:
+        case notificationTypes.PURCHASE_SUCCESS:
+        case notificationTypes.ORDER_CONFIRMED:
+        case notificationTypes.ORDER_COMPLETED:
+        case notificationTypes.ORDER_CANCELLED:
+        case notificationTypes.SCHEDULE_CHANGED:
           navigate('/transactions');
           break;
-        case 'negotiation_request':
-        case 'negotiation_accepted':
-        case 'negotiation_rejected':
-          // 跳转到商品详情页，因为议价功能在商品详情页中
+
+        // 议价相关通知
+        case notificationTypes.NEGOTIATION_REQUEST:
+        case notificationTypes.NEGOTIATION_MESSAGE:
+        case notificationTypes.NEGOTIATION_ACCEPTED:
+        case notificationTypes.NEGOTIATION_REJECTED:
           navigate(`/product/${notification.itemId}`);
           break;
+
         default:
           console.log('未知的通知类型:', notification.type);
       }
@@ -186,6 +157,107 @@ const Notification = () => {
     } catch (error) {
       console.error('处理通知点击时发生错误:', error);
     }
+  };
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      // 订单相关图标
+      case notificationTypes.ORDER_CREATED:
+        return '📦';
+      case notificationTypes.PURCHASE_SUCCESS:
+        return '🛍️';
+      case notificationTypes.ORDER_CONFIRMED:
+        return '✅';
+      case notificationTypes.ORDER_COMPLETED:
+        return '🎉';
+      case notificationTypes.ORDER_CANCELLED:
+        return '❌';
+      case notificationTypes.SCHEDULE_CHANGED:
+        return '🕒';
+
+      // 竞标相关图标
+      case notificationTypes.BID_PLACED:
+        return '💰';
+      case notificationTypes.BID_OVERTAKEN:
+        return '📈';
+      case notificationTypes.BID_WON:
+        return '🏆';
+      case notificationTypes.AUCTION_ENDED:
+        return '⏰';
+
+      // 议价相关图标
+      case notificationTypes.NEGOTIATION_REQUEST:
+        return '💬';
+      case notificationTypes.NEGOTIATION_MESSAGE:
+        return '📝';
+      case notificationTypes.NEGOTIATION_ACCEPTED:
+        return '🤝';
+      case notificationTypes.NEGOTIATION_REJECTED:
+        return '❌';
+
+      // 商品相关图标
+      case notificationTypes.ITEM_SOLD:
+        return '✅';
+      case notificationTypes.ITEM_FAVORITED:
+        return '❤️';
+
+      default:
+        return '📢';
+    }
+  };
+
+  const getNotificationText = (notification) => {
+    if (notification.message) {
+      return notification.message;
+    }
+
+    switch (notification.type) {
+      case notificationTypes.ORDER_CREATED:
+        return '訂單已成立';
+      case notificationTypes.PURCHASE_SUCCESS:
+        return '購買成功';
+      case notificationTypes.ORDER_CONFIRMED:
+        return '訂單已確認';
+      case notificationTypes.ORDER_COMPLETED:
+        return '訂單已完成';
+      case notificationTypes.ORDER_CANCELLED:
+        return '訂單已取消';
+      case notificationTypes.SCHEDULE_CHANGED:
+        return '請選擇面交時間地點';
+      case notificationTypes.BID_PLACED:
+        return '收到新的出價';
+      case notificationTypes.BID_OVERTAKEN:
+        return '您的出價已被超越';
+      case notificationTypes.BID_WON:
+        return '恭喜您得標';
+      case notificationTypes.AUCTION_ENDED:
+        return '競標時間已結束';
+      case notificationTypes.NEGOTIATION_REQUEST:
+        return '收到新的議價請求';
+      case notificationTypes.NEGOTIATION_MESSAGE:
+        return '收到新的議價訊息';
+      case notificationTypes.NEGOTIATION_ACCEPTED:
+        return '議價成功';
+      case notificationTypes.NEGOTIATION_REJECTED:
+        return '議價被拒絕';
+      case notificationTypes.ITEM_SOLD:
+        return '商品已售出';
+      case notificationTypes.ITEM_FAVORITED:
+        return '商品被收藏';
+      default:
+        return '新通知';
+    }
+  };
+
+  const formatDate = (date) => {
+    if (!date) return '';
+    return new Date(date).toLocaleString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const notificationContent = (
