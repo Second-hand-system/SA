@@ -26,11 +26,55 @@ const productSlice = createSlice({
       const { id, ...updatedData } = action.payload;
       const index = state.products.findIndex(p => p.id === id);
       if (index !== -1) {
-        state.products[index] = { ...state.products[index], ...updatedData };
+        state.products[index] = { 
+          ...state.products[index], 
+          ...updatedData,
+          ...(updatedData.status === 'sold' && {
+            negotiationPrice: null,
+            negotiationStatus: null,
+            negotiationBy: null
+          })
+        };
+      }
+    },
+    submitNegotiation: (state, action) => {
+      const { productId, price, userId } = action.payload;
+      const index = state.products.findIndex(p => p.id === productId);
+      if (index !== -1) {
+        state.products[index] = {
+          ...state.products[index],
+          negotiationPrice: price,
+          negotiationStatus: 'pending',
+          negotiationBy: userId
+        };
+      }
+    },
+    confirmNegotiation: (state, action) => {
+      const { productId } = action.payload;
+      const index = state.products.findIndex(p => p.id === productId);
+      if (index !== -1) {
+        const product = state.products[index];
+        state.products[index] = {
+          ...product,
+          status: 'sold',
+          soldPrice: product.negotiationPrice,
+          soldTo: product.negotiationBy,
+          negotiationPrice: null,
+          negotiationStatus: null,
+          negotiationBy: null
+        };
       }
     }
   }
 });
 
-export const { setProducts, setLoading, setError, updateProduct } = productSlice.actions;
+export const { 
+  setProducts, 
+  setLoading, 
+  setError, 
+  updateProduct,
+  submitNegotiation,
+  confirmNegotiation
+} = productSlice.actions;
+
 export default productSlice.reducer; 
