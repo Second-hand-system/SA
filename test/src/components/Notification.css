@@ -1,0 +1,132 @@
+.notification-button {
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s;
+}
+
+.notification-button:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+  border-radius: 50%;
+}
+
+.notification-icon {
+  font-size: 20px;
+  color: #666;
+}
+
+.notification-popover {
+  width: 300px;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.notification-list {
+  padding: 0;
+  margin: 0;
+}
+
+.notification-item {
+  padding: 12px 16px;
+  transition: all 0.3s;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.notification-item:hover {
+  background-color: #f5f5f5;
+}
+
+.notification-item.unread {
+  background-color: #e6f7ff;
+}
+
+.notification-item.unread:hover {
+  background-color: #bae7ff;
+}
+
+.notification-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notification-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.notification-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-message {
+  margin-bottom: 4px;
+  color: #333;
+  word-break: break-word;
+}
+
+.notification-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.notification-loading,
+.notification-error {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.notification-error {
+  color: #ff4d4f;
+}
+
+.retry-button {
+  margin-top: 12px;
+  padding: 4px 12px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.retry-button:hover {
+  background-color: #40a9ff;
+}
+
+.retry-button:active {
+  background-color: #096dd9;
+}
+
+.retry-button:disabled {
+  background-color: #d9d9d9;
+  cursor: not-allowed;
+}
+
+/* 自定义 Popover 样式 */
+.notification-popover-overlay .ant-popover-inner {
+  padding: 0;
+}
+
+.notification-popover-overlay .ant-popover-inner-content {
+  padding: 0;
+}
+
+/* 自定义 Alert 样式 */
+.notification-error .ant-alert {
+  margin: 0;
+  border-radius: 0;
+}
+
+.notification-error .ant-alert-message {
+  margin-bottom: 8px;
+}
+
+.notification-error .ant-alert-description {
+  margin-top: 8px;
+} 

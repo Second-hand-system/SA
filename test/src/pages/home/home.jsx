@@ -5,7 +5,11 @@ import { useAuth } from '../../context/AuthContext';
 // 導入 Firebase Firestore 的查詢和過濾功能
 import { getFirestore, collection, getDocs, query, orderBy, limit, where, startAfter, doc, getDoc } from 'firebase/firestore';
 // 導入 React Router 的鏈接組件
+<<<<<<< HEAD
 import { Link } from 'react-router-dom';
+=======
+import { Link, useSearchParams } from 'react-router-dom';
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
 // 導入 Firebase 應用實例
 import app, { checkIsFavorite, addToFavorites, removeFromFavorites } from '../../firebase';
 // 導入 Redux hooks 和 actions
@@ -15,11 +19,19 @@ import { addFavorite, removeFavorite } from '../../store/slices/favoriteSlice';
 import './home.css';
 
 function Home() {
+<<<<<<< HEAD
+=======
+  const [searchParams, setSearchParams] = useSearchParams();
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
   const { currentUser } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+<<<<<<< HEAD
   const [currentPage, setCurrentPage] = useState(1);
+=======
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page')) || 1);
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
   const [totalPages, setTotalPages] = useState(1);
   const productsPerPage = 6;
   const [isProcessing, setIsProcessing] = useState(false);
@@ -65,6 +77,7 @@ function Home() {
       let productsRef = collection(db, 'products');
       let baseQuery;
       
+<<<<<<< HEAD
       // 修改查詢方式以符合 Firestore 索引要求
       if (category !== 'all') {
         console.log('應用類別過濾:', category);
@@ -72,16 +85,27 @@ function Home() {
           productsRef,
           where('category', '==', category),
           orderBy('status'),
+=======
+      // 簡化查詢，先獲取所有商品
+      if (category !== 'all') {
+        baseQuery = query(
+          productsRef,
+          where('category', '==', category),
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
           orderBy('createdAt', 'desc')
         );
       } else {
         baseQuery = query(
           productsRef,
+<<<<<<< HEAD
           orderBy('status'),
+=======
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
           orderBy('createdAt', 'desc')
         );
       }
 
+<<<<<<< HEAD
       // 獲取總商品數
       const allProductsSnapshot = await getDocs(baseQuery);
       const totalProducts = allProductsSnapshot.docs
@@ -154,6 +178,78 @@ function Home() {
       fetchedProducts = fetchedProducts.slice(0, productsPerPage);
       
       console.log('獲取到的商品:', fetchedProducts);
+=======
+      // 獲取所有商品並進行調試
+      const allProductsSnapshot = await getDocs(baseQuery);
+      console.log('獲取到的原始商品數量:', allProductsSnapshot.docs.length);
+      
+      // 調試每個商品的狀態
+      allProductsSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        console.log('商品ID:', doc.id);
+        console.log('商品狀態:', data.status);
+        console.log('商品標題:', data.title);
+        console.log('交易模式:', data.tradeMode);
+        if (data.auctionEndTime) {
+          console.log('競標結束時間:', data.auctionEndTime);
+        }
+      });
+
+      // 過濾商品
+      const filteredProducts = allProductsSnapshot.docs.filter(doc => {
+        const data = doc.data();
+        const now = new Date();
+        
+        // 調試過濾條件
+        console.log('檢查商品:', doc.id);
+        console.log('狀態:', data.status);
+        console.log('交易模式:', data.tradeMode);
+        
+        // 如果是競標商品
+        if (data.tradeMode === '競標模式') {
+          if (data.auctionEndTime) {
+            const endTime = new Date(data.auctionEndTime);
+            const isActive = endTime > now;
+            console.log('競標商品，結束時間:', endTime);
+            console.log('是否過期:', !isActive);
+            return isActive;
+          }
+          return true; // 如果沒有設置結束時間，顯示所有競標商品
+        }
+        
+        // 如果是普通商品（先搶先贏模式）
+        // 只要不是已售出狀態就顯示
+        if (data.status !== '已售出') {
+          console.log('商品未被售出，將顯示');
+          return true;
+        }
+        
+        console.log('商品不符合顯示條件');
+        return false;
+      });
+
+      console.log('過濾後的商品數量:', filteredProducts.length);
+      const totalProducts = filteredProducts.length;
+      setTotalPages(Math.ceil(totalProducts / productsPerPage));
+
+      // 計算當前頁的商品
+      const startIndex = (page - 1) * productsPerPage;
+      const endIndex = startIndex + productsPerPage;
+      const currentPageProducts = filteredProducts.slice(startIndex, endIndex);
+
+      // 轉換為需要的格式
+      const fetchedProducts = currentPageProducts.map(doc => {
+        const data = doc.data();
+        const isFavorite = favorites.some(fav => fav.productId === doc.id);
+        return {
+          id: doc.id,
+          ...data,
+          isFavorite
+        };
+      });
+
+      console.log('當前頁商品數量:', fetchedProducts.length);
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
       setProducts(fetchedProducts);
       setError(null);
     } catch (err) {
@@ -228,6 +324,10 @@ function Home() {
   // 處理頁面變更的函數
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
+<<<<<<< HEAD
+=======
+    setSearchParams({ page: newPage.toString() });
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
     window.scrollTo(0, 0);
   };
 
@@ -236,8 +336,23 @@ function Home() {
     setSelectedCategory(categoryId);
     setSearchTerm('');
     setSearchResults([]);
+<<<<<<< HEAD
   };
 
+=======
+    setCurrentPage(1);
+    setSearchParams({ page: '1' });
+  };
+
+  // 當 URL 參數改變時更新頁碼
+  useEffect(() => {
+    const page = parseInt(searchParams.get('page')) || 1;
+    if (page !== currentPage) {
+      setCurrentPage(page);
+    }
+  }, [searchParams]);
+
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
   // 決定要顯示的商品列表
   const displayProducts = searchTerm ? searchResults : products;
 
@@ -389,7 +504,14 @@ function Home() {
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
               </button>
+<<<<<<< HEAD
               <Link to={`/product/${product.id}`} className="item-link">
+=======
+              <Link 
+                to={`/product/${product.id}?returnPage=${currentPage}`} 
+                className="item-link"
+              >
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
                   <div className="item-image">
                     <img 
                       src={

@@ -94,5 +94,22 @@ service cloud.firestore {
       );
       allow delete: if false;
     }
+<<<<<<< HEAD
+=======
+
+    // 通知集合規則
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || 
+         request.auth.token.admin == true);
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || 
+         request.auth.token.admin == true);
+      allow delete: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || 
+         request.auth.token.admin == true);
+    }
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
   }
 } 

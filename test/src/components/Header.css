@@ -1,0 +1,36 @@
+.header {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  height: 60px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.nav-link:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.nav-icon {
+  margin-right: 8px;
+  font-size: 20px;
+}
+
+.notification-link {
+  padding: 8px;
+  margin: 0 8px;
+}
+
+.notification-link:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+} 

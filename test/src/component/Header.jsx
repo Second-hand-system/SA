@@ -2,6 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSelector } from 'react-redux';
+<<<<<<< HEAD
+=======
+import Notification from '../components/Notification';
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
 import './Header.css';
 
 const Header = () => {
@@ -55,6 +59,15 @@ const Header = () => {
                 </div>
                 <span>交易紀錄</span>
               </Link>
+<<<<<<< HEAD
+=======
+              <Link to="#" className="notification-wrapper">
+                <div className="notification-icon">
+                  <Notification />
+                </div>
+                <span>通知</span>
+              </Link>
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
               <Link to="/profile" className="profile-link">
                 <div className="profile-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

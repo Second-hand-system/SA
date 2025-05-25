@@ -21,6 +21,17 @@ import TransactionSchedule from './pages/transactions/TransactionSchedule'
 import ChatList from './pages/chat/ChatList'
 import ChatRoom from './pages/chat/ChatRoom'
 
+<<<<<<< HEAD
+=======
+// 配置 React Router 的未来标志
+const router = {
+  future: {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true
+  }
+};
+
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
 // 保護需要登入的路由
 const ProtectedRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
@@ -102,7 +113,11 @@ function App() {
     <Provider store={store}>
       <AuthProvider>
         <FavoritesProvider>
+<<<<<<< HEAD
           <Router>
+=======
+          <Router future={router.future}>
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />

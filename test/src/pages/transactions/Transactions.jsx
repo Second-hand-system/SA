@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { getFirestore, collection, query, where, getDocs, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import './Transactions.css';
+=======
+import { getFirestore, collection, query, where, getDocs, orderBy, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { useAuth } from '../../context/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
+import './Transactions.css';
+import { db, auth } from '../../firebase';
+import { createNotification, notificationTypes } from '../../utils/notificationUtils';
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -11,6 +20,7 @@ const Transactions = () => {
   const [activeTab, setActiveTab] = useState('all');
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+<<<<<<< HEAD
   const db = getFirestore();
 
   useEffect(() => {
@@ -57,11 +67,108 @@ const Transactions = () => {
         setError('載入交易記錄時發生錯誤');
         setLoading(false);
       }
+=======
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      const tryFetch = async () => {
+        try {
+          // 檢查用戶權限
+          if (!currentUser.uid) {
+            console.error('No user ID available');
+            setError('用戶未登入或權限不足');
+            setLoading(false);
+            return;
+          }
+
+          const transactionsRef = collection(db, 'transactions');
+          const buyerQuery = query(
+            transactionsRef,
+            where('buyerId', '==', currentUser.uid)
+          );
+          const sellerQuery = query(
+            transactionsRef,
+            where('sellerId', '==', currentUser.uid)
+          );
+
+          const [buyerSnapshot, sellerSnapshot] = await Promise.all([
+            getDocs(buyerQuery).catch(error => {
+              console.error('Error fetching buyer transactions:', error);
+              return { docs: [] };
+            }),
+            getDocs(sellerQuery).catch(error => {
+              console.error('Error fetching seller transactions:', error);
+              return { docs: [] };
+            })
+          ]);
+
+          const buyerTransactions = buyerSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+
+          const sellerTransactions = sellerSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+
+          const allTransactions = [...buyerTransactions, ...sellerTransactions]
+            .sort((a, b) => {
+              const dateA = a.createdAt?.toDate?.() || new Date(0);
+              const dateB = b.createdAt?.toDate?.() || new Date(0);
+              return dateB - dateA;
+            });
+
+          setTransactions(allTransactions);
+          setLoading(false);
+          setError(null);
+        } catch (error) {
+          console.error('Error fetching transactions:', error);
+          
+          if (error.code === 'permission-denied') {
+            setError('權限不足，請重新登入');
+            setLoading(false);
+            return;
+          }
+          
+          if (retryCount < maxRetries) {
+            retryCount++;
+            console.log(`Retrying fetch (${retryCount}/${maxRetries})...`);
+            setTimeout(tryFetch, 1000 * retryCount);
+          } else {
+            setError('載入交易記錄時發生錯誤，請稍後再試');
+            setLoading(false);
+          }
+        }
+      };
+
+      tryFetch();
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
     };
 
     fetchTransactions();
   }, [currentUser, db]);
 
+<<<<<<< HEAD
+=======
+  // 添加清理函數
+  useEffect(() => {
+    return () => {
+      setTransactions([]);
+      setLoading(true);
+      setError(null);
+    };
+  }, []);
+
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
   const filteredTransactions = transactions.filter(transaction => {
     switch (activeTab) {
       case 'waitingForSchedule':
@@ -73,6 +180,90 @@ const Transactions = () => {
     }
   });
 
+<<<<<<< HEAD
+=======
+  const handleStatusChange = async (transactionId, newStatus) => {
+    try {
+      const transactionRef = doc(db, 'transactions', transactionId);
+      const transactionDoc = await getDoc(transactionRef);
+      const transactionData = transactionDoc.data();
+
+      await updateDoc(transactionRef, {
+        status: newStatus,
+        updatedAt: serverTimestamp()
+      });
+
+      if (newStatus === 'confirmed') {
+        await createNotification({
+          userId: transactionData.buyerId,
+          type: notificationTypes.ORDER_CONFIRMED,
+          itemName: transactionData.productTitle,
+          itemId: transactionData.productId,
+          orderId: transactionId
+        });
+      } else if (newStatus === 'completed') {
+        await createNotification({
+          userId: transactionData.sellerId,
+          type: notificationTypes.ORDER_COMPLETED,
+          itemName: transactionData.productTitle,
+          itemId: transactionData.productId,
+          orderId: transactionId
+        });
+      } else if (newStatus === 'cancelled') {
+        const notifyUserId = auth.currentUser.uid === transactionData.sellerId 
+          ? transactionData.buyerId 
+          : transactionData.sellerId;
+        
+        await createNotification({
+          userId: notifyUserId,
+          type: notificationTypes.ORDER_CANCELLED,
+          itemName: transactionData.productTitle,
+          itemId: transactionData.productId,
+          orderId: transactionId
+        });
+      }
+
+      setTransactions(prev => 
+        prev.map(t => t.id === transactionId ? { ...t, status: newStatus } : t)
+      );
+    } catch (error) {
+      console.error('Error updating transaction status:', error);
+    }
+  };
+
+  const handleScheduleChange = async (transactionId, newSchedule) => {
+    try {
+      const transactionRef = doc(db, 'transactions', transactionId);
+      const transactionDoc = await getDoc(transactionRef);
+      const transactionData = transactionDoc.data();
+
+      await updateDoc(transactionRef, {
+        schedule: newSchedule,
+        updatedAt: serverTimestamp()
+      });
+
+      const notifyUserId = auth.currentUser.uid === transactionData.sellerId 
+        ? transactionData.buyerId 
+        : transactionData.sellerId;
+
+      await createNotification({
+        userId: notifyUserId,
+        type: notificationTypes.SCHEDULE_CHANGED,
+        itemName: transactionData.productTitle,
+        itemId: transactionData.productId,
+        orderId: transactionId,
+        message: `交易時間地點已更新為：${newSchedule}`
+      });
+
+      setTransactions(prev => 
+        prev.map(t => t.id === transactionId ? { ...t, schedule: newSchedule } : t)
+      );
+    } catch (error) {
+      console.error('Error updating transaction schedule:', error);
+    }
+  };
+
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
   if (loading) {
     return (
       <div className="loading">
@@ -111,8 +302,13 @@ const Transactions = () => {
         {filteredTransactions.length === 0 ? (
           <p className="no-transactions">尚無交易記錄</p>
         ) : (
+<<<<<<< HEAD
           filteredTransactions.map(transaction => (
             <div key={transaction.id} className="transaction-card">
+=======
+          filteredTransactions.map((transaction, index) => (
+            <div key={`${transaction.id}-${index}`} className="transaction-card">
+>>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
               <div className="transaction-header">
                 <h3>{transaction.productTitle}</h3>
                 <span className={`status ${transaction.status}`}>
