@@ -137,6 +137,7 @@ const Notification = () => {
         case notificationTypes.ORDER_COMPLETED:
         case notificationTypes.ORDER_CANCELLED:
         case notificationTypes.SCHEDULE_CHANGED:
+          // 跳转到交易管理页面
           navigate('/transactions');
           break;
 

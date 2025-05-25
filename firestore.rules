@@ -38,21 +38,20 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-<<<<<<< HEAD
-=======
       // 商品的議價子集合
       match /negotiations/{negotiationId} {
-        allow read: if true;
-        // 允許買家創建議價（不能是賣家自己）
-        allow create: if isAuthenticated() && 
-          request.auth.uid != get(/databases/$(database)/documents/products/$(productId)).data.sellerId;
-        // 允許賣家更新議價狀態
-        allow update: if isAuthenticated() && 
-          request.auth.uid == get(/databases/$(database)/documents/products/$(productId)).data.sellerId;
+        allow read: if isAuthenticated() && (
+          request.auth.uid == resource.data.buyerId || 
+          request.auth.uid == resource.data.sellerId
+        );
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated() && (
+          request.auth.uid == resource.data.buyerId || 
+          request.auth.uid == resource.data.sellerId
+        );
         allow delete: if false;
       }
 
->>>>>>> 18b718393c32545306d88dcf28c41482f1dc4ed3
       // 商品的元數據（如收藏數）
       match /metadata/{metaId} {
         allow read: if true;
@@ -85,24 +84,25 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
     }
 
+    // 通知集合
+    match /notifications/{notificationId} {
+      // 允许用户读取自己的通知
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      // 允许创建通知
+      allow create: if isAuthenticated();
+      // 允许用户更新自己的通知（例如标记为已读）
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      // 不允许删除通知
+      allow delete: if false;
+    }
+
     // 交易集合
     match /transactions/{transactionId} {
       allow read: if isAuthenticated() && (
-        // 允許讀取單個交易記錄
         request.auth.uid == resource.data.buyerId || 
-        request.auth.uid == resource.data.sellerId ||
-        // 允許查詢買家或賣家的交易
-        (request.query.filters.size() > 0 && (
-          request.auth.uid == request.query.filters[0].value ||
-          request.auth.uid == request.query.filters[1].value
-        ))
+        request.auth.uid == resource.data.sellerId
       );
-      allow create: if isAuthenticated() && (
-        // 買家可以創建交易記錄
-        request.auth.uid == request.resource.data.buyerId ||
-        // 賣家可以創建交易記錄
-        request.auth.uid == request.resource.data.sellerId
-      );
+      allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
         request.auth.uid == resource.data.buyerId || 
         request.auth.uid == resource.data.sellerId
@@ -110,11 +110,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-<<<<<<< HEAD
-    // 聊天室集合（移到最外層）
-=======
+    // 議價訊息集合
+    match /negotiation_messages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
     // 聊天室集合
->>>>>>> 18b718393c32545306d88dcf28c41482f1dc4ed3
     match /chats/{chatId} {
       allow read, write: if request.auth != null && request.auth.uid in resource.data.participants;
       match /messages/{messageId} {
