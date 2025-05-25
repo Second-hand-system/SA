@@ -846,10 +846,7 @@
   padding: 0.75rem 0;
   border-bottom: 1px solid #eee;
   position: relative;
-<<<<<<< HEAD
-=======
   padding-right: 120px;
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
 }
 
 .bid-history li:last-child {
@@ -891,8 +888,8 @@
 }
 
 .bid-amount {
-  color: #e2af4a;
   font-weight: 600;
+  color: #e2af4a;
 }
 
 .bid-history li.winning-bid .bid-amount {
@@ -957,11 +954,11 @@
 
 @keyframes slideIn {
   from {
-    transform: translate(-50%, -100%);
+    transform: translateX(100%);
     opacity: 0;
   }
   to {
-    transform: translate(-50%, 0);
+    transform: translateX(0);
     opacity: 1;
   }
 }
@@ -1200,278 +1197,108 @@
 .my-products-link:hover {
   opacity: 0.8;
   transform: translateY(-2px);
-<<<<<<< HEAD
-=======
 }
 
-/* 議價留言板樣式 */
-.negotiation-board {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 24px;
-  margin: 24px 0;
+/* 議價板樣式 */
+.negotiation-actions {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
 }
 
-.negotiation-board h3 {
-  color: #333;
-  font-size: 1.5rem;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.negotiation-comments {
-  max-height: 500px;
-  overflow-y: auto;
-  margin-bottom: 24px;
-  padding-right: 12px;
-}
-
-.negotiation-comments::-webkit-scrollbar {
-  width: 6px;
-}
-
-.negotiation-comments::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.negotiation-comments::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
-}
-
-.negotiation-comment {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
-  position: relative;
+.negotiation-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
   transition: all 0.3s ease;
 }
 
-.negotiation-comment:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+.negotiation-actions .confirm-btn {
+  background-color: #4caf50;
+  color: white;
 }
 
-.negotiation-comment .comment-header {
+.negotiation-actions .confirm-btn:hover {
+  background-color: #45a049;
+}
+
+.negotiation-actions .reject-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.negotiation-actions .reject-btn:hover {
+  background-color: #da190b;
+}
+
+.negotiation-status {
+  margin-left: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+}
+
+.negotiation-status:empty {
+  display: none;
+}
+
+/* 議價歷史項目樣式 */
+.bid-history li {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  justify-content: space-between;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
 }
 
-.negotiation-comment .comment-user {
-  font-weight: 600;
-  color: #2c3e50;
+.bid-history li:last-child {
+  border-bottom: none;
 }
 
-.negotiation-comment .comment-time {
-  font-size: 0.85rem;
+.bid-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bid-user {
+  font-weight: 500;
+  color: #333;
+}
+
+.bid-time {
+  font-size: 0.8em;
   color: #666;
 }
 
-.negotiation-comment .comment-content {
-  color: #444;
-  line-height: 1.5;
-  margin-bottom: 12px;
-  white-space: pre-wrap;
-}
-
-.negotiation-comment .confirm-negotiation-btn {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: #e2af4a;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.negotiation-comment .confirm-negotiation-btn:hover {
-  background-color: #d19c35;
-  transform: translateY(-50%) scale(1.05);
-}
-
-.negotiation-comment .confirm-negotiation-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-  transform: translateY(-50%);
-}
-
-.negotiation-comment .comment-status {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.negotiation-comment .comment-status.accepted {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.negotiation-comment .comment-status.rejected {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.negotiation-form {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.negotiation-input {
-  flex: 1;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-}
-
-.negotiation-input:focus {
-  outline: none;
-  border-color: #e2af4a;
-  box-shadow: 0 0 0 2px rgba(226, 175, 74, 0.1);
-}
-
-.submit-negotiation-btn {
-  background: #e2af4a;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-}
-
-.submit-negotiation-btn:hover {
-  background: #d19c35;
-  transform: translateY(-1px);
-}
-
-.submit-negotiation-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
-}
-
-@media (max-width: 768px) {
-  .negotiation-form {
-    flex-direction: column;
-  }
-
-  .negotiation-input,
-  .submit-negotiation-btn {
-    width: 100%;
-  }
-}
-
-/* 動畫效果 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.negotiation-comment {
-  animation: fadeIn 0.3s ease-out;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .negotiation-board {
-    padding: 16px;
-    margin: 16px 0;
-  }
-
-  .negotiation-comment {
-    padding: 12px;
-  }
-
-  .negotiation-form {
-    padding: 16px;
-  }
-
-  .negotiation-form .submit-negotiation-btn {
-    width: 100%;
-  }
-}
-
-/* 議價狀態標籤 */
-.bid-status {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: #e2af4a;
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-/* 議價歷史項目 */
-.bid-history li {
-  position: relative;
-  padding-right: 120px;
-}
-
-.bid-history li.winning-bid {
-  background-color: rgba(226, 175, 74, 0.1);
-  border: 1px solid #e2af4a;
-}
-
-.bid-history li.winning-bid .bid-amount {
-  color: #e2af4a;
+.bid-amount {
   font-weight: 600;
+  color: #e2af4a;
 }
 
-/* 議價輸入框組 */
+/* 議價表單樣式 */
+.bid-form {
+  margin: 15px 0;
+}
+
 .bid-input-group {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  width: 100%;
+  gap: 10px;
 }
 
 .bid-input-group input {
   flex: 1;
-  padding: 0.75rem;
+  padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 1rem;
-}
-
-.bid-input-group input:focus {
-  outline: none;
-  border-color: #e2af4a;
-  box-shadow: 0 0 0 2px rgba(226, 175, 74, 0.1);
+  font-size: 1em;
 }
 
 .bid-submit-btn {
-  padding: 0.75rem 1.5rem;
-  background-color: #e2af4a;
+  padding: 8px 16px;
+  background-color: #2196f3;
   color: white;
   border: none;
   border-radius: 4px;
@@ -1481,71 +1308,43 @@
 }
 
 .bid-submit-btn:hover {
-  background-color: #d19c35;
-  transform: translateY(-1px);
+  background-color: #1976d2;
 }
 
 .bid-submit-btn:disabled {
   background-color: #ccc;
   cursor: not-allowed;
-  transform: none;
 }
 
-@media (max-width: 768px) {
-  .bid-input-group {
-    flex-direction: column;
-  }
-
-  .bid-submit-btn {
-    width: 100%;
-  }
-
-  .bid-history li {
-    padding-right: 1rem;
-  }
-
-  .bid-status {
-    position: relative;
-    right: auto;
-    top: auto;
-    transform: none;
-    display: inline-block;
-    margin-top: 0.5rem;
-  }
+.bid-error {
+  color: #f44336;
+  margin-top: 5px;
+  font-size: 0.9em;
 }
 
-/* 確認議價按鈕 */
-.confirm-negotiation-btn {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: #e2af4a;
+/* 成功提示樣式 */
+.success-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #4caf50;
   color: white;
-  border: none;
-  padding: 0.5rem 1rem;
+  padding: 10px 20px;
   border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
 }
 
-.confirm-negotiation-btn:hover {
-  background-color: #d19c35;
-  transform: translateY(-50%) scale(1.05);
-}
-
-.confirm-negotiation-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-  transform: translateY(-50%);
-}
-
-/* 調整議價歷史項目以容納確認按鈕 */
-.bid-history li {
-  position: relative;
-  padding-right: 120px;
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1554,13 +1353,10 @@
     right: auto;
     top: auto;
     transform: none;
-    display: block;
-    width: 100%;
-    margin-top: 0.5rem;
+    margin-top: 10px;
   }
 
   .bid-history li {
     padding-right: 1rem;
   }
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
 } 
