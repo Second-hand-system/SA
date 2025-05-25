@@ -1,7 +1,7 @@
 // 導入 React 核心功能，包括 useState 和 useEffect hooks
 import React, { useState, useEffect } from 'react';
 // 導入自定義的認證上下文
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 // 導入 Firebase Firestore 的查詢和過濾功能
 import { getFirestore, collection, getDocs, query, orderBy, limit, where, startAfter, doc, getDoc } from 'firebase/firestore';
 // 導入 React Router 的鏈接組件

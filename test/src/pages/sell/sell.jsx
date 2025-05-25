@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 // 導入 Firebase Firestore 的集合、添加文檔和服務器時間戳功能
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 // 導入自定義的認證上下文
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 // 導入 Firebase 數據庫實例
 import { db, storage } from '../../firebase';
 // 導入 Firebase Storage 的引用、上傳和下載功能

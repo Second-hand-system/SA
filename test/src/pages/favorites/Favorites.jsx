@@ -5,7 +5,7 @@ import { getUserFavorites, removeFromFavorites } from '../../firebase';
 import { useDispatch, useSelector } from 'react-redux';
 import { removeFavorite, setFavorites } from '../../store/slices/favoriteSlice';
 import { FaHeart } from 'react-icons/fa';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import './Favorites.css';
 
 // 商品類別
