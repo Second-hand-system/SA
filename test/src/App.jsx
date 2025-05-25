@@ -13,12 +13,15 @@ import ProductDetail from './pages/product/ProductDetail'
 import EditProduct from './pages/product/edit/EditProduct'
 import Favorites from './pages/favorites/Favorites'
 import Transactions from './pages/transactions/Transactions'
-import { AuthProvider, useAuth } from './context/AuthContext'
-import { FavoritesProvider } from './context/FavoritesContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { FavoritesProvider } from './contexts/FavoritesContext'
+import { NotificationProvider } from './contexts/NotificationContext'
 import { checkFirestoreConnection, auth } from './firebase'
 import TransactionSchedule from './pages/transactions/TransactionSchedule'
 import ChatList from './pages/chat/ChatList'
 import ChatRoom from './pages/chat/ChatRoom'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 // 配置 React Router 的未来标志
 const router = {
@@ -108,74 +111,88 @@ function App() {
   return (
     <Provider store={store}>
       <AuthProvider>
-        <FavoritesProvider>
-          <Router future={router.future}>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              } />
-              <Route path="/sell" element={
-                <ProtectedRoute>
-                  <Sell />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-              <Route path="/favorites" element={
-                <ProtectedRoute>
-                  <Favorites />
-                </ProtectedRoute>
-              } />
-              <Route path="/transactions" element={
-                <ProtectedRoute>
-                  <Transactions />
-                </ProtectedRoute>
-              } />
-              <Route path="/transactions/schedule/:transactionId" element={
-                <ProtectedRoute>
-                  <TransactionSchedule />
-                </ProtectedRoute>
-              } />
-              <Route path="/product/:productId" element={
-                <ProtectedRoute>
-                  <ProductDetail />
-                </ProtectedRoute>
-              } />
-              <Route path="/product/edit/:productId" element={
-                <ProtectedRoute>
-                  <EditProduct />
-                </ProtectedRoute>
-              } />
-              <Route path="/chats" element={
-                <ProtectedRoute>
-                  <ChatList />
-                </ProtectedRoute>
-              } />
-              <Route path="/chat/:chatId" element={
-                <ProtectedRoute>
-                  <ChatRoom />
-                </ProtectedRoute>
-              } />
-              <Route path="/order/:orderId" element={
-                <ProtectedRoute>
-                  <Transactions />
-                </ProtectedRoute>
-              } />
-              <Route path="/negotiation/:negotiationId" element={
-                <ProtectedRoute>
-                  <ProductDetail />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </Router>
-        </FavoritesProvider>
+        <NotificationProvider>
+          <FavoritesProvider>
+            <Router future={router.future}>
+              <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+              />
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <Home />
+                  </ProtectedRoute>
+                } />
+                <Route path="/sell" element={
+                  <ProtectedRoute>
+                    <Sell />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } />
+                <Route path="/favorites" element={
+                  <ProtectedRoute>
+                    <Favorites />
+                  </ProtectedRoute>
+                } />
+                <Route path="/transactions" element={
+                  <ProtectedRoute>
+                    <Transactions />
+                  </ProtectedRoute>
+                } />
+                <Route path="/transactions/schedule/:transactionId" element={
+                  <ProtectedRoute>
+                    <TransactionSchedule />
+                  </ProtectedRoute>
+                } />
+                <Route path="/product/:productId" element={
+                  <ProtectedRoute>
+                    <ProductDetail />
+                  </ProtectedRoute>
+                } />
+                <Route path="/product/edit/:productId" element={
+                  <ProtectedRoute>
+                    <EditProduct />
+                  </ProtectedRoute>
+                } />
+                <Route path="/chats" element={
+                  <ProtectedRoute>
+                    <ChatList />
+                  </ProtectedRoute>
+                } />
+                <Route path="/chat/:chatId" element={
+                  <ProtectedRoute>
+                    <ChatRoom />
+                  </ProtectedRoute>
+                } />
+                <Route path="/order/:orderId" element={
+                  <ProtectedRoute>
+                    <Transactions />
+                  </ProtectedRoute>
+                } />
+                <Route path="/negotiation/:negotiationId" element={
+                  <ProtectedRoute>
+                    <ProductDetail />
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </Router>
+          </FavoritesProvider>
+        </NotificationProvider>
       </AuthProvider>
     </Provider>
   )
