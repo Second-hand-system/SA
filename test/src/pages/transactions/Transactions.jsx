@@ -261,7 +261,10 @@ const Transactions = () => {
                   {currentUser.uid === transaction.buyerId ? '賣家' : '買家'}
                 </p>
                 <p><strong>交易類型：</strong>
-                  {transaction.type === 'direct_purchase' ? '直接購買' : '競標'}
+                  {transaction.type === 'direct_purchase' ? '直接購買' :
+                   transaction.type === 'auction' ? '競標' :
+                   transaction.type === 'negotiation' ? '議價' :
+                   '其他'}
                 </p>
               </div>
 
