@@ -646,49 +646,6 @@ const ProductDetail = () => {
 
         transaction.set(transactionRef, transactionData);
       });
-
-      // 在事务之外发送通知
-      try {
-        // 1. 創建購買成功通知給買家
-        await createNotification({
-          userId: auth.currentUser.uid,
-          type: notificationTypes.PURCHASE_SUCCESS,
-          itemName: product.title,
-          itemId: productId,
-          message: `您已成功購買 ${product.title}，金額：NT$ ${product.price}`
-        });
-
-        // 2. 創建提醒選擇面交時間地點的通知給買家
-        await createNotification({
-          userId: auth.currentUser.uid,
-          type: notificationTypes.SCHEDULE_CHANGED,
-          itemName: product.title,
-          itemId: productId,
-          message: `請前往交易管理區選擇面交時間地點：${product.title}`
-        });
-
-        // 3. 創建售出通知給賣家
-        await createNotification({
-          userId: product.sellerId,
-          type: notificationTypes.ITEM_SOLD,
-          itemName: product.title,
-          itemId: productId,
-          message: `您的商品 ${product.title} 已售出，金額：NT$ ${product.price}`
-        });
-
-        // 4. 創建提醒設定面交資訊的通知給賣家
-        await createNotification({
-          userId: product.sellerId,
-          type: notificationTypes.SCHEDULE_CHANGED,
-          itemName: product.title,
-          itemId: productId,
-          message: `請前往交易管理區設定面交時間地點：${product.title}`
-        });
-      } catch (notificationError) {
-        console.error('發送通知時發生錯誤:', notificationError);
-        // 通知发送失败不影响购买流程
-      }
-
       setPurchaseSuccess(true);
       setProduct(prev => ({ 
         ...prev, 
@@ -789,7 +746,17 @@ const ProductDetail = () => {
           itemId: productId,
           message: `您已成功購買 ${productData.title}`
         });
+
+        // 創建提醒選擇面交時間地點的通知給賣家
+      await createNotification({
+          userId: productData.sellerId,
+          type: notificationTypes.SCHEDULE_CHANGED,
+          itemName: productData.title,
+          itemId: productId,
+          message: `請前往交易管理區選擇面交時間地點：${productData.title}`
+        });
       });
+
 
       setPurchaseSuccess(true);
       setProduct(prev => ({ 

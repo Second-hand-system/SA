@@ -5,6 +5,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './Transactions.css';
+import { createNotification } from '../../utils/notificationUtils';
+import { notificationTypes } from '../../utils/notificationUtils';
 
 const TransactionSchedule = () => {
   const { transactionId } = useParams();
@@ -238,6 +240,15 @@ const TransactionSchedule = () => {
           scheduleOptions: scheduleOptions,
           meetingLocations: meetingLocations,
           scheduledAt: serverTimestamp()
+        });
+
+        // 創建通知給買家
+        await createNotification({
+          userId: transaction.buyerId,
+          type: notificationTypes.SCHEDULE_CHANGED,
+          itemName: transaction.productTitle,
+          itemId: transaction.productId,
+          message: `賣家已設定面交時間地點：${transaction.productTitle}，請前往交易管理區選擇`
         });
 
         // 提交成功後顯示詳細信息
