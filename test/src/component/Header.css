@@ -116,8 +116,6 @@ body {
 
 .nav-icon-yellow {
   color: #FFD600 !important;
-<<<<<<< HEAD
-=======
 }
 
 /* 通知組件樣式 */
@@ -131,6 +129,7 @@ body {
   border-radius: 4px;
   transition: all 0.3s ease;
   margin-right: 0;
+  cursor: pointer;
 }
 
 .notification-wrapper:hover {
@@ -197,5 +196,4 @@ body {
   margin: 0;
   font-size: 14px;
   line-height: 1.5;
->>>>>>> a2e378dba7f60873641fabd73efbeb7e7dc0f448
-} 
+}

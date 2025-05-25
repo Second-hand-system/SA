@@ -168,14 +168,14 @@ const Notification = () => {
           navigate(`/product/${notification.itemId}`);
           break;
         case 'purchase_success':
-          // 跳转到订单详情页
-          navigate(`/order/${notification.itemId}`);
+          // 跳转到交易页面
+          navigate('/transactions');
           break;
         case 'negotiation_request':
         case 'negotiation_accepted':
         case 'negotiation_rejected':
-          // 跳转到议价详情页
-          navigate(`/negotiation/${notification.itemId}`);
+          // 跳转到商品详情页，因为议价功能在商品详情页中
+          navigate(`/product/${notification.itemId}`);
           break;
         default:
           console.log('未知的通知类型:', notification.type);

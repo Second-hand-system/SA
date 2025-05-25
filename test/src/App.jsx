@@ -163,6 +163,16 @@ function App() {
                   <ChatRoom />
                 </ProtectedRoute>
               } />
+              <Route path="/order/:orderId" element={
+                <ProtectedRoute>
+                  <Transactions />
+                </ProtectedRoute>
+              } />
+              <Route path="/negotiation/:negotiationId" element={
+                <ProtectedRoute>
+                  <ProductDetail />
+                </ProtectedRoute>
+              } />
             </Routes>
           </Router>
         </FavoritesProvider>

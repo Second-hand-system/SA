@@ -56,10 +56,8 @@ const Header = () => {
                 </div>
                 <span>交易紀錄</span>
               </Link>
-              <Link to="#" className="notification-wrapper">
-                <div className="notification-icon">
-                  <Notification />
-                </div>
+              <Link to="#" className="notification-wrapper" onClick={(e) => e.preventDefault()}>
+                <Notification />
                 <span>通知</span>
               </Link>
               <Link to="/profile" className="profile-link">
