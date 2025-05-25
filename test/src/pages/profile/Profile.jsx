@@ -91,10 +91,8 @@ const Profile = () => {
         ...doc.data()
       }));
       
-      // Sort products: active first, then by creation date
+      // Sort products by creation date (newest first)
       const sortedProducts = productsData.sort((a, b) => {
-        if (a.status === 'active' && b.status !== 'active') return -1;
-        if (a.status !== 'active' && b.status === 'active') return 1;
         return new Date(b.createdAt) - new Date(a.createdAt);
       });
       
@@ -317,7 +315,7 @@ const Profile = () => {
                       </span>
                     ) : (
                       <span className={`product-status ${product.status === '已售出' ? 'status-ended' : 'status-active'}`}>
-                        {product.status}
+                        {product.status || '販售中'}
                       </span>
                     )}
                     {product.status === '已售出' && product.buyerName && (

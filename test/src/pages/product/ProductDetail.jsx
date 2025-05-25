@@ -968,7 +968,8 @@ const ProductDetail = () => {
       const newBid = {
         productId: productId,
         userId: currentUser.uid,
-        userName: currentUser.displayName || '匿名用戶',
+        userName: currentUser.displayName || currentUser.email?.split('@')[0] || '買家',
+        userEmail: currentUser.email,
         amount: amount,
         status: 'pending',
         createdAt: serverTimestamp()
@@ -1424,7 +1425,7 @@ const ProductDetail = () => {
       {/* 議價歷史顯示 - 統一為條列式 */}
       {product && product.tradeMode === '先搶先贏' && (
         <div className="bid-section">
-          <h3>議價歷史</h3>
+          <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>議價歷史</h3>
           <div className="bid-history">
             <ul>
               {negotiationHistory.length === 0 && (
@@ -1444,8 +1445,8 @@ const ProductDetail = () => {
                 return (
                   <li key={negotiation.id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #eee' }}>
                     <div className="bid-info" style={{ flex: 1, textAlign: 'center' }}>
-                      <span className="bid-user" style={{ display: 'block', marginBottom: '4px' }}>{negotiation.userName}</span>
-                      <span className="bid-time" style={{ display: 'block', fontSize: '0.9em', color: '#666' }}>{formattedTime}</span>
+                      <span className="bid-user" style={{ display: 'block', marginBottom: '4px' }}>買家：{negotiation.userName}</span>
+                      <span className="bid-time" style={{ display: 'block', fontSize: '0.9em', color: '#666' }}>時間：{formattedTime}</span>
                     </div>
                     <span className="bid-amount" style={{ marginLeft: '16px' }}>NT$ {negotiation.amount}</span>
                     {negotiation.status === 'pending' && auth.currentUser && product.sellerId === auth.currentUser.uid && product.status !== '已售出' ? (

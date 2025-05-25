@@ -207,7 +207,7 @@ function Sell() {
         sellerEmail: currentUser.email,
         sellerId: currentUser.uid,
         createdAt: serverTimestamp(),
-        status: 'available',
+        status: '販售中',
         tradeMode: formData.tradeMode,
         auctionStartTime: formData.tradeMode === '競標模式' ? formData.auctionStartTime : null,
         auctionEndTime: formData.tradeMode === '競標模式' ? formData.auctionEndTime : null
