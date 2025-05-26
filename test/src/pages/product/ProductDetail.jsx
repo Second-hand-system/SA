@@ -164,6 +164,7 @@ const ProductDetail = () => {
             
             if (!bidsSnapshot.empty) {
               const highestBid = bidsSnapshot.docs[0].data();
+              const highestBidId = bidsSnapshot.docs[0].id;
               
               // 檢查是否已經有交易記錄
               const transactionsRef = collection(db, 'transactions');
@@ -189,7 +190,7 @@ const ProductDetail = () => {
                   status: 'pending',
                   createdAt: serverTimestamp(),
                   type: 'auction',
-                  bidId: highestBid.id,
+                  bidId: highestBidId,
                   meetingLocations: product.meetingLocations || [],
                   productImage: product.images?.[0] || product.image || '/placeholder.jpg'
                 });
@@ -197,11 +198,38 @@ const ProductDetail = () => {
                 // 更新商品狀態
                 const productRef = doc(db, 'products', productId);
                 await updateDoc(productRef, {
-                  status: '已售出',
+                  status: '已結標',
                   soldTo: highestBid.userId,
                   soldAt: serverTimestamp()
                 });
-                setProduct(prev => ({ ...prev, status: '已售出', soldTo: highestBid.userId }));
+
+                // 1. 通知賣家競標已結束
+                await createNotification({
+                  userId: product.sellerId,
+                  type: notificationTypes.BID_PLACED,
+                  itemName: product.title,
+                  itemId: productId,
+                  message: `您的商品 ${product.title} 競標已結束`
+                });
+
+                // 2. 通知賣家前往設定面交資訊
+                await createNotification({
+                  userId: product.sellerId,
+                  type: notificationTypes.SCHEDULE_CHANGED,
+                  itemName: product.title,
+                  itemId: productId,
+                  message: `請前往交易管理區設定 ${product.title} 的面交時間地點`,
+                  link: `/transaction/${transactionRef.id}`
+                });
+
+                // 3. 通知得標者
+                await createNotification({
+                  userId: highestBid.userId,
+                  type: notificationTypes.BID_PLACED,
+                  itemName: product.title,
+                  itemId: productId,
+                  message: `恭喜您得標商品 ${product.title}`
+                });
               }
             } else {
               // 如果無人出價，設置為未售出
@@ -503,14 +531,6 @@ const ProductDetail = () => {
         // 更新收藏數
         try {
           await updateFavoriteCount(productId, true);
-          // 創建收藏通知
-          await createNotification({
-            userId: product.sellerId,
-            type: notificationTypes.ITEM_FAVORITED,
-            itemName: product.title,
-            itemId: productId,
-            message: `有人收藏了您的商品：${product.title}`
-          });
         } catch (error) {
           console.error('更新收藏數時發生錯誤:', error);
         }
@@ -735,7 +755,7 @@ const ProductDetail = () => {
 
         transaction.set(transactionRef, transactionData);
 
-        // 創建通知給賣家
+        // 創建購買通知給賣家
         await createNotification({
           userId: productData.sellerId,
           type: notificationTypes.ITEM_SOLD,
@@ -759,7 +779,8 @@ const ProductDetail = () => {
           type: notificationTypes.SCHEDULE_CHANGED,
           itemName: productData.title,
           itemId: productId,
-          message: `請前往交易管理區選擇面交時間地點：${productData.title}`
+          message: `請前往交易管理區選擇面交時間地點：${productData.title}`,
+          link: `/transaction/${transactionRef.id}`
         });
       });
 
@@ -855,7 +876,8 @@ const ProductDetail = () => {
           type: notificationTypes.BID_OVERTAKEN,
           itemName: product.title,
           itemId: productId,
-          message: `您對商品 ${product.title} 的出價已被超越`
+          message: `您對商品 ${product.title} 的出價已被超越`,
+          link: `/transaction/${transactionRef.id}`
         });
       }
 
@@ -1039,6 +1061,7 @@ const ProductDetail = () => {
         type: notificationTypes.NEGOTIATION_REQUEST,
         itemName: product.title,
         itemId: productId,
+        message: `您已對商品 ${product.title} 發送議價請求`,
         message: `您已對商品 ${product.title} 發送議價請求`
       })
       setBidAmount('');
