@@ -692,7 +692,6 @@ const ProductDetail = () => {
       setIsProcessing(true);
       const productRef = doc(db, 'products', productId);
       
-      // 使用事务来确保原子性操作
       await runTransaction(db, async (transaction) => {
         const productDoc = await transaction.get(productRef);
         
@@ -839,6 +838,47 @@ const ProductDetail = () => {
         itemId: productId,
         message: `收到新的競標：NT$ ${bidAmountNum}`
       });
+
+      // 創建競標通知給買家
+      await createNotification({
+        userId: auth.currentUser.uid,
+        type: notificationTypes.BID_PLACED,
+        itemName: product.title,
+        itemId: productId,
+        message: `您已成功出價 ${product.title}：NT$ ${bidAmountNum}`
+      });
+
+      // 如果有前一個最高出價者，通知他們被超越
+      if (currentBid && currentBid.userId !== auth.currentUser.uid) {
+        await createNotification({
+          userId: currentBid.userId,
+          type: notificationTypes.BID_OVERTAKEN,
+          itemName: product.title,
+          itemId: productId,
+          message: `您的出價已被超越：${product.title}`
+        });
+      }
+
+      // 如果拍賣結束，創建相應通知
+      if (isAuctionEnded()) {
+        // 通知最高出價者
+        await createNotification({
+          userId: auth.currentUser.uid,
+          type: notificationTypes.BID_WON,
+          itemName: product.title,
+          itemId: productId,
+          message: `恭喜您贏得拍賣：${product.title}`
+        });
+
+        // 通知賣家
+        await createNotification({
+          userId: product.sellerId,
+          type: notificationTypes.AUCTION_ENDED,
+          itemName: product.title,
+          itemId: productId,
+          message: `您的拍賣已結束：${product.title}`
+        });
+      }
 
       setBidAmount('');
       setBidError('');
