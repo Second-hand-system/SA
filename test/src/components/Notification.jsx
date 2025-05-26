@@ -30,7 +30,7 @@ const Notification = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('开始获取通知，用户ID:', auth.currentUser.uid);
+      console.log('開始獲取通知，用户ID:', auth.currentUser.uid);
 
       const notificationsRef = collection(db, 'notifications');
       const q = query(
@@ -40,7 +40,7 @@ const Notification = () => {
         limit(50)
       );
 
-      // 使用 onSnapshot 实时监听通知变化
+      // 使用 onSnapshot 
       unsubscribe = onSnapshot(q, 
         (snapshot) => {
           console.log('收到通知快照，数量:', snapshot.size);
@@ -55,11 +55,11 @@ const Notification = () => {
           setIsRetrying(false);
         },
         (error) => {
-          console.error('监听通知时发生错误:', error);
+          console.error('監聽通知時發生錯誤:', error);
           setError(error.message);
           setLoading(false);
           
-          // 如果是索引构建错误，且未超过最大重试次数，则延迟重试
+          // 如索引建構錯誤，未超過最大重試次數則延遲重試
           if (error.message.includes('index is currently building') && retryCount < MAX_RETRY_COUNT) {
             setIsRetrying(true);
             setTimeout(() => {
@@ -72,7 +72,7 @@ const Notification = () => {
 
       return unsubscribe;
     } catch (error) {
-      console.error('获取通知时发生错误:', error);
+      console.error('獲取通知時發生錯誤:', error);
       setError(error.message);
       setLoading(false);
       setIsRetrying(false);
@@ -118,92 +118,71 @@ const Notification = () => {
         });
       }
 
-      // 根据通知类型和目标ID进行跳转
+      // 根據通知類型和目標ID進行跳轉
       switch (notification.type) {
-        // 商品相关通知
+        // 商品相關
         case notificationTypes.BID_PLACED:
         case notificationTypes.BID_OVERTAKEN:
         case notificationTypes.BID_WON:
         case notificationTypes.AUCTION_ENDED:
         case notificationTypes.ITEM_SOLD:
-        case notificationTypes.ITEM_FAVORITED:
+        case notificationTypes.PURCHASE_SUCCESS:
           navigate(`/product/${notification.itemId}`);
           break;
 
-        // 订单相关通知
-        case notificationTypes.ORDER_CREATED:
-        case notificationTypes.PURCHASE_SUCCESS:
-        case notificationTypes.ORDER_CONFIRMED:
-        case notificationTypes.ORDER_COMPLETED:
-        case notificationTypes.ORDER_CANCELLED:
+        // 訂單相關通知
         case notificationTypes.SCHEDULE_CHANGED:
-          // 跳转到交易管理页面
+          // 跳轉到交易管理頁面
           navigate('/transactions');
           break;
 
-        // 议价相关通知
+        // 議價相關通知
         case notificationTypes.NEGOTIATION_REQUEST:
-        case notificationTypes.NEGOTIATION_MESSAGE:
         case notificationTypes.NEGOTIATION_ACCEPTED:
-        case notificationTypes.NEGOTIATION_REJECTED:
           navigate(`/product/${notification.itemId}`);
           break;
 
         default:
-          console.log('未知的通知类型:', notification.type);
+          console.log('未知的通知類型:', notification.type);
       }
 
-      // 关闭通知弹窗
+      // 關閉通知彈窗
       setPopoverVisible(false);
     } catch (error) {
-      console.error('处理通知点击时发生错误:', error);
+      console.error('處理通知點擊時發生錯誤:', error);
     }
   };
 
   const getNotificationIcon = (type) => {
     switch (type) {
-      // 订单相关图标
-      case notificationTypes.ORDER_CREATED:
-        return '📦';
+      // 訂單相關圖標
       case notificationTypes.PURCHASE_SUCCESS:
-        return '🛍️';
-      case notificationTypes.ORDER_CONFIRMED:
-        return '✅';
-      case notificationTypes.ORDER_COMPLETED:
-        return '🎉';
-      case notificationTypes.ORDER_CANCELLED:
-        return '❌';
+        return '🛍️';  // 購物袋圖標 直接購買
       case notificationTypes.SCHEDULE_CHANGED:
-        return '🕒';
+        return '🕒';  // 時鐘圖標
 
-      // 竞标相关图标
+      // 競標相關圖標
       case notificationTypes.BID_PLACED:
-        return '💰';
+        return '💰';  // 金錢圖標
       case notificationTypes.BID_OVERTAKEN:
-        return '📈';
+        return '📈';  // 上升圖標
       case notificationTypes.BID_WON:
-        return '🏆';
+        return '🏆';  // 獎盃圖標
       case notificationTypes.AUCTION_ENDED:
-        return '⏰';
+        return '⏰';  // 鬧鐘圖標
 
-      // 议价相关图标
+      // 議價相關圖標
       case notificationTypes.NEGOTIATION_REQUEST:
-        return '💬';
-      case notificationTypes.NEGOTIATION_MESSAGE:
-        return '📝';
+        return '💬';  // 對話框圖標
       case notificationTypes.NEGOTIATION_ACCEPTED:
-        return '🤝';
-      case notificationTypes.NEGOTIATION_REJECTED:
-        return '❌';
+        return '🤝';  // 握手圖標
 
-      // 商品相关图标
+      // 商品相關圖標
       case notificationTypes.ITEM_SOLD:
-        return '✅';
-      case notificationTypes.ITEM_FAVORITED:
-        return '❤️';
+        return '✅';  // 確認圖標
 
       default:
-        return '📢';
+        return '📢';  // 默認通知圖標
     }
   };
 
@@ -213,18 +192,13 @@ const Notification = () => {
     }
 
     switch (notification.type) {
-      case notificationTypes.ORDER_CREATED:
-        return '訂單已成立';
+      // 訂單相關通知
       case notificationTypes.PURCHASE_SUCCESS:
         return '購買成功';
-      case notificationTypes.ORDER_CONFIRMED:
-        return '訂單已確認';
-      case notificationTypes.ORDER_COMPLETED:
-        return '訂單已完成';
-      case notificationTypes.ORDER_CANCELLED:
-        return '訂單已取消';
       case notificationTypes.SCHEDULE_CHANGED:
         return '請選擇面交時間地點';
+
+      // 競標相關通知
       case notificationTypes.BID_PLACED:
         return '收到新的出價';
       case notificationTypes.BID_OVERTAKEN:
@@ -233,18 +207,16 @@ const Notification = () => {
         return '恭喜您得標';
       case notificationTypes.AUCTION_ENDED:
         return '競標時間已結束';
+
+      // 議價相關通知
       case notificationTypes.NEGOTIATION_REQUEST:
         return '收到新的議價請求';
-      case notificationTypes.NEGOTIATION_MESSAGE:
-        return '收到新的議價訊息';
       case notificationTypes.NEGOTIATION_ACCEPTED:
         return '議價成功';
-      case notificationTypes.NEGOTIATION_REJECTED:
-        return '議價被拒絕';
+
+      // 商品相關通知
       case notificationTypes.ITEM_SOLD:
         return '商品已售出';
-      case notificationTypes.ITEM_FAVORITED:
-        return '商品被收藏';
       default:
         return '新通知';
     }

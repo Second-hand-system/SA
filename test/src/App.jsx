@@ -23,7 +23,7 @@ import ChatRoom from './pages/chat/ChatRoom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
-// 配置 React Router 的未来标志
+// 配置 React Router 的未來標誌
 const router = {
   future: {
     v7_startTransition: true,

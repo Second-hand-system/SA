@@ -206,26 +206,25 @@ const ProductDetail = () => {
                 // 1. 通知賣家競標已結束
                 await createNotification({
                   userId: product.sellerId,
-                  type: notificationTypes.BID_PLACED,
+                  type: notificationTypes.AUCTION_ENDED,
                   itemName: product.title,
                   itemId: productId,
                   message: `您的商品 ${product.title} 競標已結束`
                 });
-
                 // 2. 通知賣家前往設定面交資訊
                 await createNotification({
                   userId: product.sellerId,
                   type: notificationTypes.SCHEDULE_CHANGED,
                   itemName: product.title,
                   itemId: productId,
-                  message: `請前往交易管理區設定 ${product.title} 的面交時間地點`,
+                  message: `請前往交易管理區設定商品 ${product.title} 的面交時間地點`,
                   link: `/transaction/${transactionRef.id}`
                 });
 
                 // 3. 通知得標者
                 await createNotification({
                   userId: highestBid.userId,
-                  type: notificationTypes.BID_PLACED,
+                  type: notificationTypes.BID_WON,
                   itemName: product.title,
                   itemId: productId,
                   message: `恭喜您得標商品 ${product.title}`
@@ -770,7 +769,7 @@ const ProductDetail = () => {
           type: notificationTypes.PURCHASE_SUCCESS,
           itemName: productData.title,
           itemId: productId,
-          message: `您已成功購買 ${productData.title}`
+          message: `您已成功購買商品 ${productData.title}`
         });
 
         // 創建提醒選擇面交時間地點的通知給賣家
@@ -869,36 +868,14 @@ const ProductDetail = () => {
         message: `您已成功對商品 ${product.title} 出價：NT$ ${bidAmountNum}`
       });
 
-      // 如果有前一個最高出價者，通知他們被超越
+      // 如果有新的最高出價者，通知他們被超越
       if (currentBid && currentBid.userId !== auth.currentUser.uid) {
         await createNotification({
           userId: currentBid.userId,
           type: notificationTypes.BID_OVERTAKEN,
           itemName: product.title,
           itemId: productId,
-          message: `您對商品 ${product.title} 的出價已被超越`,
-          link: `/transaction/${transactionRef.id}`
-        });
-      }
-
-      // 如果拍賣結束，創建相應通知
-      if (isAuctionEnded()) {
-        // 通知最高出價者
-        await createNotification({
-          userId: auth.currentUser.uid,
-          type: notificationTypes.BID_WON,
-          itemName: product.title,
-          itemId: productId,
-          message: `恭喜您贏得商品 ${product.title} 的拍賣`
-        });
-
-        // 通知賣家
-        await createNotification({
-          userId: product.sellerId,
-          type: notificationTypes.AUCTION_ENDED,
-          itemName: product.title,
-          itemId: productId,
-          message: `您的商品 ${product.title} 拍賣已結束`
+          message: `您對商品 ${product.title} 的出價已被超越`
         });
       }
 
@@ -1047,7 +1024,7 @@ const ProductDetail = () => {
         lastNegotiationTime: serverTimestamp()
       });
 
-      // 1. 通知賣家
+      // 1. 通知賣家議價
       await createNotification({    
         userId: product.sellerId,
         type: notificationTypes.NEGOTIATION_REQUEST,
@@ -1061,7 +1038,6 @@ const ProductDetail = () => {
         type: notificationTypes.NEGOTIATION_REQUEST,
         itemName: product.title,
         itemId: productId,
-        message: `您已對商品 ${product.title} 發送議價請求`,
         message: `您已對商品 ${product.title} 發送議價請求`
       })
       setBidAmount('');
@@ -1169,8 +1145,7 @@ const ProductDetail = () => {
           type: notificationTypes.NEGOTIATION_ACCEPTED,
           itemName: product.title,
           itemId: productId,
-          message: `您對商品 ${product.title} 的議價請求已被接受`,
-          link: `/transaction/${transactionRef.id}`
+          message: `您對商品 ${product.title} 的議價請求已被接受`
         });
 
         // 創建通知給賣家
@@ -1179,8 +1154,7 @@ const ProductDetail = () => {
           type: notificationTypes.NEGOTIATION_ACCEPTED,
           itemName: product.title,
           itemId: productId,
-          message: `您已接受商品${product.title}的議價請求`,
-          link: `/transaction/${transactionRef.id}`
+          message: `您已接受商品 ${product.title} 的議價請求`
         });
 
         // 創建提醒設置面交時間地點的通知給賣家
