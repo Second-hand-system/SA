@@ -48,8 +48,9 @@ const Favorites = () => {
         console.log('Fetching favorites for user:', currentUser.uid);
         const favoritesData = await getUserFavorites(currentUser.uid);
         
-        // 檢查每個收藏商品是否還存在
+        // 取得 Firestore 實例
         const db = getFirestore();
+        // 檢查每個收藏商品是否還存在
         const validFavoritesPromises = favoritesData.map(async (favorite) => {
           const productRef = doc(db, 'products', favorite.productId);
           const productSnap = await getDoc(productRef);

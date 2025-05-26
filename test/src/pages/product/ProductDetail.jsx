@@ -1134,7 +1134,9 @@ const ProductDetail = () => {
         const buyerDoc = await getDoc(buyerRef);
         const buyerData = buyerDoc.data();
 
-        await updateDoc(doc(db, 'products', productId), {
+        // 更新商品文檔
+        const productRef = doc(db, 'products', productId);
+        await updateDoc(productRef, {
           price: negotiationData.amount,
           status: '已售出',
           soldTo: negotiationData.userId,
@@ -1159,6 +1161,26 @@ const ProductDetail = () => {
           type: 'negotiation',
           meetingLocations: product.meetingLocations || [],
           productImage: product.images?.[0] || product.image || '/placeholder.jpg'
+        });
+
+        // 創建通知給買家
+        await createNotification({
+          userId: negotiationData.userId,
+          type: notificationTypes.NEGOTIATION_ACCEPTED,
+          itemName: product.title,
+          itemId: productId,
+          message: `您的議價請求已被接受：${product.title}`,
+          link: `/transaction/${transactionRef.id}`
+        });
+
+        // 創建通知給賣家
+        await createNotification({
+          userId: product.sellerId,
+          type: notificationTypes.NEGOTIATION_ACCEPTED,
+          itemName: product.title,
+          itemId: productId,
+          message: `您已接受買家的議價請求：${product.title}`,
+          link: `/transaction/${transactionRef.id}`
         });
       }
 
