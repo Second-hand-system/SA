@@ -836,7 +836,7 @@ const ProductDetail = () => {
         type: notificationTypes.BID_PLACED,
         itemName: product.title,
         itemId: productId,
-        message: `收到新的競標：NT$ ${bidAmountNum}`
+        message: `商品 ${product.title} 收到新的競標：NT$ ${bidAmountNum}`
       });
 
       // 創建競標通知給買家
@@ -845,7 +845,7 @@ const ProductDetail = () => {
         type: notificationTypes.BID_PLACED,
         itemName: product.title,
         itemId: productId,
-        message: `您已成功出價 ${product.title}：NT$ ${bidAmountNum}`
+        message: `您已成功對商品 ${product.title} 出價：NT$ ${bidAmountNum}`
       });
 
       // 如果有前一個最高出價者，通知他們被超越
@@ -855,7 +855,7 @@ const ProductDetail = () => {
           type: notificationTypes.BID_OVERTAKEN,
           itemName: product.title,
           itemId: productId,
-          message: `您的出價已被超越：${product.title}`
+          message: `您對商品 ${product.title} 的出價已被超越`
         });
       }
 
@@ -867,7 +867,7 @@ const ProductDetail = () => {
           type: notificationTypes.BID_WON,
           itemName: product.title,
           itemId: productId,
-          message: `恭喜您贏得拍賣：${product.title}`
+          message: `恭喜您贏得商品 ${product.title} 的拍賣`
         });
 
         // 通知賣家
@@ -876,7 +876,7 @@ const ProductDetail = () => {
           type: notificationTypes.AUCTION_ENDED,
           itemName: product.title,
           itemId: productId,
-          message: `您的拍賣已結束：${product.title}`
+          message: `您的商品 ${product.title} 拍賣已結束`
         });
       }
 
@@ -1025,17 +1025,22 @@ const ProductDetail = () => {
         lastNegotiationTime: serverTimestamp()
       });
 
-      // 發送通知給賣家
-      await addNotification({
-        type: NOTIFICATION_TYPES.NEGOTIATION_PLACED,
-        recipientId: product.sellerId,
-        productId: productId,
-        negotiationId: newBidRef.id,
-        message: `您收到了一個新的議價：${formatCurrency(amount)}`,
-        read: false,
-        createdAt: serverTimestamp()
-      });
-
+      // 1. 通知賣家
+      await createNotification({    
+        userId: product.sellerId,
+        type: notificationTypes.NEGOTIATION_REQUEST,
+        itemName: product.title,
+        itemId: productId,
+        message: `您的商品 ${product.title} 收到新的議價請求`
+      })
+      // 2. 通知買家自己
+      await createNotification({
+        userId: auth.currentUser.uid,
+        type: notificationTypes.NEGOTIATION_REQUEST,
+        itemName: product.title,
+        itemId: productId,
+        message: `您已對商品 ${product.title} 發送議價請求`
+      })
       setBidAmount('');
       toast.success('議價成功！');
       
@@ -1133,19 +1138,6 @@ const ProductDetail = () => {
           productImage: product.images?.[0] || product.image || '/placeholder.jpg'
         });
       }
-
-      // 發送通知給買家
-      await addNotification({
-        type: response === 'accepted' ? NOTIFICATION_TYPES.NEGOTIATION_ACCEPTED : NOTIFICATION_TYPES.NEGOTIATION_REJECTED,
-        recipientId: negotiationData.userId,
-        productId: productId,
-        negotiationId: negotiationId,
-        message: response === 'accepted' ? 
-          `您的議價已被接受：${formatCurrency(negotiationData.amount)}` :
-          `您的議價已被拒絕：${formatCurrency(negotiationData.amount)}`,
-        read: false,
-        createdAt: serverTimestamp()
-      });
 
       // 更新議價歷史
       const negotiationsQuery = query(
@@ -1297,7 +1289,12 @@ const ProductDetail = () => {
               <h3>購買者資訊</h3>
               <div className="purchaser-details">
                 <p><strong>購買者：</strong>{product.buyerName || '匿名用戶'}</p>
-                <p><strong>購買時間：</strong>{product.soldAt ? new Date(product.soldAt.toDate()).toLocaleString('zh-TW') : '未知'}</p>
+                {product.soldAt && (
+                  <p>
+                    <strong>售出時間：</strong>
+                    {product.soldAt.toDate ? product.soldAt.toDate().toLocaleString('zh-TW') : '未知時間'}
+                  </p>
+                )}
                 <p><strong>聯絡方式：</strong>{product.buyerEmail || '未提供'}</p>
               </div>
             </div>

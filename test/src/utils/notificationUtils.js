@@ -11,20 +11,20 @@ export const notificationTypes = {
   SCHEDULE_CHANGED: 'schedule_changed',     // 时间地点需调整
 
   // 竞标相关
-  BID_PLACED: 'bid_placed',                // 竞标出价
+  BID_PLACED: 'BID_PLACED',                // 竞标出价
   BID_OVERTAKEN: 'bid_overtaken',          // 竞标被超越
   BID_WON: 'bid_won',                      // 竞标得标
   AUCTION_ENDED: 'auction_ended',          // 竞标时间结束
 
   // 议价相关
-  NEGOTIATION_REQUEST: 'negotiation_request',    // 议价请求
+  NEGOTIATION_REQUEST: 'NEGOTIATION_REQUEST',    // 议价请求
   NEGOTIATION_MESSAGE: 'negotiation_message',    // 议价留言
-  NEGOTIATION_ACCEPTED: 'negotiation_accepted',  // 议价成功
-  NEGOTIATION_REJECTED: 'negotiation_rejected',  // 议价拒绝
+  NEGOTIATION_ACCEPTED: 'NEGOTIATION_ACCEPTED',  // 议价成功
+  NEGOTIATION_REJECTED: 'NEGOTIATION_REJECTED',  // 议价拒绝
 
   // 商品相关
-  ITEM_SOLD: 'item_sold',                  // 商品售出
-  ITEM_FAVORITED: 'item_favorited'         // 商品被收藏
+  ITEM_SOLD: 'ITEM_SOLD',                  // 商品售出
+  ITEM_FAVORITED: 'ITEM_FAVORITED'         // 商品被收藏
 };
 
 export const createNotification = async ({ userId, type, itemName, itemId, message, orderId }) => {
