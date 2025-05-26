@@ -774,7 +774,7 @@ const ProductDetail = () => {
         });
 
         // 創建提醒選擇面交時間地點的通知給賣家
-      await createNotification({
+        await createNotification({
           userId: productData.sellerId,
           type: notificationTypes.SCHEDULE_CHANGED,
           itemName: productData.title,
@@ -1169,7 +1169,7 @@ const ProductDetail = () => {
           type: notificationTypes.NEGOTIATION_ACCEPTED,
           itemName: product.title,
           itemId: productId,
-          message: `您的議價請求已被接受：${product.title}`,
+          message: `您對商品 ${product.title} 的議價請求已被接受`,
           link: `/transaction/${transactionRef.id}`
         });
 
@@ -1179,7 +1179,17 @@ const ProductDetail = () => {
           type: notificationTypes.NEGOTIATION_ACCEPTED,
           itemName: product.title,
           itemId: productId,
-          message: `您已接受買家的議價請求：${product.title}`,
+          message: `您已接受商品${product.title}的議價請求`,
+          link: `/transaction/${transactionRef.id}`
+        });
+
+        // 創建提醒設置面交時間地點的通知給賣家
+        await createNotification({
+          userId: product.sellerId,
+          type: notificationTypes.SCHEDULE_CHANGED,
+          itemName: product.title,
+          itemId: productId,
+          message: `請前往交易管理區設置商品 ${product.title} 的面交時間地點`,
           link: `/transaction/${transactionRef.id}`
         });
       }

@@ -37,7 +37,7 @@ const Notification = () => {
         notificationsRef,
         where('userId', '==', auth.currentUser.uid),
         orderBy('createdAt', 'desc'),
-        limit(10)
+        limit(50)
       );
 
       // 使用 onSnapshot 实时监听通知变化

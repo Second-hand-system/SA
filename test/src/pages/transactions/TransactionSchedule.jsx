@@ -248,7 +248,7 @@ const TransactionSchedule = () => {
           type: notificationTypes.SCHEDULE_CHANGED,
           itemName: transaction.productTitle,
           itemId: transaction.productId,
-          message: `賣家已設定面交時間地點：${transaction.productTitle}，請前往交易管理區選擇`
+          message: `賣家已設定商品 ${transaction.productTitle} 的面交時間地點，請前往交易管理區選擇`
         });
 
         // 提交成功後顯示詳細信息
