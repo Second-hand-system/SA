@@ -203,7 +203,7 @@ const ProductDetail = () => {
                   soldAt: serverTimestamp()
                 });
 
-                // 1. 通知賣家競標已結束
+                // 1. 賣家競標已結束
                 await createNotification({
                   userId: product.sellerId,
                   type: notificationTypes.AUCTION_ENDED,

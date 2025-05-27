@@ -31,12 +31,12 @@ const Notification = () => {
       setLoading(true);
       setError(null);
       console.log('開始獲取通知，用户ID:', auth.currentUser.uid);
-
+      //建立查詢
       const notificationsRef = collection(db, 'notifications');
       const q = query(
         notificationsRef,
         where('userId', '==', auth.currentUser.uid),
-        orderBy('createdAt', 'desc'),
+        orderBy('createdAt', 'desc'),//按時間倒序
         limit(50)
       );
 
@@ -157,7 +157,7 @@ const Notification = () => {
     switch (type) {
       // 訂單相關圖標
       case notificationTypes.PURCHASE_SUCCESS:
-        return '🛍️';  // 購物袋圖標 直接購買
+        return '🛍️';  // 購物袋圖標
       case notificationTypes.SCHEDULE_CHANGED:
         return '🕒';  // 時鐘圖標
 
@@ -189,36 +189,6 @@ const Notification = () => {
   const getNotificationText = (notification) => {
     if (notification.message) {
       return notification.message;
-    }
-
-    switch (notification.type) {
-      // 訂單相關通知
-      case notificationTypes.PURCHASE_SUCCESS:
-        return '購買成功';
-      case notificationTypes.SCHEDULE_CHANGED:
-        return '請選擇面交時間地點';
-
-      // 競標相關通知
-      case notificationTypes.BID_PLACED:
-        return '收到新的出價';
-      case notificationTypes.BID_OVERTAKEN:
-        return '您的出價已被超越';
-      case notificationTypes.BID_WON:
-        return '恭喜您得標';
-      case notificationTypes.AUCTION_ENDED:
-        return '競標時間已結束';
-
-      // 議價相關通知
-      case notificationTypes.NEGOTIATION_REQUEST:
-        return '收到新的議價請求';
-      case notificationTypes.NEGOTIATION_ACCEPTED:
-        return '議價成功';
-
-      // 商品相關通知
-      case notificationTypes.ITEM_SOLD:
-        return '商品已售出';
-      default:
-        return '新通知';
     }
   };
 
